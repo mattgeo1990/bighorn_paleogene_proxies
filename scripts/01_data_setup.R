@@ -14,7 +14,7 @@ library(plotly)
 
 ### Define Helper Functions ----------
 round_depth <- function(df) {
-  df %>% mutate(Strat_m_Bowen = round(Strat_m_Bowen, 1))
+  df %>% mutate(strat_height_m = round(strat_height_m, 1))
 }
 
 ### Read Data ----------
@@ -26,14 +26,14 @@ R34_raw     <- read.csv(here("data", "raw", "R34_corrected.csv"))
 R34_rfw     <- read.csv(here("data", "raw", "R34_reconstructed_waters_Excel.csv"))
 
 CU_data <- read_csv(here("data", "raw", "PETM_clumped.csv")) %>%
-  clean_names() %>%
-  rename(Strat_m_Bowen = strat_height_m) %>%
+  #clean_names() %>%
+  rename(strat_height_m = Strat_m_Bowen) %>%
   mutate(d18Oc_SMOW = to_VSMOW(d18Ocarb_VPBD, eq = "IUPAC")) %>%
   round_depth()
 
 koch <- read_csv(here("data", "raw", "Koch_SC_nodules_isotopes.csv")) %>%
-  clean_names() %>%
-  rename(Strat_m_Bowen = strat_m) %>%
+  #clean_names() %>%
+  rename(strat_height_m = Strat_m) %>%
   round_depth()
 
 Bowen2001 <- read.csv(
