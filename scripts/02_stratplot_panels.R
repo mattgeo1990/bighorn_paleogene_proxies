@@ -8,7 +8,7 @@ library(zoo)
 library(grid)  # Needed for unit() in geom_segment()
 
 # Load processed data
-df <- read_csv(here("data", "processed", "combined_petm_data.csv"))
+df <- read_csv(here("data", "processed", "PETM_combined.csv"))
 
 #### AGE MODEL ------------
 

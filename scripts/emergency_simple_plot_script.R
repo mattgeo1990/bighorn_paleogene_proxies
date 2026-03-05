@@ -1,7 +1,9 @@
 # ---- Packages ----
 library(tidyverse)   # ggplot2, dplyr, tibble, readr, etc.
 library(here)        # project-root file paths
+install.packages("janitor")
 library(janitor)     # clean_names()
+install.packages("patchwork")
 library(zoo)         # rollmean()
 library(patchwork)   # panel assembly
 
