@@ -32,11 +32,11 @@ pred_df <- tibble(
 )
 
 # Optional: plot age model (optional preview)
-# ggplot(model_data, aes(x = est_Depth_m_PCB_outcrop, y = Age_Ma)) +
-#   geom_point(color = "darkblue", size = 2) +
-#   geom_line(data = pred_df, aes(x = est_Depth_m_PCB_outcrop, y = Age_Ma), color = "red", linewidth = 1) +
-#   scale_x_reverse() +
-#   theme_minimal()
+ggplot(model_data, aes(x = est_Depth_m_PCB_outcrop, y = Age_Ma)) +
+  geom_point(color = "darkblue", size = 2) +
+  geom_line(data = pred_df, aes(x = est_Depth_m_PCB_outcrop, y = Age_Ma), color = "red", linewidth = 1) +
+  scale_x_reverse() +
+  theme_minimal()
 
 # Extrapolate full range (1300–1800 m)
 depth_seq_full <- seq(1300, 1800, length.out = 501)
@@ -51,7 +51,7 @@ df <- df %>%
   mutate(Age_Ma = approx(
     x = age_model_full$est_Depth_m_PCB_outcrop,
     y = age_model_full$Age_Ma,
-    xout = Strat_m_Bowen,
+    xout = strat_height_m,
     rule = 2
   )$y)
 
@@ -114,7 +114,7 @@ p1 <- ggplot(df_sorted, aes(y = Age_Ma)) +
   scale_y_reverse() +
   labs(
     x = expression(Delta*minute^17*O[carb]~"(per meg)"),
-    y = "Age (Ma)", title = "Δ¹⁷O₍carb₎"
+    y = "Age (Ma)", title = expression(Delta^17*O[carb])
   ) +
   geom_segment(data = turnover_events,
                aes(x = x_pos, xend = x_pos - 0.2,
@@ -125,6 +125,7 @@ p1 <- ggplot(df_sorted, aes(y = Age_Ma)) +
             aes(x = x_pos + 0.05, y = Age_Ma, label = label),
             hjust = 0, size = 3.3) +
   theme_petm
+p1
 
 
 # T47 panel
@@ -145,6 +146,7 @@ p2 <- ggplot(df, aes(x = T47_C, y = Age_Ma)) +
             aes(x = 37.6, y = Age_Ma, label = label),
             hjust = 0, size = 3.3) +
   theme_petm
+p2
 
 # δ13C panel
 p3 <- ggplot(df, aes(x = d13C_carb, y = Age_Ma)) +
@@ -164,6 +166,7 @@ p3 <- ggplot(df, aes(x = d13C_carb, y = Age_Ma)) +
             aes(x = -7.85, y = Age_Ma, label = label),
             hjust = 0, size = 3.3) +
   theme_petm
+p3
 
 # Combine panels
 final_fig <- p1 + p2 + p3 + plot_layout(ncol = 3)
@@ -174,3 +177,4 @@ if (!dir.exists(here("figures"))) dir.create(here("figures"))
 # Export figure
 ggsave(here("figures", "PETM_panel_v1.png"),
        final_fig, width = 11, height = 6, dpi = 600)
+final_fig

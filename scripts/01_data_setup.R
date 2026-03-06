@@ -19,7 +19,7 @@ round_depth <- function(df) {
 
 ### Read Data ----------
 samples     <- read.csv(here("data", "raw", "SandCoulee_Polecat_nodules.csv")) %>%
-  rename(sample.ID = Sample_ID) %>%
+  rename(sample.ID = Sample_ID) 
 R31_raw     <- read.csv(here("data", "raw", "R31_corData_linear.csv"))
 R32_raw     <- read.csv(here("data", "raw", "R32_corData_linear.csv"))
 R33_raw     <- read.csv(here("data", "raw", "R33_corrected.csv"))
