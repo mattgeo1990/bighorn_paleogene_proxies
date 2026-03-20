@@ -43,6 +43,13 @@ Bowen2001 <- read.csv(
 ) %>%
   rename(strat_height_m = Level)
 
+###Wrangle IPL Corrected IPL Clumped Data###
+
+
+
+
+
+
 ### Wrangle IPL Corrected Δ17O Data ----------
 R31_PETM <- R31_raw %>%
   filter(Type.2 == "Bighorn PETM") %>%
