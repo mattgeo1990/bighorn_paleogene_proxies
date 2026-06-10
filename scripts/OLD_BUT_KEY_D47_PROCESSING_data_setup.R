@@ -45,11 +45,18 @@ Bowen2001 <- read.csv(
 ) %>%
   rename(strat_height_m = Level)
 
+
+
+
+
+
 ###Wrangle IPL Corrected IPL Clumped Data###
+
+
 # Import corrected IPL clumped isotope data
 IPL_clumped <- read_csv(
   here("data", "raw", "Matthew's BHB Carbs_5-8-26.csv")
-)
+) # these data include manual corrections by Ben Passey. These data are reliable
 
 # Remove apostrophes introduced during import
 names(IPL_clumped) <- str_remove_all(names(IPL_clumped), "'")
@@ -57,6 +64,110 @@ names(IPL_clumped) <- str_remove_all(names(IPL_clumped), "'")
 # Inspect imported data
 table(IPL_clumped$SampleID)
 str(IPL_clumped)
+
+
+
+### Plot all replicates and identify 2025-2026 clumped session 1 vs clumped session 2
+# Ben noted that session 1 seems to have produced higher temp values
+
+# read in Ben's May 13 2026 summary (corrected data with strat levels and session #)
+
+BP_May13_summary <- read.csv(here::here("data", "excel files", "BHB Paleogene Summary May 2026.csv"))
+
+str(BP_May13_summary)
+
+# Plot "T.D47..Petersen" vs "Strat". Color points based on "Session".
+ggplot(BP_May13_summary, aes(x = T.D47..Petersen, y = Strat, color = Session)) +
+  geom_point(size = 3, alpha = 0.8) +
+  labs(
+    x = expression(paste("Temperature (", degree, "C)")),
+    y = "Strat",
+    color = "Session"
+  ) +
+  theme_classic()
+
+# Average duplicate analyses within Sample × Session,
+# keep only samples measured in both sessions
+
+paired <- BP_May13_summary %>%
+  filter(
+    !is.na(Session),
+    Session %in% c("Session 1", "Session 2"),
+    !is.na(T.D47..Petersen),
+    !is.na(Strat)
+  ) %>%
+  group_by(Strat, Session) %>%
+  summarise(
+    T_mean = mean(T.D47..Petersen, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from = Session,
+    values_from = T_mean
+  ) %>%
+  filter(
+    !is.na(`Session 1`),
+    !is.na(`Session 2`)
+  ) %>%
+  mutate(
+    dT = `Session 2` - `Session 1`
+  )
+
+print(paired)
+
+ggplot(paired, aes(x = `Session 1`, y = `Session 2`)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  geom_point(size = 3) +
+  coord_equal() +
+  labs(
+    x = expression("Session 1 T" [Delta47] * " (" * degree * "C)"),
+    y = expression("Session 2 T" [Delta47] * " (" * degree * "C)")
+  ) +
+  theme_classic()
+
+paired %>%
+  summarise(
+    n_pairs = n(),
+    mean_dT = mean(dT),
+    median_dT = median(dT),
+    sd_dT = sd(dT)
+  )
+
+ggplot(paired, aes(x = Strat, y = dT)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_point(size = 3) +
+  coord_flip() +
+  labs(
+    x = "Strat",
+    y = expression(Delta*"T = Session 2 - Session 1 ("*degree*"C)")
+  ) +
+  theme_classic()
+
+# SC-27 is the only one with significant offest between session 1 mean and session 2 mean
+# let's look at the data
+BP_May13_summary$T.D47..Petersen[which(BP_May13_summary$Strat %in% "1525")]
+
+# which strat levels only have data from one of the two sessions?
+BP_May13_summary %>%
+  filter(
+    !is.na(Session),
+    Session %in% c("Session 1", "Session 2")
+  ) %>%
+  group_by(Strat) %>%
+  summarise(
+    sessions = paste(sort(unique(Session)), collapse = ", "),
+    n_sessions = n_distinct(Session),
+    .groups = "drop"
+  ) %>%
+  filter(n_sessions == 1) %>%
+  arrange(Strat)
+
+
+
+
+
+### Prepare to summarize the data by strat level 
 
 # Import sample metadata with stratigraphic positions
 mod_sample_list <- read_csv(
@@ -228,6 +339,10 @@ ggsave(
   width = 7,
   height = 8
 )
+
+
+
+
 
 
 # Combine PB-only IPL and CU temperatures for sample-level comparison
@@ -499,3 +614,100 @@ write_csv(combined, here("data", "processed", "PETM_combined.csv"))
 # Export cleaned dataset
 write_csv(combined, here("data", "processed", "combined_petm_data.csv"))
 
+
+
+#### Emergency panel code --------
+
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+
+# Common y-axis limits/breaks
+y_lims <- c(500, 1800)
+y_breaks <- seq(500, 1800, by = 100)
+
+petm_rect <- annotate(
+  "rect",
+  xmin = -Inf, xmax = Inf,
+  ymin = 1500, ymax = 1545,
+  fill = "red", alpha = 0.15
+)
+
+panel_theme <- theme_bw(base_size = 12) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_blank()
+  )
+
+# ---- D17O water / reconstructed fluid water ----
+# Change x variable here if your column name is slightly different
+p_D17Orfw <- ggplot(df, aes(x = D17Orfw, y = strat_height_m)) +
+  petm_rect +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  geom_path(na.rm = TRUE) +
+  scale_y_continuous(limits = y_lims, breaks = y_breaks) +
+  labs(
+    x = expression(Delta^17*O[rfw]~"(per meg)"),
+    y = "Stratigraphic height (m)",
+    title = expression(Delta^17*O[rfw])
+  ) +
+  panel_theme +
+  theme(axis.title.y = element_text())
+
+# ---- D47 temperature ----
+p_D47 <- ggplot(BP_May2026_strat_summary,
+                aes(x = mean_T47, y = Strat)) +
+  petm_rect +
+  geom_errorbarh(
+    aes(xmin = mean_T47 - sd_T47,
+        xmax = mean_T47 + sd_T47),
+    height = 0,
+    na.rm = TRUE
+  ) +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  scale_x_continuous(breaks = seq(15, 60, by = 5)) +
+  scale_y_continuous(limits = y_lims, breaks = y_breaks) +
+  labs(
+    x = expression(T[Delta47]~"("*degree*C*")"),
+    title = expression(Delta[47])
+  ) +
+  panel_theme
+
+# ---- d18O carb ----
+p_d18O <- ggplot(df, aes(x = d18Oc_SMOW, y = strat_height_m)) +
+  petm_rect +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  geom_path(na.rm = TRUE) +
+  scale_y_continuous(limits = y_lims, breaks = y_breaks) +
+  labs(
+    x = expression(delta^18*O[carb]~"\u2030 VSMOW"),
+    title = expression(delta^18*O[carb])
+  ) +
+  panel_theme
+
+# ---- d13C carb ----
+p_d13C <- ggplot(df, aes(x = d13C_carb, y = strat_height_m)) +
+  petm_rect +
+  geom_point(size = 2.5, na.rm = TRUE) +
+  geom_path(na.rm = TRUE) +
+  scale_y_continuous(limits = y_lims, breaks = y_breaks) +
+  labs(
+    x = expression(delta^13*C[carb]~"\u2030 VPDB"),
+    title = expression(delta^13*C[carb])
+  ) +
+  panel_theme
+
+# ---- combine ----
+final_panel <- p_D17Orfw + p_D47 + p_d18O + p_d13C +
+  plot_layout(ncol = 4)
+
+final_panel
+
+ggsave(
+  here::here("figures", "PETM_strat_proxy_panel_quick.png"),
+  final_panel,
+  width = 13,
+  height = 7,
+  dpi = 600
+)

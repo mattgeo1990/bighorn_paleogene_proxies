@@ -40,13 +40,11 @@ BP_May2026_strat_summary <- BP_May2026_summary %>%
 ggplot(BP_May2026_strat_summary,
        aes(x = mean_T47, y = Strat)) +
   
-  # PETM interval bar
   annotate("rect",
            xmin = -Inf, xmax = Inf,
            ymin = 1500, ymax = 1545,
            fill = "red", alpha = 0.15) +
   
-  # PETM label
   annotate("text",
            x = Inf, y = 1522.5,
            label = "PETM",
@@ -54,19 +52,25 @@ ggplot(BP_May2026_strat_summary,
            color = "red",
            fontface = "bold") +
   
-  geom_errorbarh(aes(xmin = mean_T47 - sd_T47,
-                     xmax = mean_T47 + sd_T47),
-                 height = 0) +
-  
-  geom_point(size = 3) +
-  
-  labs(
-    x = expression(T[Delta47]~"Petersen ("*degree*C*")"),
-    y = "Strat (m)",
-    title = expression(T[Delta47]~"by Stratigraphic Position")
+  geom_errorbarh(
+    aes(xmin = mean_T47 - sd_T47,
+        xmax = mean_T47 + sd_T47),
+    height = 0
   ) +
   
-  theme_bw(base_size = 14)
+  geom_point(size = 3) +
+  scale_x_continuous(
+    breaks = seq(15, 60, by = 5)
+  ) +
+  scale_y_continuous(
+    breaks = seq(500, 1800, by = 100)
+  ) +
+  
+  theme_bw(base_size = 14) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
 
 
 # apply age model
