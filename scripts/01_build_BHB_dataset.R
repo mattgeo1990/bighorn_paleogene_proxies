@@ -90,7 +90,7 @@ names(IPL_D17O_data)
 # Ben Passey for Bighorn Basin Paleogene carbonate samples.
 
 IPL_D47_data <- read.csv(
-  here("data", "raw", "IPL_D47_BHB_Pg_Summary_May 2026.csv")
+  here("data", "raw", "IPL_D47_BHB_Pg_Summary_June2026.csv")
 )
 
 names(IPL_D47_data)
@@ -306,7 +306,7 @@ IPL_D47_primary_data <- IPL_D47_data %>%
 # pedogenic carbonate samples to assess temperature variability with stratigraphy
 # and identify potential outliers or stratigraphic trends.
 ggplot(IPL_D47_primary_data,
-       aes(x = T.D47..Petersen,
+       aes(x = T47_preferred,
            y = strat_height_m)) +
   geom_point(
     size = 2,
@@ -331,11 +331,11 @@ ggplot(IPL_D47_data,
        aes(
          x = reorder(
            MLA_sample_id,
-           T.D47..Petersen,
+           T47_preferred,
            FUN = median,
            na.rm = TRUE
          ),
-         y = T.D47..Petersen,
+         y = T47_preferred,
          color = Session
        )) +
   
@@ -373,7 +373,7 @@ paired <- IPL_D47_data %>%
   filter(
     !is.na(Session),
     Session %in% c("Session 1", "Session 2"),
-    !is.na(T.D47..Petersen),
+    !is.na(T47_preferred),
     !is.na(strat_height_m)
   ) %>%
   
@@ -382,7 +382,7 @@ paired <- IPL_D47_data %>%
   
   # Calculate mean temperature for each strat level in each session
   summarise(
-    T_mean = mean(T.D47..Petersen, na.rm = TRUE),
+    T_mean = mean(T47_preferred, na.rm = TRUE),
     n = n(),
     .groups = "drop"
   ) %>%
@@ -498,9 +498,9 @@ ggplot(paired,
 
 ggplot(IPL_D47_primary_data,
        aes(x = reorder(MLA_sample_id,
-                       T.D47..Petersen,
+                       T47_preferred,
                        median),
-           y = T.D47..Petersen)) +
+           y = T47_preferred)) +
   geom_point() +
   coord_flip()
 
@@ -510,10 +510,10 @@ sample_sd <- IPL_D47_primary_data %>%
   group_by(MLA_sample_id) %>%
   summarise(
     n = n(),
-    mean_T = mean(T.D47..Petersen),
-    sd_T = sd(T.D47..Petersen),
-    range_T = max(T.D47..Petersen) -
-      min(T.D47..Petersen)
+    mean_T = mean(T47_preferred),
+    sd_T = sd(T47_preferred),
+    range_T = max(T47_preferred) -
+      min(T47_preferred)
   )
 
 # Summarize distribution of within-sample variability
@@ -549,11 +549,11 @@ ggplot(IPL_D47_primary_data,
        aes(
          x = reorder(
            MLA_sample_id,
-           T.D47..Petersen,
+           T47_preferred,
            FUN = median,
            na.rm = TRUE
          ),
-         y = T.D47..Petersen,
+         y = T47_preferred,
          color = Session
        )) +
   
@@ -1073,13 +1073,13 @@ IPLD47_primary_summary <- IPL_D47_primary_data %>%
   summarise(
     strat_height_m = mean(strat_height_m, na.rm = TRUE),
     
-    IPLD47_n_T47 = sum(!is.na(T.D47..Petersen)),
-    IPLD47_mean_T47_C = mean(T.D47..Petersen, na.rm = TRUE),
-    IPLD47_sd_T47_C = sd(T.D47..Petersen, na.rm = TRUE),
+    IPLD47_n_T47 = sum(!is.na(T47_preferred)),
+    IPLD47_mean_T47_C = mean(T47_preferred, na.rm = TRUE),
+    IPLD47_sd_T47_C = sd(T47_preferred, na.rm = TRUE),
     IPLD47_se_T47_C = IPLD47_sd_T47_C / sqrt(IPLD47_n_T47),
     
-    IPLD47_min_T47_C = min(T.D47..Petersen, na.rm = TRUE),
-    IPLD47_max_T47_C = max(T.D47..Petersen, na.rm = TRUE),
+    IPLD47_min_T47_C = min(T47_preferred, na.rm = TRUE),
+    IPLD47_max_T47_C = max(T47_preferred, na.rm = TRUE),
     IPLD47_range_T47_C = IPLD47_max_T47_C - IPLD47_min_T47_C,
     
     IPLD47_sessions = paste(
@@ -1104,13 +1104,13 @@ IPLD47_spar_summary <- IPL_D47_SPAR_data %>%
   summarise(
     strat_height_m = mean(strat_height_m, na.rm = TRUE),
     
-    IPLD47_n_T47 = sum(!is.na(T.D47..Petersen)),
-    IPLD47_mean_T47_C = mean(T.D47..Petersen, na.rm = TRUE),
-    IPLD47_sd_T47_C = sd(T.D47..Petersen, na.rm = TRUE),
+    IPLD47_n_T47 = sum(!is.na(T47_preferred)),
+    IPLD47_mean_T47_C = mean(T47_preferred, na.rm = TRUE),
+    IPLD47_sd_T47_C = sd(T47_preferred, na.rm = TRUE),
     IPLD47_se_T47_C = IPLD47_sd_T47_C / sqrt(IPLD47_n_T47),
     
-    IPLD47_min_T47_C = min(T.D47..Petersen, na.rm = TRUE),
-    IPLD47_max_T47_C = max(T.D47..Petersen, na.rm = TRUE),
+    IPLD47_min_T47_C = min(T47_preferred, na.rm = TRUE),
+    IPLD47_max_T47_C = max(T47_preferred, na.rm = TRUE),
     IPLD47_range_T47_C = IPLD47_max_T47_C - IPLD47_min_T47_C,
     
     IPLD47_sessions = paste(
@@ -1377,8 +1377,92 @@ BHB_multiproxy_summary %>%
  filter(MLA_horizon_id == "PK95-SC-295") %>%
  select(MLA_horizon_id, strat_height_m)
 
+# 10. Age Model --------------
 
-# 10. Export summarized primary datasets  ---------------------
+# Assign ages to all horizons using the composite Bighorn Basin age model.
+#
+# matthews_age_model contains age-depth tie points derived from a combination
+# of:
+#   (1) the astronomically calibrated Polecat Bench core chronology of
+#       Westerhold et al. (2018), projected onto Polecat Bench outcrop
+#       stratigraphic heights using the onset of the PETM carbon isotope
+#       excursion (CIE) as a shared datum, and
+#   (2) the paleomagnetic age model of Secord et al. (2006), which provides
+#       age control outside the interval directly constrained by Westerhold
+#       et al. (2018).
+#
+# Ages for individual horizons are obtained by linear interpolation between
+# adjacent age-depth tie points. Horizons falling outside the modeled range
+# are assigned NA (rule = 1).
+
+matthews_age_model <- read.csv(
+  here("data", "raw", "approx_age_mdl_PETM_PCB.csv")
+)
+
+str(matthews_age_model)
+
+BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
+  mutate(
+    Age_Ma = approx(
+      x = matthews_age_model$est_Depth_m_PCB_outcrop,
+      y = matthews_age_model$Age_Ma,
+      xout = strat_height_m,
+      rule = 1
+    )$y
+  )
+
+# Quick-look age model diagnostics
+
+# Age-depth model
+ggplot(
+  BHB_multiproxy_summary,
+  aes(x = Age_Ma, y = strat_height_m)
+) +
+  geom_point(size = 2) +
+  scale_x_reverse() +
+  geom_path(linewidth = 1) +
+  labs(
+    x = "Age (Ma)",
+    y = "Stratigraphic height (m)"
+  ) +
+  labs(
+    title = "Composite Age Model for Northern BHB",
+    x = "Age (Ma)",
+    y = "Stratigraphic height above K-Pg (m)"
+  ) +
+  theme_classic()
+
+# Quick-look carbon isotope stratigraphy
+d13C_age_plot_data <- BHB_multiproxy_summary %>%
+  mutate(
+    d13C_plot = coalesce(
+      Koch_mean_d13Ccarb_vpdb,
+      Bowen_mean_d13Ccarb_vpdb,
+      Snell_mean_d13Ccarb_vpdb
+    )
+  ) %>%
+  filter(
+    !is.na(d13C_plot),
+    !is.na(Age_Ma)
+  )
+
+ggplot(
+  d13C_age_plot_data,
+  aes(
+    x = Age_Ma,
+    y = d13C_plot
+  )
+) +
+  geom_point(size = 2) +
+  geom_path(alpha = 0.5) +
+  scale_x_reverse() +
+  labs(
+    x = "Age (Ma)",
+    y = expression(delta^13 * C[carb] ~ "(‰ VPDB)")
+  ) +
+  theme_classic()
+
+# 11. Export summarized primary datasets  ---------------------
 
 write_csv(
   IPL17O_summary,
@@ -1416,7 +1500,7 @@ write_csv(
 )
 
 
-# 11. Quick checks ---------------------------------------------
+# 12. Quick checks ---------------------------------------------
 
 glimpse(BHB_multiproxy_summary)
 
@@ -1430,7 +1514,7 @@ BHB_multiproxy_summary %>%
  # data summary
 
 
-# 12. Data Availability ------
+# 13. Data Availability ------
 
 # IPL / CU 
 

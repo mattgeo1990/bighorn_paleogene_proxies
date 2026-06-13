@@ -158,45 +158,32 @@ BHB_multiproxy_with_temperature <- BHB_multiproxy_summary %>%
   )
 
 # ---- Diagnostic plot ----
+library(ggplot2)
+library(dplyr)
+library(here)
 
-ggplot() +
-  geom_point(
-    data = temp_obs,
-    aes(x = T_C, y = strat_height_m, shape = source),
-    size = 2
-  ) +
+p_temp_teaser <- ggplot() +
+  
+  # PETM interval behind everything
   annotate(
     "rect",
-    xmin = -Inf,
-    xmax = 53,
-    ymin = 1500,
-    ymax = 1540,
-    fill = "red",
-    alpha = .6
+    xmin = -Inf, xmax = Inf,
+    ymin = 1500, ymax = 1540,
+    fill = "grey",
+    alpha = 0.5
   ) +
+  
   annotate(
     "text",
-    x = Inf,
+    x = 75,
     y = 1520,
     label = "PETM",
-    hjust = 1.1,
+    hjust = 1,
     fontface = "bold",
     size = 4
   ) +
-  geom_errorbarh(
-    data = temp_obs,
-    aes(
-      xmin = T_C - T_se_C,
-      xmax = T_C + T_se_C,
-      y = strat_height_m
-    ),
-    height = 0
-  ) +
-  geom_point(
-    data = temp_horizon,
-    aes(x = T_measured_C, y = strat_height_m),
-    size = 2.5
-  ) +
+  
+  # model uncertainty ribbon
   geom_ribbon(
     data = BHB_temperature_model,
     aes(
@@ -205,27 +192,172 @@ ggplot() +
       y = strat_height_m
     ),
     fill = "firebrick",
-    alpha = 0.2
+    alpha = 0.18
   ) +
+  
+  # model line
   geom_path(
     data = BHB_temperature_model,
     aes(x = T_model_C, y = strat_height_m),
     color = "firebrick",
     linewidth = 1.2
   ) +
+  
+  # source-level SE bars
+  geom_errorbarh(
+    data = temp_obs,
+    aes(
+      xmin = T_C - T_se_C,
+      xmax = T_C + T_se_C,
+      y = strat_height_m,
+      color = source
+    ),
+    height = 0,
+    linewidth = 0.45,
+    alpha = 0.65
+  ) +
+  
+  # source-level observations
+  geom_point(
+    data = temp_obs,
+    aes(
+      x = T_C,
+      y = strat_height_m,
+      shape = source,
+      fill = source,
+      color = source
+    ),
+    size = 1.5,
+    stroke = 0.8,
+    alpha = 0.95
+  ) +
+  
+  scale_shape_manual(
+    values = c(
+      "IPL" = 21,
+      "CU" = 22,
+      "Snell" = 24
+    )
+  ) +
+  
+  scale_fill_manual(
+    values = c(
+      "IPL" = "black",
+      "CU" = "white",
+      "Snell" = "gray65"
+    )
+  ) +
+  
+  scale_color_manual(
+    values = c(
+      "IPL" = "black",
+      "CU" = "gray35",
+      "Snell" = "gray35"
+    )
+  ) +
+  
+  scale_x_continuous(
+    breaks = seq(10, 75, by = 5),
+    limits = c(10, 75),
+    expand = expansion(mult = c(0.02, 0.04))
+  ) +
+  
+  scale_y_continuous(
+    breaks = seq(500, 2300, by = 100),
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  
   labs(
     x = expression(Delta[47] * "-derived temperature (" * degree * "C)"),
     y = "Stratigraphic height (m)",
-    shape = "Data source"
+    shape = "Data source",
+    fill = "Data source",
+    color = "Data source"
   ) +
-  scale_x_continuous(
-    breaks = seq(20, 60, by = 5)
+  
+  guides(
+    color = guide_legend(override.aes = list(linewidth = 0, size = 3)),
+    fill = guide_legend(override.aes = list(size = 3)),
+    shape = guide_legend(override.aes = list(size = 3))
   ) +
-  scale_y_continuous(
-    breaks = seq(500, 2300, by = 100)
-  ) +
-  theme_classic()
+  
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position = c(0.82, 0.18),
+    legend.background = element_rect(fill = "white", color = "gray80"),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
 
+p_temp_teaser
+
+
+# PETM-focused
+p_temp_teaser +
+  coord_cartesian(
+    ylim = c(1450, 1560)
+  )
+
+# LPEE focus
+p_temp_teaser +
+  coord_cartesian(
+    ylim = c(1400, 1700)
+  )
+
+# Upper section
+p_temp_teaser +
+  coord_cartesian(
+    ylim = c(1500, 2300)
+  )
+
+# Full stratigraphic section
+ggsave(
+  here("figures", "BHB_D47_temperature_full.png"),
+  p_temp_teaser,
+  width = 6,
+  height = 7.2,
+  dpi = 600
+)
+
+# PETM-focused
+ggsave(
+  here("figures", "BHB_D47_temperature_PETM.png"),
+  p_temp_teaser +
+    coord_cartesian(
+      ylim = c(1450, 1560)
+    ),
+  width = 6,
+  height = 5,
+  dpi = 600
+)
+
+# LPEE focus
+ggsave(
+  here("figures", "BHB_D47_temperature_LPEE.png"),
+  p_temp_teaser +
+    coord_cartesian(
+      ylim = c(1400, 1700)
+    ),
+  width = 6,
+  height = 6,
+  dpi = 600
+)
+
+# Upper section
+ggsave(
+  here("figures", "BHB_D47_temperature_Wasatchian.png"),
+  p_temp_teaser +
+    coord_cartesian(
+      ylim = c(1500, 2300)
+    ),
+  width = 6,
+  height = 6,
+  dpi = 600
+)
+      
+      
 # ---- Save outputs ----
 write_csv(
   temp_obs,
@@ -245,4 +377,179 @@ write_csv(
 write_csv(
   BHB_multiproxy_with_temperature,
   here("data", "processed", "BHB_multiproxy_with_temperature.csv")
+)
+
+# interactive plot -----
+library(plotly)
+library(here)
+library(htmlwidgets)
+
+p_temp_interactive <- plot_ly() %>%
+  add_trace(
+    data = BHB_temperature_model,
+    x = ~T_model_C,
+    y = ~strat_height_m,
+    type = "scatter",
+    mode = "lines",
+    line = list(width = 3),
+    name = "Temperature model",
+    text = ~paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Model T: ", round(T_model_C, 1), " °C",
+      "<br>Strat height: ", strat_height_m, " m"
+    ),
+    hoverinfo = "text"
+  ) %>%
+  add_trace(
+    data = temp_obs,
+    x = ~T_C,
+    y = ~strat_height_m,
+    type = "scatter",
+    mode = "markers",
+    color = ~source,
+    symbol = ~source,
+    name = ~source,
+    error_x = list(
+      type = "data",
+      array = ~T_se_C,
+      visible = TRUE
+    ),
+    marker = list(size = 8),
+    text = ~paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Source: ", source,
+      "<br>T: ", round(T_C, 1), " °C",
+      "<br>SE: ", round(T_se_C, 2), " °C",
+      "<br>Strat height: ", strat_height_m, " m"
+    ),
+    hoverinfo = "text"
+  ) %>%
+  layout(
+    shapes = list(
+      list(
+        type = "rect",
+        xref = "paper",
+        x0 = 0,
+        x1 = 1,
+        y0 = 1500,
+        y1 = 1540,
+        fillcolor = "red",
+        opacity = 0.2,
+        line = list(width = 0)
+      )
+    ),
+    annotations = list(
+      list(
+        x = 1,
+        y = 1520,
+        xref = "paper",
+        yref = "y",
+        text = "PETM",
+        showarrow = FALSE,
+        xanchor = "right",
+        font = list(size = 14)
+      )
+    ),
+    xaxis = list(
+      title = "Δ47-derived temperature (°C)"
+    ),
+    yaxis = list(
+      title = "Stratigraphic height (m)"
+    )
+  )
+
+p_temp_interactive
+
+saveWidget(
+  p_temp_interactive,
+  here("figures", "interactive_temperature_model.html"),
+  selfcontained = TRUE
+)
+
+# ---- Interactive age-space temperature plot ----
+library(plotly)
+library(here)
+library(htmlwidgets)
+library(dplyr)
+
+# Use Matthew age model where available; otherwise fall back to Snell age
+BHB_temp_age_plot <- BHB_multiproxy_with_temperature %>%
+  mutate(
+    plot_Age_Ma = coalesce(Age_Ma, Snell_Age_Ma),
+    age_source = case_when(
+      !is.na(Age_Ma) ~ "Matthew age model",
+      is.na(Age_Ma) & !is.na(Snell_Age_Ma) ~ "Snell age",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(plot_Age_Ma), !is.na(T_model_C))
+
+temp_obs_age <- temp_obs %>%
+  left_join(
+    BHB_temp_age_plot %>%
+      select(MLA_horizon_id, strat_height_m, plot_Age_Ma, age_source),
+    by = c("MLA_horizon_id", "strat_height_m")
+  ) %>%
+  filter(!is.na(plot_Age_Ma), !is.na(T_C))
+
+p_temp_age_interactive <- plot_ly() %>%
+  add_trace(
+    data = BHB_temp_age_plot,
+    x = ~T_model_C,
+    y = ~plot_Age_Ma,
+    type = "scatter",
+    mode = "lines",
+    line = list(width = 3),
+    name = "Temperature model",
+    text = ~paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Age: ", round(plot_Age_Ma, 3), " Ma",
+      "<br>Age source: ", age_source,
+      "<br>Model T: ", round(T_model_C, 1), " °C",
+      "<br>Strat height: ", strat_height_m, " m"
+    ),
+    hoverinfo = "text"
+  ) %>%
+  add_trace(
+    data = temp_obs_age,
+    x = ~T_C,
+    y = ~plot_Age_Ma,
+    type = "scatter",
+    mode = "markers",
+    color = ~source,
+    symbol = ~source,
+    name = ~source,
+    error_x = list(
+      type = "data",
+      array = ~T_se_C,
+      visible = TRUE
+    ),
+    marker = list(size = 8),
+    text = ~paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Source: ", source,
+      "<br>Age: ", round(plot_Age_Ma, 3), " Ma",
+      "<br>Age source: ", age_source,
+      "<br>T: ", round(T_C, 1), " °C",
+      "<br>SE: ", round(T_se_C, 2), " °C",
+      "<br>Strat height: ", strat_height_m, " m"
+    ),
+    hoverinfo = "text"
+  ) %>%
+  layout(
+    xaxis = list(
+      title = "Δ47-derived temperature (°C)"
+    ),
+    yaxis = list(
+      title = "Age (Ma)",
+      autorange = "reversed"
+    )
+  )
+
+p_temp_age_interactive
+
+saveWidget(
+  p_temp_age_interactive,
+  here("figures", "interactive_temperature_age_model.html"),
+  selfcontained = TRUE
 )
