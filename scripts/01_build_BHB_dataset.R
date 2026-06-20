@@ -5,6 +5,12 @@
 
 
 # 1. Setup ----------------------------------------------------
+# Load required packages
+
+library(tidyverse)
+library(here)
+library(isogeochem)
+library(plotly)
 
 # source(here::here("scripts", "00_setup.R"))
 
@@ -68,6 +74,7 @@ IPL_sample_list <- read.csv(
   here("data", "raw", "SandCoulee_Polecat_nodules.csv")
 )
 
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # IPL triple oxygen isotope dataset
 #
@@ -77,7 +84,7 @@ IPL_sample_list <- read.csv(
 # by Matthew Allen using the same reporting framework.
 
 IPL_D17O_data <- read.csv(
-  here("data", "raw", "all_data_pre-Oct2025_PaleogeneBHB_IPL17O_standardized_columns.csv")
+  here("data", "raw", "all_data_pre-June2026_PaleogeneBHB_IPL17O_standardized_columns.csv")
 )
 
 names(IPL_D17O_data)
@@ -232,53 +239,121 @@ hist(IPL_D17O_data$X33_mismatch,
      border = "white")
 
 # Scatterplot to examine relationship between mismatch and Δ′17O values
-plot(IPL_D17O_data$X33_mismatch ~ IPL_D17O_data$Dp17Ocarb_permeg_final_correction,
-     main = "Mismatch vs Δ′17Ocarb",
-     xlab = expression(Delta * minute^17 * O[carb] ~ "(per meg)"),
-     ylab = "X33 Mismatch",
-     pch = 19, col = "gray40")
 
-# Manually flag samples with high mismatch values (by IPL_num)
-high_mismatch <- c("5699", "5841", "5830")  
+p <- ggplot(
+  IPL_D17O_data,
+  aes(
+    x = Dp17Ocarb_permeg_final_correction,
+    y = X33_mismatch,
+    text = paste(
+      "IPL_num:", IPL_num,
+      "<br>Sample:", MLA_sample_id,
+      "<br>Horizon:", MLA_horizon_id,
+      "<br>Δ′17O:", round(Dp17Ocarb_permeg_final_correction, 1),
+      "<br>Mismatch:", round(X33_mismatch, 3)
+    )
+  )
+) +
+  geom_point(
+    size = 2.5,
+    alpha = 0.8,
+    color = "gray40"
+  ) +
+  labs(
+    title = "Mismatch vs Δ′17Ocarb",
+    x = "Δ′17Ocarb (per meg)",
+    y = "X33 Mismatch"
+  ) +
+  theme_classic()
 
+ggplotly(
+  p,
+  tooltip = "text"
+)
+# Manually exclude analyses with anomalously high X33 mismatch.
+# These exclusions are based on analytical QC, not on Δ′17Ocarb value.
+high_mismatch <- c("5699", "5841")
 
-# Filter out high mismatch samples by IPL_num
-IPL_D17O_data_clean <- IPL_D17O_data[!IPL_D17O_data$IPL_num %in% high_mismatch, ]
+# Inspect excluded high-mismatch analyses.
+IPL_D17O_data %>%
+  filter(IPL_num %in% high_mismatch) %>%
+  select(
+    IPL_num,
+    MLA_sample_id,
+    MLA_horizon_id,
+    Dp17Ocarb_permeg_final_correction,
+    X33_mismatch
+  ) %>%
+  arrange(desc(abs(X33_mismatch)))
 
-# Scatterplot to examine relationship between mismatch and Δ′17O values
-plot(IPL_D17O_data_clean$X33_mismatch ~ IPL_D17O_data_clean$Dp17Ocarb_permeg_final_correction,
-     main = "Mismatch vs Δ′17Ocarb",
-     xlab = expression(Delta * minute^17 * O[carb] ~ "(per meg)"),
-     ylab = "X33 Mismatch",
-     pch = 19, col = "gray40")
+# Remove high-mismatch analyses before summary statistics.
+IPL_D17O_data_clean <- IPL_D17O_data %>%
+  filter(!IPL_num %in% high_mismatch)
 
+# Examine relationship between analytical mismatch and Δ′17Ocarb.
+plot(
+  IPL_D17O_data_clean$X33_mismatch ~
+    IPL_D17O_data_clean$Dp17Ocarb_permeg_final_correction,
+  main = "Mismatch vs Δ′17Ocarb",
+  xlab = expression(Delta * minute^17 * O[carb] ~ "(per meg)"),
+  ylab = "X33 Mismatch",
+  pch = 19,
+  col = "gray40"
+)
 
-# Identify Δ'17O outliers automatically using boxplot rule
-outliers <- boxplot.stats(IPL_D17O_data_clean$Dp17Ocarb_permeg_final_correction)$out
+# Identify statistical Δ′17Ocarb outliers for inspection only.
+# These are not removed automatically because statistical outlier status
+# alone is not sufficient evidence of analytical failure.
+outliers <- boxplot.stats(
+  IPL_D17O_data_clean$Dp17Ocarb_permeg_final_correction
+)$out
 
-# Remove Δ'17O outliers
-IPL_D17O_data_final <- IPL_D17O_data_clean[!IPL_D17O_data_clean$Dp17Ocarb_permeg_final_correction %in% outliers, ]
+# Inspect analyses flagged by the 1.5×IQR rule.
+IPL_D17O_data_clean %>%
+  filter(Dp17Ocarb_permeg_final_correction %in% outliers) %>%
+  select(
+    IPL_num,
+    MLA_sample_id,
+    MLA_horizon_id,
+    Dp17Ocarb_permeg_final_correction,
+    X33_mismatch
+  ) %>%
+  arrange(Dp17Ocarb_permeg_final_correction)
 
-# Outlier Identification and Removal Justification
-#
-# Outliers in Δ′17Ocarb values were identified statistically using the 
-# standard 1.5×IQR rule implemented in boxplot.stats(). This is a widely 
-# accepted exploratory approach across the geosciences and other fields 
-# for detecting anomalous data points that fall beyond 1.5 times the 
-# interquartile range (IQR) from the 25th or 75th percentile.
-#
-# The flagged values were inspected alongside analytical metadata 
-# (reactor mismatch, replicate consistency, and data quality flags).
-# Outliers were removed only when independent evidence (e.g., high 
-# X33_mismatch or analytical notes) supported their exclusion as 
-# likely analytical artifacts rather than true geochemical variability.
-#
-# This approach ensures that the remaining dataset represents 
-# reproducible Δ′17Ocarb values within analytical uncertainty while 
-# preserving natural variability. All removed values are archived and 
-# documented for reproducibility.
+# Retain SC-49 and SC-50 for now.
+# SC-49 has two low-mismatch analyses after removal of the high-mismatch run,
+# and SC-50 is a single extreme value with no independent QC reason for exclusion.
+# Additional SC-50 replicates are pending.
 
+# Inspect PB-00-02-09L, which shows poor replicate agreement.
+IPL_D17O_data_clean %>%
+  filter(MLA_horizon_id == "PB-00-02-09L") %>%
+  select(
+    IPL_num,
+    MLA_sample_id,
+    MLA_horizon_id,
+    Dp17Ocarb_permeg_final_correction,
+    X33_mismatch
+  )
 
+# Temporarily omit the high Δ′17Ocarb replicate from PB-00-02-09L.
+# The paired replicate is ~-120 per meg, so this sample requires additional
+# replication before the less negative value is treated as representative.
+omit_low_confidence <- c("5780")
+
+IPL_D17O_data_final <- IPL_D17O_data_clean %>%
+  filter(!IPL_num %in% omit_low_confidence)
+
+# Exclusion justification:
+# Analyses were excluded only when independent QC information supported removal.
+# High-mismatch analyses were removed because anomalous X33 mismatch indicates
+# reduced confidence in the analytical correction. Statistical Δ′17Ocarb outliers
+# identified by the 1.5×IQR rule were inspected but not automatically removed.
+# SC-49 and SC-50 were retained because their unusual Δ′17Ocarb values are not
+# accompanied by clear analytical failure. One PB-00-02-09L replicate was
+# temporarily omitted because the two-replicate spread is large and additional
+# replication is needed to determine which value best represents the sample.
+# All excluded analyses remain archived in the raw dataset.
 # Remove singletons ?
 # IPL17O_summary <- IPL17O_summary %>% filter(n > 1)
 
@@ -571,7 +646,6 @@ ggplot(IPL_D47_primary_data,
     color = "Session"
   ) +
   theme_classic()
-
 
 
 # 5. Clean Snell et al. (2013) Δ47 data --------------------------------
@@ -1067,69 +1141,84 @@ IPL17O_summary <- IPL_D17O_data_final %>%
 #
 # Produces a sample-level Δ47 temperature summary table for downstream
 # analyses. Primary samples exclude analyses identified as SPAR.
+mean_or_na <- function(x) {
+  if (all(is.na(x))) NA_real_ else mean(x, na.rm = TRUE)
+}
 
-IPLD47_primary_summary <- IPL_D47_primary_data %>%
-  group_by(MLA_sample_id, MLA_horizon_id) %>%
-  summarise(
-    strat_height_m = mean(strat_height_m, na.rm = TRUE),
-    
-    IPLD47_n_T47 = sum(!is.na(T47_preferred)),
-    IPLD47_mean_T47_C = mean(T47_preferred, na.rm = TRUE),
-    IPLD47_sd_T47_C = sd(T47_preferred, na.rm = TRUE),
-    IPLD47_se_T47_C = IPLD47_sd_T47_C / sqrt(IPLD47_n_T47),
-    
-    IPLD47_min_T47_C = min(T47_preferred, na.rm = TRUE),
-    IPLD47_max_T47_C = max(T47_preferred, na.rm = TRUE),
-    IPLD47_range_T47_C = IPLD47_max_T47_C - IPLD47_min_T47_C,
-    
-    IPLD47_sessions = paste(
-      sort(unique(na.omit(Session))),
-      collapse = ", "
-    ),
-    
-    .groups = "drop"
-  ) %>%
-  mutate(
-    IPLD47_sample_type = "primary"
-  ) %>%
-  arrange(strat_height_m)
+min_or_na <- function(x) {
+  if (all(is.na(x))) NA_real_ else min(x, na.rm = TRUE)
+}
 
+max_or_na <- function(x) {
+  if (all(is.na(x))) NA_real_ else max(x, na.rm = TRUE)
+}
 
-# Summarize IPL SPAR Δ47 data
-#
-# Kept separate from the primary micrite/microspar dataset.
+summarize_IPLD47 <- function(data, sample_type) {
+  data %>%
+    group_by(MLA_sample_id, MLA_horizon_id) %>%
+    summarise(
+      strat_height_m = mean_or_na(strat_height_m),
+      
+      IPLD47_n_T47 = sum(!is.na(T47_preferred)),
+      IPLD47_mean_T47_C = mean_or_na(T47_preferred),
+      IPLD47_sd_T47_C = sd(T47_preferred, na.rm = TRUE),
+      IPLD47_se_T47_C = IPLD47_sd_T47_C / sqrt(IPLD47_n_T47),
+      
+      IPLD47_min_T47_C = min_or_na(T47_preferred),
+      IPLD47_max_T47_C = max_or_na(T47_preferred),
+      IPLD47_range_T47_C =
+        IPLD47_max_T47_C - IPLD47_min_T47_C,
+      
+      # Preserve corrected mineral isotope data
+      IPL_NuDog_d13Ccarb_VPDB = mean_or_na(
+        IPL_NuDog_d13Ccarb_VPDB
+      ),
+      
+      IPL_NuDog_d18Ocarb_VPDB = mean_or_na(
+        IPL_NuDog_d18Ocarb_VPDB
+      ),
+      
+      IPL_NuDog_d18Ocarb_VSMOW = mean_or_na(
+        IPL_NuDog_d18Ocarb_VSMOW
+      ),
+      
+      IPLD47_sessions = paste(
+        sort(unique(na.omit(Session))),
+        collapse = ", "
+      ),
+      
+      IPLD47_IPLnums = paste(
+        sort(unique(na.omit(IPLnum))),
+        collapse = ", "
+      ),
+      
+      .groups = "drop"
+    ) %>%
+    mutate(
+      IPLD47_se_T47_C = if_else(
+        IPLD47_n_T47 > 0,
+        IPLD47_se_T47_C,
+        NA_real_
+      ),
+      IPLD47_sample_type = sample_type
+    ) %>%
+    arrange(strat_height_m)
+}
 
-IPLD47_spar_summary <- IPL_D47_SPAR_data %>%
-  group_by(MLA_sample_id, MLA_horizon_id) %>%
-  summarise(
-    strat_height_m = mean(strat_height_m, na.rm = TRUE),
-    
-    IPLD47_n_T47 = sum(!is.na(T47_preferred)),
-    IPLD47_mean_T47_C = mean(T47_preferred, na.rm = TRUE),
-    IPLD47_sd_T47_C = sd(T47_preferred, na.rm = TRUE),
-    IPLD47_se_T47_C = IPLD47_sd_T47_C / sqrt(IPLD47_n_T47),
-    
-    IPLD47_min_T47_C = min(T47_preferred, na.rm = TRUE),
-    IPLD47_max_T47_C = max(T47_preferred, na.rm = TRUE),
-    IPLD47_range_T47_C = IPLD47_max_T47_C - IPLD47_min_T47_C,
-    
-    IPLD47_sessions = paste(
-      sort(unique(na.omit(Session))),
-      collapse = ", "
-    ),
-    
-    .groups = "drop"
-  ) %>%
-  mutate(
-    IPLD47_sample_type = "spar"
-  ) %>%
-  arrange(strat_height_m)
+# Primary micrite/microspar summary
+IPLD47_primary_summary <- summarize_IPLD47(
+  IPL_D47_primary_data,
+  sample_type = "primary"
+)
 
+# Spar summary
+IPLD47_spar_summary <- summarize_IPLD47(
+  IPL_D47_SPAR_data,
+  sample_type = "spar"
+)
 
-# Inspect summaries
 IPLD47_primary_summary
 IPLD47_spar_summary
-
 
 # Export summary tables
 write_csv(
@@ -1260,26 +1349,26 @@ bowen_summary <- bowen_primary %>%
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Summarize Bowen excluded / altered carbonate data
 
-bowen_excluded_summary <- bowen_excluded %>%
-  group_by(MLA_horizon_id, strat_height_m) %>%
-  summarise(
-    BowenExcluded_mean_d13Ccarb_vpdb = mean(Bowen_d13Ccarb_vpdb, na.rm = TRUE),
-    BowenExcluded_se_d13Ccarb_vpdb   = sd(Bowen_d13Ccarb_vpdb, na.rm = TRUE) /
-      sqrt(sum(!is.na(Bowen_d13Ccarb_vpdb))),
-    BowenExcluded_n_d13Ccarb         = sum(!is.na(Bowen_d13Ccarb_vpdb)),
+#bowen_excluded_summary <- bowen_excluded %>%
+#  group_by(MLA_horizon_id, strat_height_m) %>%
+#  summarise(
+#    BowenExcluded_mean_d13Ccarb_vpdb = mean(Bowen_d13Ccarb_vpdb, na.rm = TRUE),
+#    BowenExcluded_se_d13Ccarb_vpdb   = sd(Bowen_d13Ccarb_vpdb, na.rm = TRUE) /
+#      sqrt(sum(!is.na(Bowen_d13Ccarb_vpdb))),
+#    BowenExcluded_n_d13Ccarb         = sum(!is.na(Bowen_d13Ccarb_vpdb)),
     
-    BowenExcluded_mean_d18Ocarb_vpdb = mean(Bowen_d18Ocarb_vpdb, na.rm = TRUE),
-    BowenExcluded_se_d18Ocarb_vpdb   = sd(Bowen_d18Ocarb_vpdb, na.rm = TRUE) /
-      sqrt(sum(!is.na(Bowen_d18Ocarb_vpdb))),
-    BowenExcluded_n_d18Ocarb_vpdb    = sum(!is.na(Bowen_d18Ocarb_vpdb)),
+#    BowenExcluded_mean_d18Ocarb_vpdb = mean(Bowen_d18Ocarb_vpdb, na.rm = TRUE),
+#    BowenExcluded_se_d18Ocarb_vpdb   = sd(Bowen_d18Ocarb_vpdb, na.rm = TRUE) /
+#      sqrt(sum(!is.na(Bowen_d18Ocarb_vpdb))),
+#    BowenExcluded_n_d18Ocarb_vpdb    = sum(!is.na(Bowen_d18Ocarb_vpdb)),
     
-    BowenExcluded_mean_d18Ocarb_vsmow = mean(Bowen_d18Ocarb_vsmow, na.rm = TRUE),
-    BowenExcluded_se_d18Ocarb_vsmow   = sd(Bowen_d18Ocarb_vsmow, na.rm = TRUE) /
-      sqrt(sum(!is.na(Bowen_d18Ocarb_vsmow))),
-    BowenExcluded_n_d18Ocarb_vsmow    = sum(!is.na(Bowen_d18Ocarb_vsmow)),
+#    BowenExcluded_mean_d18Ocarb_vsmow = mean(Bowen_d18Ocarb_vsmow, na.rm = TRUE),
+#    BowenExcluded_se_d18Ocarb_vsmow   = sd(Bowen_d18Ocarb_vsmow, na.rm = TRUE) /
+#     sqrt(sum(!is.na(Bowen_d18Ocarb_vsmow))),
+#    BowenExcluded_n_d18Ocarb_vsmow    = sum(!is.na(Bowen_d18Ocarb_vsmow)),
     
-    .groups = "drop"
-  )
+#   .groups = "drop"
+# )
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Quick checks
@@ -1329,8 +1418,67 @@ ggplot(bowen_summary,
   ) +
   theme_classic()
 
+## 8.5 Summarize spar/microspar data --------
 
+# ---- Combine IPL spar + Snell altered/spar data ----
 
+spar_altered_combined <- bind_rows(
+  
+  IPL_D47_SPAR_data %>%
+    transmute(
+      source = "IPL D47",
+      sample_group = "SPAR",
+      sample_type = "SPAR",
+      MLA_sample_id,
+      MLA_horizon_id,
+      strat_height_m,
+      d13Ccarb_vpdb = IPL_NuDog_d13Ccarb_VPDB,
+      d18Ocarb_vpdb = IPL_NuDog_d18Ocarb_VPDB,
+      d18Ocarb_vsmow = IPL_NuDog_d18Ocarb_VSMOW,
+      D47 = D47.CDES,
+      D47_carb_corr = D47.CDES.Carb.Corr,
+      T47_C = T.D47..Petersen,
+      T47_preferred,
+      T47_se_C = NA_real_
+    ),
+  
+  Snell2013_altered %>%
+    transmute(
+      source = "Snell et al. 2013",
+      sample_group = Snell_sample_group,
+      sample_type = Snell_sample_type,
+      MLA_sample_id,
+      MLA_horizon_id,
+      strat_height_m,
+      d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
+      d18Ocarb_vpdb = NA_real_,
+      d18Ocarb_vsmow = Snell_mean_d18Ocarb_vsmow,
+      D47 = Snell_mean_D47,
+      D47_carb_corr = NA_real_,
+      T47_C = Snell_mean_T47_C,
+      T47_preferred = Snell_mean_T47_C,
+      T47_se_C = Snell_se_T47_C
+    ),
+  
+  Snell2013_spar %>%
+    transmute(
+      source = "Snell et al. 2013",
+      sample_group = Snell_sample_group,
+      sample_type = Snell_sample_type,
+      MLA_sample_id,
+      MLA_horizon_id,
+      strat_height_m,
+      d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
+      d18Ocarb_vpdb = NA_real_,
+      d18Ocarb_vsmow = Snell_mean_d18Ocarb_vsmow,
+      D47 = Snell_mean_D47,
+      D47_carb_corr = NA_real_,
+      T47_C = Snell_mean_T47_C,
+      T47_preferred = Snell_mean_T47_C,
+      T47_se_C = Snell_se_T47_C
+    )
+) %>%
+  arrange(strat_height_m, MLA_horizon_id, source, MLA_sample_id)
 
 # 9. Combine summaries by horizon / strat ----------------------
 
@@ -1376,6 +1524,46 @@ check_horizon_dupes(BHB_multiproxy_summary)
 BHB_multiproxy_summary %>%
  filter(MLA_horizon_id == "PK95-SC-295") %>%
  select(MLA_horizon_id, strat_height_m)
+
+# Summarize spar / altered data by horizon 
+
+spar_altered_horizon_summary <- spar_altered_combined %>%
+  group_by(MLA_horizon_id) %>%
+  summarise(
+    strat_height_m = mean(strat_height_m, na.rm = TRUE),
+    
+    sources = paste(sort(unique(source)), collapse = "; "),
+    sample_groups = paste(sort(unique(sample_group)), collapse = "; "),
+    sample_types = paste(sort(unique(sample_type)), collapse = "; "),
+    
+    n_analyses = n(),
+    n_T47 = sum(!is.na(T47_C)),
+    n_d18Ocarb = sum(!is.na(d18Ocarb_vsmow)),
+    
+    mean_T47_C = mean(T47_C, na.rm = TRUE),
+    sd_T47_C = sd(T47_C, na.rm = TRUE),
+    se_T47_C = sd_T47_C / sqrt(n_T47),
+    min_T47_C = min(T47_C, na.rm = TRUE),
+    max_T47_C = max(T47_C, na.rm = TRUE),
+    
+    mean_d18Ocarb_vsmow = mean(d18Ocarb_vsmow, na.rm = TRUE),
+    sd_d18Ocarb_vsmow = sd(d18Ocarb_vsmow, na.rm = TRUE),
+    se_d18Ocarb_vsmow = sd_d18Ocarb_vsmow / sqrt(n_d18Ocarb),
+    min_d18Ocarb_vsmow = min(d18Ocarb_vsmow, na.rm = TRUE),
+    max_d18Ocarb_vsmow = max(d18Ocarb_vsmow, na.rm = TRUE),
+    
+    mean_d13Ccarb_vpdb = mean(d13Ccarb_vpdb, na.rm = TRUE),
+    sd_d13Ccarb_vpdb = sd(d13Ccarb_vpdb, na.rm = TRUE),
+    
+    .groups = "drop"
+  ) %>%
+  mutate(
+    across(
+      where(is.numeric),
+      ~ if_else(is.nan(.x) | is.infinite(.x), NA_real_, .x)
+    )
+  ) %>%
+  arrange(strat_height_m)
 
 # 10. Age Model --------------
 
@@ -1499,6 +1687,25 @@ write_csv(
   here("data", "processed", "BHB_multiproxy_summary.csv")
 )
 
+# Export spar / altered carbonate datasets
+
+write_csv(
+  spar_altered_combined,
+  here(
+    "data",
+    "processed",
+    "spar_altered_combined.csv"
+  )
+)
+
+write_csv(
+  spar_altered_horizon_summary,
+  here(
+    "data",
+    "processed",
+    "spar_altered_horizon_summary.csv"
+  )
+)
 
 # 12. Quick checks ---------------------------------------------
 
@@ -1515,6 +1722,57 @@ BHB_multiproxy_summary %>%
 
 
 # 13. Data Availability ------
+
+# ---- UM sample coverage jitter plots ----
+
+UM_sample_coverage <- IPL_sample_list %>%
+  filter(
+    Status == "UM",
+    !is.na(strat_height_m)
+  ) %>%
+  mutate(sample_set = "UM samples")
+
+p_UM_coverage_full <- ggplot(
+  UM_sample_coverage,
+  aes(x = sample_set, y = strat_height_m)
+) +
+  geom_jitter(
+    width = 0.0,
+    height = 0,
+    size = 2.5,
+    alpha = 0.75
+  ) +
+  scale_y_continuous(
+    breaks = seq(500, 2300, by = 100)
+  ) +
+  labs(
+    title = "UM Sample Coverage",
+    x = NULL,
+    y = "Stratigraphic height (m)"
+  ) +
+  theme_classic(base_size = 16) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+  )
+
+p_UM_coverage_zoom <- p_UM_coverage_full +
+  coord_cartesian(ylim = c(1200, 1800)) +
+  scale_y_continuous(
+    breaks = seq(1200, 1800, by = 50)
+  ) +
+  labs(
+    title = "UM Sample Coverage: P–E Boundary Interval"
+  )
+
+p_UM_coverage_full
+p_UM_coverage_zoom
+
+
+
+
 
 # IPL / CU 
 
@@ -1599,7 +1857,55 @@ write_csv(IPL17O_no_D47, here::here("data", "processed", "IPL17O_no_D47.csv"))
 write_csv(D47_no_IPL17O, here::here("data", "processed", "D47_no_IPL17O.csv"))
 write_csv(IPL17O_and_D47, here::here("data", "processed", "IPL17O_and_D47.csv"))
 
+# ---- UM samples still missing IPL D47 ----
 
+UM_missing_IPLD47 <- IPL_sample_list %>%
+  filter(
+    Status == "UM",
+    !is.na(MLA_horizon_id),
+    !is.na(strat_height_m)
+  ) %>%
+  distinct(
+    MLA_horizon_id,
+    strat_height_m,
+    Status,
+    D47_IPL,
+    X17O_IPL,
+    Reps_needed,
+    mg_needed,
+    MLA_notes
+  ) %>%
+  left_join(
+    IPLD47_primary_summary %>%
+      distinct(
+        MLA_horizon_id,
+        has_IPLD47 = IPLD47_mean_T47_C,
+        IPLD47_n_T47,
+        IPLD47_mean_T47_C,
+        IPLD47_se_T47_C
+      ),
+    by = "MLA_horizon_id"
+  ) %>%
+  mutate(
+    has_IPLD47 = !is.na(has_IPLD47)
+  ) %>%
+  filter(!has_IPLD47) %>%
+  arrange(strat_height_m)
+
+print.data.frame(UM_missing_IPLD47)
+
+UM_missing_IPLD47 %>%
+  filter(!has_IPLD47) %>%
+  arrange(strat_height_m) %>%
+  select(MLA_horizon_id, strat_height_m)
+
+# quick count
+UM_missing_IPLD47 %>%
+  summarise(
+    n_missing_horizons = n(),
+    min_strat = min(strat_height_m, na.rm = TRUE),
+    max_strat = max(strat_height_m, na.rm = TRUE)
+  )
 ## Quick counts ----
 
 availability_counts <- data_availability %>%

@@ -28,10 +28,14 @@ BHB_D17O_inputs <- BHB_d18Ow_recon %>%
     !is.na(T_recon_se_C)
   ) %>%
   mutate(
-    D17Ocarb_se_used_permeg = case_when(
-      !is.na(IPL17O_se_Dp17Ocarb_adj) & IPL17O_se_Dp17Ocarb_adj > 0 ~ IPL17O_se_Dp17Ocarb_adj,
-      !is.na(IPL17O_se_Dp17Ocarb) & IPL17O_se_Dp17Ocarb > 0 ~ IPL17O_se_Dp17Ocarb,
-      TRUE ~ 12
+    D17Ocarb_se_used_permeg = pmax(
+      case_when(
+        !is.na(IPL17O_se_Dp17Ocarb_adj) & IPL17O_se_Dp17Ocarb_adj > 0 ~ IPL17O_se_Dp17Ocarb_adj,
+        !is.na(IPL17O_se_Dp17Ocarb) & IPL17O_se_Dp17Ocarb > 0 ~ IPL17O_se_Dp17Ocarb,
+        TRUE ~ 12
+      ),
+      12,
+      na.rm = TRUE
     ),
     
     d17Ocarb_se_used = case_when(
@@ -229,7 +233,29 @@ ggplot(
   ) +
   theme_classic()
 
+# ---- Join D17O soil-water reconstructions back to full multiproxy table ----
+
+BHB_multiproxy_final <- BHB_d18Ow_recon %>%
+  left_join(
+    BHB_D17Orsw_recon %>%
+      select(
+        MLA_horizon_id,
+        D17Orsw_mean_permeg,
+        D17Orsw_median_permeg,
+        D17Orsw_sd_permeg,
+        D17Orsw_lower95_permeg,
+        D17Orsw_upper95_permeg
+      ),
+    by = "MLA_horizon_id"
+  )
+
+
 # ---- Save outputs ----
+write_csv(
+  BHB_multiproxy_final,
+  here("data", "processed", "BHB_multiproxy_final.csv")
+)
+
 write_csv(
   BHB_D17O_inputs,
   here("data", "processed", "BHB_D17O_soilwater_inputs.csv")

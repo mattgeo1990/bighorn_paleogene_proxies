@@ -9,7 +9,7 @@ library(here)
 n_mc <- 10000
 set.seed(123)
 
-# ---- Load data with modeled temperatures ----
+# ---- Load data
 BHB <- read_csv(
   here("data", "processed", "BHB_multiproxy_with_temperature.csv")
 )
@@ -225,6 +225,48 @@ ggplot(
   ) +
   theme_classic()
 
+ggplot(
+  BHB_d18Ow_recon,
+  aes(
+    x = T_recon_C,
+    y = d18Ow_mean_vsmow
+  )
+) +
+  geom_point(
+    size = 2,
+    alpha = 0.7
+  ) +
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = expression(delta^18 * O[soil-water] ~ "(‰ VSMOW)")
+  ) +
+  theme_classic(base_size = 14)
+
+d18Ow_measuredT47 <- BHB_d18Ow_recon %>%
+  filter(T_recon_source == "IPL measured T47")
+
+ggplot(
+  d18Ow_measuredT47,
+  aes(
+    x = T_recon_C,
+    y = d18Ow_mean_vsmow
+  )
+) +
+  geom_point(
+    size = 2.5,
+    alpha = 0.8
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    linewidth = 0.8
+  ) +
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = expression(delta^18 * O[soil-water] ~ "(‰ VSMOW)")
+  ) +
+  theme_classic(base_size = 14)
+
 
 # ---- Save outputs ----
 write_csv(
@@ -241,3 +283,56 @@ write_csv(
   missing_d18Ocarb,
   here("data", "processed", "BHB_missing_selected_d18Ocarb.csv")
 )
+
+
+# TEMPORARY EVAL----------
+# ---- Check which horizons fail the d18Ow reconstruction filter ----
+
+recon_filter_check <- BHB_water_inputs %>%
+  mutate(
+    has_d18Ocarb = !is.na(d18Ocarb_vsmow),
+    has_d18Ocarb_se = !is.na(d18Ocarb_se_used_vsmow),
+    has_T = !is.na(T_recon_C),
+    has_T_se = !is.na(T_recon_se_C),
+    
+    passes_d18Ow_filter =
+      has_d18Ocarb &
+      has_d18Ocarb_se &
+      has_T &
+      has_T_se,
+    
+    missing_for_filter = pmap_chr(
+      list(has_d18Ocarb, has_d18Ocarb_se, has_T, has_T_se),
+      function(has_d18Ocarb, has_d18Ocarb_se, has_T, has_T_se) {
+        missing <- c(
+          if (!has_d18Ocarb) "d18Ocarb",
+          if (!has_d18Ocarb_se) "d18Ocarb_se",
+          if (!has_T) "T_recon_C",
+          if (!has_T_se) "T_recon_se_C"
+        )
+        paste(missing, collapse = "; ")
+      }
+    )
+  )
+
+# Summary count
+recon_filter_check %>%
+  count(passes_d18Ow_filter, missing_for_filter)
+
+# Horizon IDs that fail
+horizons_failing_d18Ow_filter <- recon_filter_check %>%
+  filter(!passes_d18Ow_filter) %>%
+  select(
+    MLA_horizon_id,
+    strat_height_m,
+    missing_for_filter,
+    d18Ocarb_source,
+    d18Ocarb_vsmow,
+    d18Ocarb_se_used_vsmow,
+    T_recon_source,
+    T_recon_C,
+    T_recon_se_C
+  ) %>%
+  arrange(strat_height_m)
+
+horizons_failing_d18Ow_filter

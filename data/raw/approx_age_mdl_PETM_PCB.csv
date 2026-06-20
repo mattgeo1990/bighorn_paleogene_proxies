@@ -1,37 +1,41 @@
 ﻿Depth_m_PCB_core,depth_relative_onset,est_Depth_m_PCB_outcrop,Age_Ma,basis
-,7.9,1621.7,55.605,
-7.9,8.2,1613.8,55.626,
-16.1,7.4,1605.6,55.647,
-23.5,7.7,1598.2,55.668,
-31.2,7,1590.5,55.689,
-38.2,6.4,1583.5,55.71,
-44.6,6.4,1577.1,55.731,
-51,7.2,1570.7,55.752,
-58.2,7.65,1563.5,55.773,
-65.85,8.55,1555.85,55.794,
-74.4,8.2,1547.3,55.815,
-82.6,8.5,1539.1,55.836,
-91.1,8.6,1530.6,55.857,
-99.7,7.8,1522,55.878,
-107.5,7.85,1514.2,55.899,
-115.35,3.35,1506.35,55.92,
-118.7,0,1503,55.93,
-123,-4.3,1498.7,55.94,
-130,-7,1491.7,55.961,
-139.3,-9.3,1482.4,55.982,
-146.5,-7.2,1475.2,56.003,
-155,-8.5,1466.7,56.024,
-164,-9,1457.7,56.045,
-171.2,-7.2,1450.5,56.066,
-181.7,-10.5,1440,56.087,
-189.5,-7.8,1432.2,56.108,
-,,1400,56.2,manual interpolation
-,,1320,56.3,manual interpolation
-,,1280,56.4,manual interpolation
-,,1240,56.5,manual interpolation
-,,1200,56.6,manual interpolation
-,,1100,56.7,manual interpolation
-,,1000,56.8,manual interpolation
+,,2240,54.1,Snell et al. (2013)
+,,1970,54.7,Snell et al. (2013)
+,,1840,55,Snell et al. (2013)
+,,1630,55.56,Snell et al. (2013)
+,7.9,1621.7,55.605,extrapolation from Westerhold
+7.9,8.2,1613.8,55.626,extrapolation from Westerhold
+16.1,7.4,1605.6,55.647,extrapolation from Westerhold
+23.5,7.7,1598.2,55.668,extrapolation from Westerhold
+31.2,7,1590.5,55.689,extrapolation from Westerhold
+38.2,6.4,1583.5,55.71,extrapolation from Westerhold
+44.6,6.4,1577.1,55.731,extrapolation from Westerhold
+51,7.2,1570.7,55.752,extrapolation from Westerhold
+58.2,7.65,1563.5,55.773,extrapolation from Westerhold
+65.85,8.55,1555.85,55.794,extrapolation from Westerhold
+74.4,8.2,1547.3,55.815,extrapolation from Westerhold
+82.6,8.5,1539.1,55.836,Westerhold et al. (2020)
+91.1,8.6,1530.6,55.857,Westerhold et al. (2020)
+99.7,7.8,1522,55.878,Westerhold et al. (2020)
+107.5,7.85,1514.2,55.899,Westerhold et al. (2020)
+115.35,3.35,1506.35,55.92,Westerhold et al. (2020)
+118.7,0,1503,55.93,Westerhold et al. (2020)
+123,-4.3,1498.7,55.94,Westerhold et al. (2020)
+130,-7,1491.7,55.961,extrapolation from Westerhold
+139.3,-9.3,1482.4,55.982,extrapolation from Westerhold
+146.5,-7.2,1475.2,56.003,extrapolation from Westerhold
+155,-8.5,1466.7,56.024,extrapolation from Westerhold
+164,-9,1457.7,56.045,extrapolation from Westerhold
+171.2,-7.2,1450.5,56.066,extrapolation from Westerhold
+181.7,-10.5,1440,56.087,extrapolation from Westerhold
+189.5,-7.8,1432.2,56.108,extrapolation from Westerhold
+,,1400,56.2,interpolation
+,,1320,56.3,interpolation
+,,1280,56.4,interpolation
+,,1240,56.5,interpolation
+,,1200,56.6,interpolation
+,,1100,56.7,interpolation
+,,1000,56.8,interpolation
 ,,910,56.9,Secord et al. (2006)  paleomag
 ,,860,57,Secord et al. (2006)  paleomag
 ,,820,57.1,Secord et al. (2006)  paleomag

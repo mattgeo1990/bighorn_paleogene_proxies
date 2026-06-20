@@ -467,20 +467,17 @@ saveWidget(
 )
 
 # ---- Interactive age-space temperature plot ----
+
 library(plotly)
 library(here)
 library(htmlwidgets)
 library(dplyr)
 
-# Use Matthew age model where available; otherwise fall back to Snell age
+# Use Matthew age model for all horizons
 BHB_temp_age_plot <- BHB_multiproxy_with_temperature %>%
   mutate(
-    plot_Age_Ma = coalesce(Age_Ma, Snell_Age_Ma),
-    age_source = case_when(
-      !is.na(Age_Ma) ~ "Matthew age model",
-      is.na(Age_Ma) & !is.na(Snell_Age_Ma) ~ "Snell age",
-      TRUE ~ NA_character_
-    )
+    plot_Age_Ma = Age_Ma,
+    age_source = "Matthew age model"
   ) %>%
   filter(!is.na(plot_Age_Ma), !is.na(T_model_C))
 
