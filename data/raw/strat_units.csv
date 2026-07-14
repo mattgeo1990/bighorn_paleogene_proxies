@@ -1,0 +1,29 @@
+﻿unit_id,base_m,top_m,lithology,grain_class,unit_label,notes
+1,0,8,mudstone,mud,Mantua Quarry,Approximate contact depths digitized from image
+2,8,18,sandstone,fine,,Fine sandstone; approximate contact depths
+3,18,28,mudstone,mud,,Approximate contact depths
+4,28,42,sandstone,fine,,Grain class provisionally interpreted as fine; approximate contacts
+5,42,58,mudstone,mud,,Approximate contact depths
+6,58,66,coal,coal,Rock Bench Quarry,Approximate contact depths
+7,66,74,mudstone,mud,Grim Coals,Coal-bearing interval noted in source image; approximate contacts
+8,74,82,sandstone,fine,,Grain class provisional; approximate contacts
+9,82,104,mudstone,mud,,SC-429 and SC-264 nearby; approximate contacts
+10,104,118,sandstone,fine,,Grain class provisional; approximate contacts
+11,118,185,mudstone,mud,,Includes Ti-f2; approximate contacts
+12,185,195,sandstone,fine,,Grain class provisional; approximate contacts
+13,195,330,mudstone,mud,,"SC-263, SC-412, SC-415, SC-262, and SC-261; likely contains unresolved thin beds"
+14,330,338,ash,ash,Belt Ash,Belt Ash labeled at 331 m; interval thickness approximate
+15,338,382,mudstone,mud,,SC-243 and flora horizon; approximate contacts
+16,382,448,mudstone,mud,,Approximate contact depths
+17,448,520,mudstone,mud,,SC-239; approximate contacts
+18,520,535,sandstone,fine,,Grain class provisional; approximate contacts
+19,535,610,mudstone,mud,,SC-246 and SC-228; approximate contacts
+20,610,670,mudstone,mud,,SC-242; approximate contacts
+21,670,690,sandstone,fine,,Grain class provisional; approximate contacts
+22,690,720,mudstone,mud,,SC-252; approximate contacts
+23,720,750,sandstone,fine,,Ti-5b base from WB; grain class provisional; approximate contacts
+24,750,790,mudstone,mud,,SC-223; approximate contacts
+25,790,810,sandstone,fine,,Ti-6 base from WB; grain class provisional; approximate contacts
+26,810,870,mudstone,mud,,SC-086 and SC-377; approximate contacts
+27,870,905,covered,covered,Covered,Explicitly shown as covered interval
+28,905,940,mudstone,mud,,SC-83 and lowest rodent; approximate contacts

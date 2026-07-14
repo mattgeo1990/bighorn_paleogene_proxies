@@ -12,7 +12,8 @@ scripts <- c(
   "04_soilwater_d18O_reconstructions.R",
   "05_soilwater_D17O_reconstructions.R",
   "06_process_reference_datasets.R",
-  "07_age_domain_plots.R"
+  "07_strat_domain_plots.R",
+  "08_age_domain_plots.R"
 )
 
 for (script in scripts) {

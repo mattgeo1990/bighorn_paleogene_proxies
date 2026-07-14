@@ -11,12 +11,59 @@ library(zoo)
 BHB_multiproxy_summary <- read_csv(
   here("data", "processed", "BHB_multiproxy_summary.csv")
 )
+# ---- Temperature screening scheme ----
 
+screening_scheme <- "exclude_all_suspect"
+# options:
+# "none"
+# "exclude_heavy"
+# "exclude_heavy_moderate"
+# "exclude_all_suspect"
+
+temp_screening_flags <- read_csv(
+  here("data", "processed", "temperature_screening_flags.csv")
+)
+
+needed_screening_cols <- c(
+  "exclude_heavy",
+  "exclude_heavy_moderate",
+  "exclude_all_suspect"
+)
+
+for (col in needed_screening_cols) {
+  if (!col %in% names(temp_screening_flags)) {
+    temp_screening_flags[[col]] <- FALSE
+  }
+}
+
+BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
+  select(-any_of(c(
+    needed_screening_cols,
+    "exclude_from_temp_model"
+  ))) %>%
+  left_join(
+    temp_screening_flags,
+    by = "MLA_horizon_id"
+  ) %>%
+  mutate(
+    across(
+      any_of(needed_screening_cols),
+      ~ replace_na(.x, FALSE)
+    ),
+    exclude_from_temp_model = case_when(
+      screening_scheme == "none" ~ FALSE,
+      screening_scheme == "exclude_heavy" ~ exclude_heavy,
+      screening_scheme == "exclude_heavy_moderate" ~ exclude_heavy_moderate,
+      screening_scheme == "exclude_all_suspect" ~ exclude_all_suspect,
+      TRUE ~ FALSE
+    )
+  )
 # ---- Build temperature observation table ----
 # IPL, CU, and Snell are kept as separate observations.
 # CU reports 2SE, so convert to SE.
 
 temp_obs <- BHB_multiproxy_summary %>%
+  filter(!exclude_from_temp_model) %>%
   select(
     MLA_horizon_id,
     strat_height_m,

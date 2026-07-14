@@ -1583,17 +1583,30 @@ spar_altered_horizon_summary <- spar_altered_combined %>%
 # adjacent age-depth tie points. Horizons falling outside the modeled range
 # are assigned NA (rule = 1).
 
-matthews_age_model <- read.csv(
-  here("data", "raw", "approx_age_mdl_PETM_PCB.csv")
+age_priors <- read.csv(
+  here("data", "raw", "PCB-CFB_age_priors.csv")
 )
 
-str(matthews_age_model)
+str(age_priors)
+
+# ---- Continuous composite age model ------
+
+age_priors <- age_priors %>%
+  mutate(
+    est_Depth_m_PCB_outcrop = as.numeric(est_Depth_m_PCB_outcrop),
+    Age_Ma_best_estimate = as.numeric(Age_Ma_best_estimate)
+  ) %>%
+  filter(
+    !is.na(est_Depth_m_PCB_outcrop),
+    !is.na(Age_Ma_best_estimate)
+  ) %>%
+  arrange(est_Depth_m_PCB_outcrop)
 
 BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
   mutate(
     Age_Ma = approx(
-      x = matthews_age_model$est_Depth_m_PCB_outcrop,
-      y = matthews_age_model$Age_Ma,
+      x = age_priors$est_Depth_m_PCB_outcrop,
+      y = age_priors$Age_Ma_best_estimate,
       xout = strat_height_m,
       rule = 1
     )$y
@@ -1602,54 +1615,111 @@ BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
 # Quick-look age model diagnostics
 
 # Age-depth model
-ggplot(
-  BHB_multiproxy_summary,
-  aes(x = Age_Ma, y = strat_height_m)
-) +
-  geom_point(size = 2) +
-  scale_x_reverse() +
-  geom_path(linewidth = 1) +
-  labs(
-    x = "Age (Ma)",
-    y = "Stratigraphic height (m)"
+ggplot() +
+  geom_line(
+    data = tibble(
+      strat_height_m = seq(
+        min(age_priors$est_Depth_m_PCB_outcrop),
+        max(age_priors$est_Depth_m_PCB_outcrop),
+        by = 1
+      )
+    ) %>%
+      mutate(
+        Age_Ma = approx(
+          x = age_priors$est_Depth_m_PCB_outcrop,
+          y = age_priors$Age_Ma_best_estimate,
+          xout = strat_height_m,
+          rule = 1
+        )$y
+      ),
+    aes(x = Age_Ma, y = strat_height_m),
+    linewidth = 1
   ) +
+  geom_point(
+    data = age_priors,
+    aes(x = Age_Ma_best_estimate, y = est_Depth_m_PCB_outcrop),
+    size = 2
+  ) +
+  scale_x_reverse() +
   labs(
-    title = "Composite Age Model for Northern BHB",
+    title = "Composite age-depth model",
+    subtitle = "Piecewise linear interpolation through stratigraphic age priors",
     x = "Age (Ma)",
     y = "Stratigraphic height above K-Pg (m)"
   ) +
   theme_classic()
 
-# Quick-look carbon isotope stratigraphy
-d13C_age_plot_data <- BHB_multiproxy_summary %>%
+
+# ---- Apply composite age model to BHB multiproxy summary 
+
+age_priors_clean <- age_priors %>%
   mutate(
-    d13C_plot = coalesce(
-      Koch_mean_d13Ccarb_vpdb,
-      Bowen_mean_d13Ccarb_vpdb,
-      Snell_mean_d13Ccarb_vpdb
-    )
+    est_Depth_m_PCB_outcrop = as.numeric(est_Depth_m_PCB_outcrop),
+    Age_Ma_best_estimate = as.numeric(Age_Ma_best_estimate)
   ) %>%
   filter(
-    !is.na(d13C_plot),
-    !is.na(Age_Ma)
+    !is.na(est_Depth_m_PCB_outcrop),
+    !is.na(Age_Ma_best_estimate)
+  ) %>%
+  arrange(est_Depth_m_PCB_outcrop)
+
+BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
+  mutate(
+    Age_Ma = approx(
+      x = age_priors_clean$est_Depth_m_PCB_outcrop,
+      y = age_priors_clean$Age_Ma_best_estimate,
+      xout = strat_height_m,
+      rule = 1
+    )$y
   )
 
+# Quick check
+BHB_multiproxy_summary %>%
+  select(MLA_horizon_id, strat_height_m, Age_Ma) %>%
+  arrange(strat_height_m)
+
 ggplot(
-  d13C_age_plot_data,
+  BHB_multiproxy_summary %>%
+    filter(
+      !is.na(Age_Ma),
+      !is.na(Koch_mean_d13Ccarb_vpdb)
+    ),
   aes(
     x = Age_Ma,
-    y = d13C_plot
+    y = Koch_mean_d13Ccarb_vpdb
   )
 ) +
-  geom_point(size = 2) +
-  geom_path(alpha = 0.5) +
+  geom_point(alpha = 0.8, size = 2) +
+  geom_smooth(
+    method = "loess",
+    span = 0.2,
+    se = FALSE,
+    linewidth = 1.2,
+    color = "black"
+  ) +
   scale_x_reverse() +
   labs(
     x = "Age (Ma)",
-    y = expression(delta^13 * C[carb] ~ "(‰ VPDB)")
+    y = "Koch d13Ccarb (per mil VPDB)",
+    title = "Koch paleosol carbonate d13C in age space"
   ) +
   theme_classic()
 
+# ---- Add geologic stage from age model ----
+BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
+  mutate(
+    stage = case_when(
+      Age_Ma >= 66.0 & Age_Ma < 61.6 ~ "Danian",
+      Age_Ma >= 61.6 & Age_Ma < 59.2 ~ "Selandian",
+      Age_Ma >= 59.2 & Age_Ma < 56.0 ~ "Thanetian",
+      Age_Ma >= 56.0 & Age_Ma < 47.8 ~ "Ypresian",
+      TRUE ~ NA_character_
+    ),
+    stage = factor(
+      stage,
+      levels = c("Danian", "Selandian", "Thanetian", "Ypresian")
+    )
+  )
 # 11. Export summarized primary datasets  ---------------------
 
 write_csv(
@@ -1718,7 +1788,39 @@ BHB_multiproxy_summary %>%
     max_strat = max(strat_height_m, na.rm = TRUE)
   )
 
- # data summary
+# quick check on d13C 
+paired_d13c <- BHB_multiproxy_summary %>%
+  filter(
+    !is.na(Koch_mean_d13Ccarb_vpdb),
+    !is.na(IPL_NuDog_d13Ccarb_VPDB)
+  )
+
+ggplot(
+  paired_d13c,
+  aes(
+    x = Koch_mean_d13Ccarb_vpdb,
+    y = IPL_NuDog_d13Ccarb_VPDB
+  )
+) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    linetype = 2,
+    color = "gray50"
+  ) +
+  geom_smooth(
+    method = "lm",
+    se = FALSE,
+    color = "black"
+  ) +
+  labs(
+    x = "Koch d13Ccarb (‰ VPDB)",
+    y = "IPL NuDog d13Ccarb (‰ VPDB)",
+    title = "Koch vs. IPL NuDog carbonate d13C"
+  ) +
+  theme_classic()
+
 
 
 # 13. Data Availability ------
@@ -1918,7 +2020,93 @@ write_csv(
   here::here("data", "processed", "IPL_CU_availability_counts.csv")
 )
 
+library(plotly)
+
+# ---- Interactive jitter plot: D47 availability ----
+library(plotly)
+library(ggplot2)
+
+p_D47 <- data_availability %>%
+  mutate(
+    D47_status = if_else(has_any_D47, "Has D47", "No D47"),
+    hover_text = paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Strat height: ", round(strat_height_m,1),
+      "<br>D47 status: ", D47_status,
+      "<br>IPL T47: ", round(IPLD47_mean_T47_C,1),
+      "<br>CU T47: ", round(CU_mean_T47_C,1)
+    )
+  ) %>%
+  ggplot(
+    aes(
+      x = 1,
+      y = strat_height_m,
+      color = D47_status,
+      text = hover_text
+    )
+  ) +
+  geom_jitter(width = 0.15, height = 0) +
+  scale_color_manual(
+    values = c(
+      "Has D47" = "black",
+      "No D47" = "grey80"
+    )
+  ) +
+  labs(
+    title = "D47 coverage",
+    x = "",
+    y = "Stratigraphic height (m)"
+  ) +
+  theme_classic()+ scale_y_continuous(
+    breaks = seq(500, 2300, by = 100)
+  )
 
 
+ggplotly(p_D47, tooltip = "text")
 
 
+# ---- Interactive jitter plot: D17O availability ----
+p_D17O_availability <- data_availability %>%
+  mutate(
+    D17O_status = if_else(has_IPL17O, "Has D17O", "No D17O"),
+    hover_text = paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Strat height: ", strat_height_m, " m",
+      "<br>D17O status: ", D17O_status,
+      "<br>n analyses: ", IPL17O_n_analyses,
+      "<br>Mean Dp17Ocarb: ", round(IPL17O_mean_Dp17Ocarb, 1),
+      "<br>SD Dp17Ocarb: ", round(IPL17O_sd_Dp17Ocarb, 1),
+      "<br>Mean d18Ocarb: ", round(IPL17O_mean_d18Ocarb, 2),
+      "<br>Data combo: ", data_combo
+    )
+  ) %>%
+  ggplot(aes(
+    x = D17O_status,
+    y = strat_height_m,
+    color = D17O_status,
+    text = hover_text
+  )) +
+  geom_jitter(
+    width = 0.18,
+    height = 0,
+    size = 2.4,
+    alpha = 0.85
+  ) +
+  scale_color_manual(
+    values = c(
+      "Has D17O" = "black",
+      "No D17O" = "grey75"
+    )
+  ) +
+  scale_y_continuous(
+    breaks = seq(500, 2300, by = 100)
+  ) +
+  labs(
+    title = "D17O availability by horizon",
+    x = NULL,
+    y = "Stratigraphic height (m)"
+  ) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+plotly::ggplotly(p_D17O_availability, tooltip = "text")

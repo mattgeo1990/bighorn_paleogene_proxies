@@ -1,133 +1,362 @@
 # 06_process_reference_datasets.R
-# Purpose: Process external reference datasets for comparison with BHB records.
-
+# Purpose:
+#   Process external reference datasets for comparison with BHB records.
+#
+# Outputs:
+#   - Harper2024_CO2_SST_processed.csv
+#   - Kelson_Tornillo_D47_processed.csv
+#   - Kelson_Tornillo_D47_strat_age_filtered.csv
+#   - BHB_GTS2020_tiepoints.csv
+#   - BHB_GTS2020_age_model.csv
 
 # ---- Load packages ----
 library(tidyverse)
 library(here)
+library(zoo)
 
-# ---- Load Harper et al. (2024) reference datasets ----
+# ---- Output directories ----
+dir.create(here("data", "processed"), recursive = TRUE, showWarnings = FALSE)
+dir.create(here("figures", "reference_datasets"), recursive = TRUE, showWarnings = FALSE)
 
+# ============================================================
+# 1. Harper et al. (2024) CO2 and SST reference records
+# ============================================================
 
-# Harper et al. (2024) used new and published planktic foraminiferal
-# geochemical data from Pacific ODP Sites 1209 and 1210, together with a
-# multiproxy Bayesian hierarchical model, to reconstruct atmospheric CO2
-# and SST from ~59 to 53 Ma. Their record spans long-term late Paleocene–
-# early Eocene warming, the PETM, and ETM-2.
-#
-# Source:
-# Harper, D.T., Hönisch, B., Bowen, G.J., Zeebe, R.E., Haynes, L.L.,
-# Penman, D.E., and Zachos, J.C. (2024). Long- and short-term coupling of
-# sea surface temperature and atmospheric CO2 during the late Paleocene and
-# early Eocene. PNAS.
-#
-# Raw input files:
-#   HarperEtAl2024_co2_out.csv
-#   HarperEtAl2024_sst_out.csv
-#
-# Notes:
-#   - Raw ages are reported in kyr before present / kyr-style units.
-#   - Ages are converted to Ma by dividing by 1000.
-#   - Only the posterior mean and 95% credible interval bounds are retained.
-#   - CO2 and SST records share the same age grid and are merged by Age_Ma.
-
-
-Harper2024_CO2 <- read.csv(
-  here::here("data", "raw", "HarperEtAl2024_co2_out.csv")
+Harper2024_CO2 <- read_csv(
+  here("data", "raw", "HarperEtAl2024_co2_out.csv")
 )
 
-Harper2024_SST <- read.csv(
-  here::here("data", "raw", "HarperEtAl2024_sst_out.csv")
+Harper2024_SST <- read_csv(
+  here("data", "raw", "HarperEtAl2024_sst_out.csv")
 )
-
-# Merge CO2 and SST records 
-# Keep one age column, convert kyr to Ma, and retain only mean and 95% CI bounds.
 
 Harper2024_CO2_SST <- Harper2024_CO2 %>%
   transmute(
     Age_Ma = age / 1000,
     Harper2024_mean_CO2_ppm = mean,
-    Harper2024_CO2_lower95_ppm = X2.50.,
-    Harper2024_CO2_upper95_ppm = X97.50.
+    Harper2024_CO2_lower95_ppm = `2.50%`,
+    Harper2024_CO2_upper95_ppm = `97.50%`
   ) %>%
   left_join(
     Harper2024_SST %>%
       transmute(
         Age_Ma = age / 1000,
         Harper2024_mean_SST_C = mean,
-        Harper2024_SST_lower95_C = X2.50.,
-        Harper2024_SST_upper95_C = X97.50.
+        Harper2024_SST_lower95_C = `2.50%`,
+        Harper2024_SST_upper95_C = `97.50%`
       ),
     by = "Age_Ma"
   ) %>%
+  arrange(Age_Ma) %>%
+  mutate(
+    Harper2024_SST_anchor_C = rollapply(
+      Harper2024_mean_SST_C,
+      width = 3,
+      FUN = mean,
+      fill = NA,
+      align = "center",
+      partial = TRUE
+    ),
+    Harper2024_CO2_anchor_ppm = rollapply(
+      Harper2024_mean_CO2_ppm,
+      width = 3,
+      FUN = mean,
+      fill = NA,
+      align = "center",
+      partial = TRUE
+    )
+  )
+
+Harper_SST_spline <- smooth.spline(
+  x = Harper2024_CO2_SST$Age_Ma,
+  y = Harper2024_CO2_SST$Harper2024_SST_anchor_C,
+  spar = 0.35
+)
+
+Harper_CO2_spline <- smooth.spline(
+  x = Harper2024_CO2_SST$Age_Ma,
+  y = Harper2024_CO2_SST$Harper2024_CO2_anchor_ppm,
+  spar = 0.35
+)
+
+Harper2024_CO2_SST <- Harper2024_CO2_SST %>%
+  mutate(
+    Harper2024_SST_smooth_C = as.numeric(
+      predict(Harper_SST_spline, x = Age_Ma)$y
+    ),
+    Harper2024_CO2_smooth_ppm = as.numeric(
+      predict(Harper_CO2_spline, x = Age_Ma)$y
+    )
+  ) %>%
   arrange(desc(Age_Ma))
 
-# Quick checks 
+# ============================================================
+# 2. Kelson Tornillo / Big Bend D47 reference dataset
+# ============================================================
 
-str(Harper2024_CO2_SST)
+Kelson_exclude_strat_age <- c(
+  "BB-TF3-14-003",
+  "BB-TF2-14-036",
+  "PS3-Bk",
+  "BB-TF2-14-002",
+  "BB12-077",
+  "BB-TF3-14-012nod2",
+  "BB-TF2-14-030"
+)
 
-summary(Harper2024_CO2_SST$Age_Ma)
-summary(Harper2024_CO2_SST$Harper2024_mean_CO2_ppm)
-summary(Harper2024_CO2_SST$Harper2024_mean_SST_C)
+Kelson_Tornillo_raw <- read_csv(
+  here("data", "raw", "kelson_tornillo_D47.csv")
+)
 
+Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
+  transmute(
+    sample_id = Sample_ID,
+    Age_Ma = `Age (Ma)`,
+    epoch = Epoch,
+    section = Section,
+    petro_type = Type,
+    
+    d13Ccarb_vpdb = d13Ccarb,
+    d13Ccarb_sd = `d13C SD`,
+    d13Ccarb_se = d13C_SE,
+    
+    d18Ocarb_vpdb = d18Ocarb,
+    d18Ocarb_vsmow = 1.03091 * d18Ocarb + 30.91,
+    d18Ocarb_sd = `d18O SD`,
+    d18Ocarb_se = d18O_SE,
+    
+    D47 = `∆47 a`,
+    D47_sd = `∆47_SD`,
+    D47_se = `∆47 SE`,
+    n_replicates = `n (# of replicates)`,
+    
+    T47_C = `T(∆47) b`,
+    T47_se_C = `T(∆47) SE`,
+    T47_95CI_C = `T(∆47) 95 % CI`,
+    
+    d18Ow_vsmow = d18Owater,
+    d18Ow_error = `d18Ow error`
+  ) %>%
+  mutate(
+    petro_class = case_when(
+      str_detect(str_to_lower(petro_type), "micrite") ~ "Micrite",
+      str_detect(str_to_lower(petro_type), "spar") ~ "Spar",
+      str_detect(str_to_lower(petro_type), "radial") ~ "Radial",
+      TRUE ~ petro_type
+    )
+  ) %>%
+  filter(!is.na(Age_Ma)) %>%
+  arrange(desc(Age_Ma))
 
+# Filtered version for strat/age plots only
+Kelson_Tornillo_D47_strat_age <- Kelson_Tornillo_D47 %>%
+  filter(!sample_id %in% Kelson_exclude_strat_age)
 
-# CO2 versus age
-p_Harper_CO2_age <- ggplot(
-  Harper2024_CO2_SST,
-  aes(x = Harper2024_mean_CO2_ppm, y = Age_Ma)
-) +
+# ---- Quick checks ----
+
+Kelson_Tornillo_D47 %>%
+  count(epoch, petro_class)
+
+Kelson_Tornillo_D47_strat_age %>%
+  count(epoch, petro_class)
+
+summary(Kelson_Tornillo_D47$T47_C)
+summary(Kelson_Tornillo_D47$d18Ocarb_vpdb)
+summary(Kelson_Tornillo_D47$d18Ocarb_vsmow)
+
+# ---- Plot: Kelson D47 temperature vs d18Ocarb ----
+# Full dataset retained here.
+
+p_Kelson_T47_d18Ocarb <- Kelson_Tornillo_D47 %>%
+  filter(!is.na(T47_C), !is.na(d18Ocarb_vsmow)) %>%
+  ggplot(aes(
+    x = T47_C,
+    y = d18Ocarb_vsmow,
+    shape = petro_class
+  )) +
   geom_errorbarh(
     aes(
-      xmin = Harper2024_CO2_lower95_ppm,
-      xmax = Harper2024_CO2_upper95_ppm
+      xmin = T47_C - T47_se_C,
+      xmax = T47_C + T47_se_C
     ),
     height = 0,
-    alpha = 0.35
+    linewidth = 0.35,
+    alpha = 0.35,
+    na.rm = TRUE
   ) +
-  geom_path(linewidth = 0.8) +
-  geom_point(size = 1.5) +
-  scale_y_reverse() +
+  geom_errorbar(
+    aes(
+      ymin = d18Ocarb_vsmow - d18Ocarb_se,
+      ymax = d18Ocarb_vsmow + d18Ocarb_se
+    ),
+    width = 0,
+    linewidth = 0.35,
+    alpha = 0.35,
+    na.rm = TRUE
+  ) +
+  geom_point(size = 2.2, alpha = 0.80) +
   labs(
-    title = expression("Harper et al. (2024) atmospheric CO"[2]),
-    x = expression("Atmospheric CO"[2] ~ "(ppm)"),
-    y = "Age (Ma)"
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = expression(delta^18 * O[carb] ~ "(‰ VSMOW)"),
+    shape = "Petrography"
   ) +
-  theme_classic()
+  theme_classic(base_size = 11)
 
-print(p_Harper_CO2_age)
+p_Kelson_T47_d18Ocarb
 
+# ---- Plot: Kelson micrite-only D47 temperature vs age ----
+# Excluded samples removed here.
 
-# SST versus age
-p_Harper_SST_age <- ggplot(
-  Harper2024_CO2_SST,
-  aes(x = Harper2024_mean_SST_C, y = Age_Ma)
-) +
+Kelson_Tornillo_micrite_strat_age <- Kelson_Tornillo_D47_strat_age %>%
+  filter(
+    petro_class == "Micrite",
+    !is.na(T47_C),
+    !is.na(Age_Ma)
+  )
+
+p_Kelson_micrite_T47_age <- ggplot(Kelson_Tornillo_micrite_strat_age) +
   geom_errorbarh(
     aes(
-      xmin = Harper2024_SST_lower95_C,
-      xmax = Harper2024_SST_upper95_C
+      xmin = T47_C - T47_se_C,
+      xmax = T47_C + T47_se_C,
+      y = Age_Ma
     ),
     height = 0,
-    alpha = 0.35
+    linewidth = 0.35,
+    alpha = 0.45,
+    na.rm = TRUE
   ) +
-  geom_path(linewidth = 0.8) +
-  geom_point(size = 1.5) +
+  geom_point(
+    aes(x = T47_C, y = Age_Ma),
+    size = 1.8,
+    alpha = 0.75
+  ) +
   scale_y_reverse() +
-  labs(
-    title = "Harper et al. (2024) Pacific sea-surface temperature",
-    x = expression("Sea-surface temperature (" * degree * "C)"),
-    y = "Age (Ma)"
+  scale_x_continuous(
+    breaks = seq(10, 70, by = 10),
+    limits = c(10, 70),
+    expand = expansion(mult = c(0.02, 0.04))
   ) +
-  theme_classic()
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = "Age (Ma)",
+    title = "Kelson Tornillo micrite D47 temperatures"
+  ) +
+  theme_classic(base_size = 11)
 
-print(p_Harper_SST_age)
+p_Kelson_micrite_T47_age
 
+# ============================================================
+# 3. GTS2020 BHB age-model update
+# ============================================================
 
+GTS2020_tiepoints <- tribble(
+  ~tie_point, ~strat_height_m, ~Age_Ma, ~source,
+  "C26n",     NA_real_,        59.237, "GTS2020",
+  "C25r",     NA_real_,        58.959, "GTS2020",
+  "C25n",     NA_real_,        57.656, "GTS2020",
+  "C24r",     NA_real_,        57.101, "GTS2020",
+  "C24n.3n",  NA_real_,        53.900, "GTS2020"
+)
 
-# Save processed reference dataset
+BHB_multiproxy_summary <- read_csv(
+  here("data", "processed", "BHB_multiproxy_summary.csv")
+)
+
+BHB_GTS2020_tiepoints_clean <- GTS2020_tiepoints %>%
+  filter(!is.na(strat_height_m), !is.na(Age_Ma)) %>%
+  arrange(strat_height_m)
+
+BHB_GTS2020_age_model <- BHB_multiproxy_summary %>%
+  distinct(MLA_horizon_id, strat_height_m) %>%
+  filter(!is.na(strat_height_m)) %>%
+  arrange(strat_height_m) %>%
+  mutate(
+    Age_Ma_GTS2020 = approx(
+      x = BHB_GTS2020_tiepoints_clean$strat_height_m,
+      y = BHB_GTS2020_tiepoints_clean$Age_Ma,
+      xout = strat_height_m,
+      rule = 1
+    )$y
+  )
+
+p_BHB_GTS2020_age_model <- ggplot() +
+  geom_path(
+    data = BHB_GTS2020_age_model,
+    aes(x = Age_Ma_GTS2020, y = strat_height_m),
+    linewidth = 0.8,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = BHB_GTS2020_tiepoints_clean,
+    aes(x = Age_Ma, y = strat_height_m),
+    size = 2
+  ) +
+  geom_text(
+    data = BHB_GTS2020_tiepoints_clean,
+    aes(x = Age_Ma, y = strat_height_m, label = tie_point),
+    hjust = -0.05,
+    size = 3
+  ) +
+  scale_x_reverse() +
+  labs(
+    x = "Age (Ma; GTS2020)",
+    y = "Stratigraphic height (m)",
+    title = "BHB GTS2020 age-depth model"
+  ) +
+  theme_classic(base_size = 11)
+
+p_BHB_GTS2020_age_model
+
+# ============================================================
+# 4. Save processed outputs
+# ============================================================
 
 write_csv(
   Harper2024_CO2_SST,
   here("data", "processed", "Harper2024_CO2_SST_processed.csv")
+)
+
+write_csv(
+  Kelson_Tornillo_D47,
+  here("data", "processed", "Kelson_Tornillo_D47_processed.csv")
+)
+
+write_csv(
+  Kelson_Tornillo_D47_strat_age,
+  here("data", "processed", "Kelson_Tornillo_D47_strat_age_filtered.csv")
+)
+
+write_csv(
+  GTS2020_tiepoints,
+  here("data", "processed", "BHB_GTS2020_tiepoints.csv")
+)
+
+write_csv(
+  BHB_GTS2020_age_model,
+  here("data", "processed", "BHB_GTS2020_age_model.csv")
+)
+
+ggsave(
+  here("figures", "reference_datasets", "Kelson_T47_vs_d18Ocarb.png"),
+  p_Kelson_T47_d18Ocarb,
+  width = 5,
+  height = 4,
+  dpi = 600
+)
+
+ggsave(
+  here("figures", "reference_datasets", "Kelson_micrite_T47_vs_age.png"),
+  p_Kelson_micrite_T47_age,
+  width = 4,
+  height = 6,
+  dpi = 600
+)
+
+ggsave(
+  here("figures", "reference_datasets", "BHB_GTS2020_age_model.png"),
+  p_BHB_GTS2020_age_model,
+  width = 5,
+  height = 6,
+  dpi = 600
 )

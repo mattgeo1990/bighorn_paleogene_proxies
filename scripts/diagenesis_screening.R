@@ -601,6 +601,89 @@ ggplot(
     panel.grid.minor = element_line(color = "grey92")
   )
 
+
+# 17O ------------------------
+
+d17_plot <- BHB_multiproxy_final %>%
+  filter(
+    !is.na(IPLD47_mean_T47_C),
+    !is.na(IPL17O_mean_dp17Ocarb)
+  ) %>%
+  transmute(
+    MLA_horizon_id,
+    T47_C = IPLD47_mean_T47_C,
+    T47_se_C = IPLD47_se_T47_C,
+    D17Ocarb = IPL17O_mean_dp17Ocarb,
+    D17Ocarb_se = IPL17O_se_dp17Ocarb,
+    carbonate_type = "micrite"
+  )
+
+burial_d17_model <- expand_grid(
+  T_C = seq(20, 120, by = 1),
+  scenario = c(
+    "No Δ′17O change",
+    "Small Δ′17O shift",
+    "Moderate Δ′17O shift"
+  )
+) %>%
+  mutate(
+    D17Ocarb = case_when(
+      scenario == "No Δ′17O change" ~ 20,
+      scenario == "Small Δ′17O shift" ~ 20 - 0.03 * (T_C - 20),
+      scenario == "Moderate Δ′17O shift" ~ 20 - 0.08 * (T_C - 20)
+    )
+  )
+
+p_T47_D17Ocarb <- ggplot() +
+  geom_line(
+    data = burial_d17_model,
+    aes(
+      x = T_C,
+      y = D17Ocarb,
+      color = scenario
+    ),
+    linewidth = 1
+  ) +
+  geom_errorbar(
+    data = d17_plot,
+    aes(
+      x = T47_C,
+      ymin = D17Ocarb - D17Ocarb_se,
+      ymax = D17Ocarb + D17Ocarb_se
+    ),
+    width = 0,
+    alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  geom_errorbarh(
+    data = d17_plot,
+    aes(
+      xmin = T47_C - T47_se_C,
+      xmax = T47_C + T47_se_C,
+      y = D17Ocarb
+    ),
+    height = 0,
+    alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = d17_plot,
+    aes(
+      x = T47_C,
+      y = D17Ocarb
+    ),
+    size = 3,
+    alpha = 0.85
+  ) +
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = expression(Delta*"'"^17 * O[carb] ~ "(per meg)"),
+    color = "Burial trajectory"
+  ) +
+  theme_classic(base_size = 13)
+
+p_T47_D17Ocarb
+
 # Spar mixing sensitivity model ---------------------
 
 library(tidyverse)
@@ -654,59 +737,45 @@ ggplot(
     panel.grid.minor = element_blank()
   )
 
-# Cull data suspected of alteration -----
-
-nuclear <- c(
-  #tier 1 (heavy alteration):
-  "PK95-SC-4",
-  "PK95-SC-279",
-  "PK95-SC-242",
-  "PK95-SC-27",
-  # tier 2 (moderate alteration): 
-  "PK95-SC-176",
-  "PK95-SC-246",
-  "PK95-SC-118up",
-  # tier 3 (possibly altered):
-  "PK95-SC-187",
-  "PK95-SC-160",
-  "PK95-SC-6"
-)
-
-moderate <- c(
-  #tier 1 (heavy alteration):
-  "PK95-SC-4",
-  "PK95-SC-279",
-  "PK95-SC-242",
-  "PK95-SC-27",
-  # tier 2 (moderate alteration): 
-  "PK95-SC-176",
-  "PK95-SC-246",
-  "PK95-SC-118up"
-)
-
-conservative <- c(
-  #tier 1 (heavy alteration):
+tier1_heavy <- c(
   "PK95-SC-4",
   "PK95-SC-279",
   "PK95-SC-242",
   "PK95-SC-27"
 )
 
+tier2_moderate <- c(
+  "PK95-SC-176",
+  "PK95-SC-246",
+  "PK95-SC-118up"
+)
 
-# Choose cull scheme
-altered_cull_data <- nuclear 
+tier3_possible <- c(
+  "PK95-SC-187",
+  "PK95-SC-160",
+  "PK95-SC-6"
+)
 
-BHB_multiproxy_with_temperature %>%
-  filter(MLA_horizon_id %in% altered_cull_data) %>%
-  select(
-    MLA_horizon_id,
-    strat_height_m,
-    T_measured_C,
-    T_model_C,
-    T_model_lower95_C,
-    T_model_upper95_C
-  ) %>%
-  arrange(strat_height_m)
-
-
-
+temp_screening_flags <- tibble(
+  MLA_horizon_id = unique(c(
+    tier1_heavy,
+    tier2_moderate,
+    tier3_possible
+  ))
+) %>%
+  mutate(
+    exclude_heavy = MLA_horizon_id %in% tier1_heavy,
+    
+    exclude_heavy_moderate =
+      MLA_horizon_id %in% c(
+        tier1_heavy,
+        tier2_moderate
+      ),
+    
+    exclude_all_suspect =
+      MLA_horizon_id %in% c(
+        tier1_heavy,
+        tier2_moderate,
+        tier3_possible
+      )
+  )

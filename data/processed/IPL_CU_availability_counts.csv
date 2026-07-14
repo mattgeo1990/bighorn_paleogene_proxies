@@ -1,8 +1,8 @@
 data_combo,n
-No IPL/CU isotope data,123
-IPL D47 only,15
-IPL 17O + IPL D47,11
-IPL 17O only,6
+No IPL/CU isotope data,120
+IPL 17O + IPL D47,15
+IPL D47 only,11
+IPL 17O only,8
 CU D47 only,5
 IPL 17O + CU D47,5
 IPL 17O + IPL D47 + CU D47,3

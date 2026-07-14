@@ -7,11 +7,11 @@ library(patchwork)
 
 # ---- Shared age plot settings ----
 
-age_limits <- c(58.2, 54.1)
-age_breaks <- seq(54.1, 58.2, by = 0.1)
+age_limits <- c(59, 53.5)
+age_breaks <- seq(53.5, 59, by = 0.1)
 
 petm_age_old <- 55.935
-petm_age_young <- 55.8
+petm_age_young <- 55.75
 
 add_petm_age <- function(fill = "red", alpha = 0.25) {
   annotate(
@@ -31,6 +31,14 @@ shared_age_scale <- function() {
   )
 }
 
+temp_x_scale <- function() {
+  scale_x_continuous(
+    breaks = seq(10, 75, by = 10),
+    limits = c(10, 75),
+    expand = expansion(mult = c(0.02, 0.04))
+  )
+}
+
 theme_age_panel <- theme_classic(base_size = 10) +
   theme(
     axis.title = element_text(size = 10),
@@ -47,9 +55,55 @@ BHB_multiproxy_final <- read_csv(here("data", "processed", "BHB_D17Orsw_reconstr
 BHB_temperature_model <- read_csv(here("data", "processed", "BHB_temperature_model.csv"))
 temp_obs <- read_csv(here("data", "processed", "BHB_temperature_observations.csv"))
 
+Kelson_Tornillo_D47 <- read_csv(
+  here("data", "processed", "Kelson_Tornillo_D47_strat_age_filtered.csv")
+)
+
+
 Harper2024_CO2_SST <- read_csv(
   here("data", "processed", "Harper2024_CO2_SST_processed.csv")
 )
+
+biozones <- read_csv(
+  here(
+    "data",
+    "processed",
+    "BHB_biozones.csv"
+  )
+)
+
+age_priors <- read.csv(
+  here("data", "raw", "PCB-CFB_age_priors.csv")
+)
+
+age_priors_clean <- age_priors %>%
+  mutate(
+    est_Depth_m_PCB_outcrop = as.numeric(est_Depth_m_PCB_outcrop),
+    Age_Ma_best_estimate = as.numeric(Age_Ma_best_estimate)
+  ) %>%
+  filter(
+    !is.na(est_Depth_m_PCB_outcrop),
+    !is.na(Age_Ma_best_estimate)
+  ) %>%
+  arrange(est_Depth_m_PCB_outcrop)
+
+biozones_age <- biozones %>%
+  mutate(
+    Age_ymin_Ma = approx(
+      x = age_priors_clean$est_Depth_m_PCB_outcrop,
+      y = age_priors_clean$Age_Ma_best_estimate,
+      xout = ymin,
+      rule = 1
+    )$y,
+    Age_ymax_Ma = approx(
+      x = age_priors_clean$est_Depth_m_PCB_outcrop,
+      y = age_priors_clean$Age_Ma_best_estimate,
+      xout = ymax,
+      rule = 1
+    )$y
+  )
+
+biozones_age
 
 # ---- Add age to temperature model and observations ----
 
@@ -253,15 +307,62 @@ p_D17Orsw_age_clean <- ggplot() +
   theme_age_panel
 
 # ---- Harper reference records ----
+# ---- Smooth Harper reference records like BHB temperature model ----
 
 Harper_plot <- Harper2024_CO2_SST %>%
   filter(
     Age_Ma >= min(age_limits),
     Age_Ma <= max(age_limits)
+  ) %>%
+  arrange(Age_Ma) %>%
+  mutate(
+    SST_anchor_C = zoo::rollapply(
+      Harper2024_mean_SST_C,
+      width = 3,
+      FUN = mean,
+      fill = NA,
+      align = "center",
+      partial = TRUE
+    ),
+    CO2_anchor_ppm = zoo::rollapply(
+      Harper2024_mean_CO2_ppm,
+      width = 3,
+      FUN = mean,
+      fill = NA,
+      align = "center",
+      partial = TRUE
+    )
+  )
+
+Harper_SST_spline <- smooth.spline(
+  x = Harper_plot$Age_Ma,
+  y = Harper_plot$SST_anchor_C,
+  spar = 0.35
+)
+
+Harper_CO2_spline <- smooth.spline(
+  x = Harper_plot$Age_Ma,
+  y = Harper_plot$CO2_anchor_ppm,
+  spar = 0.35
+)
+
+Harper_plot <- Harper_plot %>%
+  mutate(
+    Harper2024_SST_smooth_C = as.numeric(
+      predict(Harper_SST_spline, x = Age_Ma)$y
+    ),
+    Harper2024_CO2_smooth_ppm = as.numeric(
+      predict(Harper_CO2_spline, x = Age_Ma)$y
+    )
   )
 
 p_Harper_SST_age <- ggplot(Harper_plot) +
   add_petm_age(fill = "red", alpha = 0.25) +
+  geom_point(
+    aes(x = Harper2024_mean_SST_C, y = Age_Ma),
+    size = 1.0,
+    alpha = 0.18
+  ) +
   geom_ribbon(
     aes(
       xmin = Harper2024_SST_lower95_C,
@@ -272,7 +373,7 @@ p_Harper_SST_age <- ggplot(Harper_plot) +
     alpha = 0.45
   ) +
   geom_path(
-    aes(x = Harper2024_mean_SST_C, y = Age_Ma),
+    aes(x = Harper2024_SST_smooth_C, y = Age_Ma),
     linewidth = 1
   ) +
   scale_x_continuous(
@@ -289,6 +390,11 @@ p_Harper_SST_age <- ggplot(Harper_plot) +
 # Adjust CO2 column names here if your processed file uses different names
 p_Harper_CO2_age <- ggplot(Harper_plot) +
   add_petm_age(fill = "red", alpha = 0.25) +
+  geom_point(
+    aes(x = Harper2024_mean_CO2_ppm, y = Age_Ma),
+    size = 1.0,
+    alpha = 0.18
+  ) +
   geom_ribbon(
     aes(
       xmin = Harper2024_CO2_lower95_ppm,
@@ -299,7 +405,7 @@ p_Harper_CO2_age <- ggplot(Harper_plot) +
     alpha = 0.45
   ) +
   geom_path(
-    aes(x = Harper2024_mean_CO2_ppm, y = Age_Ma),
+    aes(x = Harper2024_CO2_smooth_ppm, y = Age_Ma),
     linewidth = 1
   ) +
   scale_x_continuous(
@@ -313,6 +419,74 @@ p_Harper_CO2_age <- ggplot(Harper_plot) +
   ) +
   theme_age_panel
 
+# ---- Kelson Tornillo primary D47 temperatures ----
+
+# ---- Kelson Tornillo primary D47 temperatures ----
+
+Kelson_Tornillo_primary_age <- Kelson_Tornillo_D47 %>%
+  filter(
+    petro_class == "Micrite",
+    !is.na(Age_Ma),
+    !is.na(T47_C)
+  ) %>%
+  arrange(Age_Ma) %>%
+  mutate(
+    T47_anchor_C = zoo::rollapply(
+      T47_C,
+      width = 3,
+      FUN = mean,
+      fill = NA,
+      align = "center",
+      partial = TRUE
+    )
+  )
+
+Kelson_T47_spline <- smooth.spline(
+  x = Kelson_Tornillo_primary_age$Age_Ma,
+  y = Kelson_Tornillo_primary_age$T47_anchor_C,
+  spar = 0.35
+)
+
+Kelson_Tornillo_primary_age <- Kelson_Tornillo_primary_age %>%
+  mutate(
+    T47_smooth_C = as.numeric(
+      predict(Kelson_T47_spline, x = Age_Ma)$y
+    )
+  )
+
+p_Kelson_Tornillo_T47_age <- ggplot() +
+  add_petm_age(fill = "red", alpha = 0.25) +
+  geom_errorbarh(
+    data = Kelson_Tornillo_primary_age,
+    aes(
+      xmin = T47_C - T47_se_C,
+      xmax = T47_C + T47_se_C,
+      y = Age_Ma
+    ),
+    height = 0,
+    linewidth = 0.35,
+    alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = Kelson_Tornillo_primary_age,
+    aes(x = T47_C, y = Age_Ma),
+    size = 1.8,
+    alpha = 0.75
+  ) +
+  geom_path(
+    data = Kelson_Tornillo_primary_age,
+    aes(x = T47_smooth_C, y = Age_Ma),
+    linewidth = 1,
+    na.rm = TRUE
+  ) +
+  temp_x_scale() +
+  shared_age_scale() +
+  labs(
+    x = expression("Tornillo " * Delta[47] * " temperature (" * degree * "C)"),
+    y = "Age (Ma)"
+  ) +
+  theme_age_panel
 # ---- Panel figures ----
 
 p_T47_age_panel <- p_T47_age_clean +
@@ -347,16 +521,68 @@ p_age_panel_BHB_only <-
 
 
 p_age_panel_temp_comparison <- 
-  p_Harper_CO2_panel + p_Harper_SST_panel + p_T47_age_panel +
+  p_T47_age_panel +  p_Harper_SST_panel + p_Harper_CO2_panel + 
   plot_layout(nrow = 1, ncol = 3, widths = c(1, 1, 1, 1, 1)) +
   plot_annotation(
     theme = theme(plot.tag = element_text(face = "bold", size = 12))
   )
 
+# ---- Multi-panel temperature comparison: Harper SST, Tornillo, BHB ----
+
+p_Harper_SST_panel <- p_Harper_SST_age +
+  labs(y = "Age (Ma)", tag = "A")
+
+p_Kelson_Tornillo_panel <- p_Kelson_Tornillo_T47_age +
+  labs(y = NULL, tag = "B") +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+p_BHB_T47_panel <- p_T47_age_clean +
+  labs(y = NULL, tag = "C") +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+p_age_panel_temp_comparison <- 
+  p_Harper_SST_panel +
+  p_Kelson_Tornillo_panel +
+  p_BHB_T47_panel +
+  plot_layout(nrow = 1, ncol = 3, widths = c(1, 1, 1)) +
+  plot_annotation(
+    theme = theme(plot.tag = element_text(face = "bold", size = 12))
+  )
+
+p_age_panel_temp_comparison
+
+ggsave(
+  here("figures", "age_domain", "Harper_Tornillo_BHB_temperature_age_panel.png"),
+  p_age_panel_temp_comparison,
+  width = 12,
+  height = 6,
+  dpi = 600
+)
 p_age_panel_BHB_only
 p_age_panel_temp_comparison
 
+#-- 17O through time ------
+
+p_age_panel_17O <- 
+  p_BHB_T47_panel +
+  p_d18Ow_age_clean +
+  p_D17Orsw_age_clean +
+  plot_layout(nrow = 1, ncol = 3, widths = c(1, 1, 1)) +
+  plot_annotation(
+    theme = theme(plot.tag = element_text(face = "bold", size = 12))
+  )
+
+p_age_panel_17O
+
+
 # ---- Save outputs ----
+
 
 dir.create(here("figures", "age_domain"), recursive = TRUE, showWarnings = FALSE)
 

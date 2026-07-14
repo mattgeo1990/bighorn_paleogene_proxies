@@ -4,6 +4,7 @@
 library(tidyverse)
 library(here)
 library(patchwork)
+library(plotly)
 
 # ---- Shared plot settings ----
 
@@ -48,6 +49,135 @@ temp_obs <- read_csv(here("data", "processed", "BHB_temperature_observations.csv
 BHB_multiproxy_final <- read_csv(
   here("data", "processed", "BHB_multiproxy_final.csv")
 )
+
+bowen_reps <- read_csv(
+  here("data", "raw", "Bowen2001_IsotopeData.csv")
+) %>%
+  mutate(
+    strat_height_m = round(strat_height_m, 1),
+    Bowen_d13Ccarb_vpdb = as.numeric(d13C_VPDB),
+    Bowen_d18Ocarb_vpdb = as.numeric(d18Ocarb_VPDB),
+    Bowen_d18Ocarb_vsmow = as.numeric(d18Ocarb_VSMOW)
+  ) %>%
+  filter(
+    !is.na(strat_height_m),
+    !is.na(Bowen_d13Ccarb_vpdb),
+    Bowen_d18Ocarb_vpdb > -11,
+    !grepl("SPAR", MLA_sample_id)
+  )
+
+# ------PLOTS ------
+# all d13C by strat -------
+library(tidyverse)
+
+d13c_strat <- BHB_multiproxy_summary %>%
+  select(
+    strat_height_m,
+    Koch_mean_d13Ccarb_vpdb,
+    Bowen_mean_d13Ccarb_vpdb,
+    CU_mean_d13Ccarb_vpdb,
+    Snell_mean_d13Ccarb_vpdb,
+    IPL_NuDog_d13Ccarb_VPDB
+  ) %>%
+  pivot_longer(
+    cols = -strat_height_m,
+    names_to = "dataset",
+    values_to = "d13C"
+  ) %>%
+  filter(!is.na(d13C))
+
+ggplot(
+  d13c_strat,
+  aes(
+    x = d13C,
+    y = strat_height_m,
+    color = dataset
+  )
+) +
+  geom_point(size = 2, alpha = 0.8) +
+  labs(
+    x = expression(delta^13 * C[carb] ~ "(‰ VPDB)"),
+    y = "Stratigraphic height (m)",
+    color = "Dataset",
+    title = expression(paste(delta^13, "C datasets by stratigraphic height"))
+  ) +
+  theme_classic()
+
+# Standalone: Polecat Bench d13C Bowen et al. (2001) --------
+
+# ---- Bowen 2001 primary-only replicate-level d13C strat plot ----
+bowen_reps <- read_csv(
+  here("data", "raw", "Bowen2001_IsotopeData.csv")
+) %>%
+  mutate(
+    strat_height_m = round(strat_height_m, 1),
+    Bowen_d13Ccarb_vpdb = as.numeric(d13C_VPDB),
+    Bowen_d18Ocarb_vpdb = as.numeric(d18Ocarb_VPDB),
+    Bowen_d18Ocarb_vsmow = as.numeric(d18Ocarb_VSMOW)
+  ) %>%
+  filter(
+    !is.na(strat_height_m),
+    !is.na(Bowen_d13Ccarb_vpdb),
+    !is.na(Bowen_d18Ocarb_vpdb),
+    Bowen_d18Ocarb_vpdb > -11,
+    !grepl("SPAR", MLA_sample_id)
+  )
+
+p_bowen_d13C <- ggplot(
+  bowen_reps,
+  aes(
+    x = strat_height_m,
+    y = Bowen_d13Ccarb_vpdb
+  )
+) +
+  geom_point(
+    aes(
+      tooltip = paste0(
+        "Soil ID: ", Bowen_Soil_ID,
+        "<br>Sample ID: ", Bowen_Sample_ID,
+        "<br>MLA sample: ", MLA_sample_id,
+        "<br>Horizon: ", MLA_horizon_id,
+        "<br>Strat height: ", strat_height_m, " m",
+        "<br>d13C: ", round(Bowen_d13Ccarb_vpdb, 2), " per mil VPDB",
+        "<br>d18O: ", round(Bowen_d18Ocarb_vpdb, 2), " per mil VPDB"
+      )
+    ),
+    size = 1.8,
+    alpha = 0.65,
+    color = "gray45"
+  ) +
+  geom_smooth(
+    method = "loess",
+    formula = y ~ x,
+    span = 0.06,
+    se = FALSE,
+    linewidth = 1.5,
+    color = "black"
+  ) +
+  coord_flip() +
+  scale_x_continuous(
+    breaks = seq(
+      floor(min(bowen_reps$strat_height_m, na.rm = TRUE)),
+      ceiling(max(bowen_reps$strat_height_m, na.rm = TRUE)),
+      by = 1
+    )
+  ) +
+  labs(
+    title = "Bowen et al. primary carbonate d13C",
+    subtitle = "Replicate-level data; black curve = LOESS smooth through stratigraphic height",
+    x = "Stratigraphic height above K-Pg (m)",
+    y = "d13Ccarb (per mil VPDB)"
+  ) +
+  theme_classic(base_size = 14)
+
+ggplotly(
+  p_bowen_d13C,
+  tooltip = "tooltip",
+  height = 1400,
+  width = 900
+)
+
+
 # ---- Temperature plot ----
 
 temp_obs_all <- temp_obs %>%
@@ -163,6 +293,203 @@ p_d13C_strat_clean <- ggplot() +
   ) +
   theme_strat_panel
 
+# Compact rolling-mean d13Ccarb stratigraphic panel -----
+
+library(dplyr)
+library(ggplot2)
+install.packages("slider")
+library(slider)
+library(svglite)
+
+d13c_panel_width_in  <- 1
+d13c_panel_height_in <- 3
+
+# Plot limits
+d13c_y_limits <- c(0, 2300)
+d13c_y_breaks <- seq(0, 2300, by = 200)
+
+# Rolling-window width in stratigraphic meters
+rolling_window_m <- 100
+
+# Calculate centered rolling mean by stratigraphic height
+d13C_rolling <- d13C_obs_all %>%
+  filter(
+    !is.na(strat_height_m),
+    !is.na(d13Ccarb_vpdb),
+    strat_height_m >= d13c_y_limits[1],
+    strat_height_m <= d13c_y_limits[2]
+  ) %>%
+  arrange(strat_height_m) %>%
+  group_by(strat_height_m) %>%
+  summarise(
+    d13Ccarb_vpdb = mean(d13Ccarb_vpdb, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    d13C_rolling_mean = slide_index_dbl(
+      .x = d13Ccarb_vpdb,
+      .i = strat_height_m,
+      .f = ~ mean(.x, na.rm = TRUE),
+      .before = rolling_window_m / 2,
+      .after = rolling_window_m / 2,
+      .complete = FALSE
+    )
+  )
+
+# Horizontal limits based on both observations and rolling mean
+d13c_x_limits <- range(
+  c(
+    d13C_obs_all$d13Ccarb_vpdb,
+    d13C_rolling$d13C_rolling_mean
+  ),
+  na.rm = TRUE
+)
+
+d13c_x_padding <- diff(d13c_x_limits) * 0.04
+
+d13c_x_limits <- c(
+  d13c_x_limits[1] - d13c_x_padding,
+  d13c_x_limits[2] + d13c_x_padding
+)
+
+p_d13C_compact <- ggplot() +
+  
+  # Raw observations shown lightly for context
+  geom_point(
+    data = d13C_obs_all %>%
+      filter(
+        !is.na(d13Ccarb_vpdb),
+        !is.na(strat_height_m)
+      ),
+    aes(
+      x = d13Ccarb_vpdb,
+      y = strat_height_m
+    ),
+    size = 0.75,
+    alpha = 0.20
+  ) +
+  
+  # Rolling mean line
+  geom_path(
+    data = d13C_rolling,
+    aes(
+      x = d13C_rolling_mean,
+      y = strat_height_m
+    ),
+    linewidth = 0.65,
+    lineend = "round",
+    na.rm = TRUE
+  ) +
+  
+  scale_x_continuous(
+    limits = d13c_x_limits,
+    breaks = seq(-16, -4, by = 4),
+    expand = expansion(mult = c(0, 0))
+  ) +
+  
+  scale_y_continuous(
+    limits = d13c_y_limits,
+    breaks = d13c_y_breaks,
+    expand = expansion(mult = c(0, 0))
+  ) +
+  
+  coord_cartesian(
+    xlim = d13c_x_limits,
+    ylim = d13c_y_limits,
+    expand = FALSE,
+    clip = "on"
+  ) +
+  
+  labs(
+    x = expression(delta^13 * C[carb] ~ ("\u2030 VPDB")),
+    y = NULL
+  ) +
+  
+  theme_classic(
+    base_family = "Arial",
+    base_size = 6.5
+  ) +
+  
+  theme(
+    axis.title.x = element_text(
+      family = "Arial",
+      size = 6.5,
+      margin = margin(t = 2)
+    ),
+    
+    axis.text.x = element_text(
+      family = "Arial",
+      size = 6
+    ),
+    
+    axis.ticks.x = element_line(
+      linewidth = 0.25
+    ),
+    
+    axis.ticks.length.x = grid::unit(
+      1,
+      "mm"
+    ),
+    
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    
+    axis.line = element_line(
+      linewidth = 0.28
+    ),
+    
+    legend.position = "none",
+    
+    plot.margin = margin(
+      t = 0,
+      r = 2,
+      b = 2,
+      l = 0,
+      unit = "pt"
+    )
+  )
+
+p_d13C_compact
+
+# -------------------------------------------------------------------
+# Export
+# -------------------------------------------------------------------
+
+dir.create(
+  here("figures", "strat_domain"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+ggsave(
+  filename = here(
+    "figures",
+    "strat_domain",
+    "BHB_d13Ccarb_compact.png"
+  ),
+  plot = p_d13C_compact,
+  width = d13c_panel_width_in,
+  height = d13c_panel_height_in,
+  units = "in",
+  dpi = 600,
+  bg = "white"
+)
+
+ggsave(
+  filename = here(
+    "figures",
+    "strat_domain",
+    "BHB_d13Ccarb_compact.svg"
+  ),
+  plot = p_d13C_compact,
+  width = d13c_panel_width_in,
+  height = d13c_panel_height_in,
+  units = "in",
+  device = svglite::svglite,
+  bg = "white"
+)
+
 # ---- d18O soil-water plot ----
 
 d18Ow_obs <- BHB_d18Ow %>%
@@ -229,8 +556,8 @@ p_D17Orsw_strat_clean <- ggplot() +
     alpha = 0.70
   ) +
   scale_x_continuous(
-    breaks = seq(-100, 50, by = 10),
-    limits = c(-70, 10),
+    breaks = seq(-200, 200, by = 50),
+    limits = c(-200, 200),
     expand = expansion(mult = c(0.04, 0.04))
   ) +
   shared_y_scale() +
@@ -531,4 +858,13 @@ ggsave(
   width = 12,
   height = 6,
   dpi = 600
+)
+
+write_csv(
+  biozones,
+  here(
+    "data",
+    "processed",
+    "BHB_biozones.csv"
+  )
 )
