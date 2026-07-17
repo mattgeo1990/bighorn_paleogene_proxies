@@ -14,13 +14,12 @@ library(tidyverse)
 library(here)
 library(zoo)
 
-# ---- Output directories ----
+# --- Output directories ----
 dir.create(here("data", "processed"), recursive = TRUE, showWarnings = FALSE)
 dir.create(here("figures", "reference_datasets"), recursive = TRUE, showWarnings = FALSE)
 
-# ============================================================
-# 1. Harper et al. (2024) CO2 and SST reference records
-# ============================================================
+# ---- 1. Harper et al. (2024) CO2 and SST reference records -----------
+
 
 Harper2024_CO2 <- read_csv(
   here("data", "raw", "HarperEtAl2024_co2_out.csv")
@@ -90,9 +89,7 @@ Harper2024_CO2_SST <- Harper2024_CO2_SST %>%
   ) %>%
   arrange(desc(Age_Ma))
 
-# ============================================================
-# 2. Kelson Tornillo / Big Bend D47 reference dataset
-# ============================================================
+# --- 2. Kelson Tornillo / Big Bend D47 reference dataset ----
 
 Kelson_exclude_strat_age <- c(
   "BB-TF3-14-003",
@@ -152,7 +149,297 @@ Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
 Kelson_Tornillo_D47_strat_age <- Kelson_Tornillo_D47 %>%
   filter(!sample_id %in% Kelson_exclude_strat_age)
 
+
+# --- 3. Fricke et al. (1998) biogenic apatite isotope records ---------
+# Northern Bighorn Basin: Clarks Fork Basin and McCullough Peaks
+#
+# Important:
+# - published_age_Ma uses the original Fricke et al. age model.
+# - within_specimen_height_mm is position along a tooth or scale,
+#   NOT stratigraphic height.
+# - Individual specimens cannot be assigned confidently to either
+#   Clarks Fork Basin or McCullough Peaks from Table 1 alone.
+
+
+library(tidyverse)
+library(here)
+
+# Load extracted sample-level isotope data ----
+
+Fricke1998_raw <- read_csv(
+  here(
+    "data",
+    "raw",
+    "FrickeEtAl1998_Table1_isotope_data.csv"
+  ),
+  show_col_types = FALSE
+)
+
+# Load published temperature-change estimates ----
+
+Fricke1998_temperature_change <- read_csv(
+  here(
+    "data",
+    "raw",
+    "FrickeEtAl1998_Table2_temperature_change.csv"
+  ),
+  show_col_types = FALSE
+)
+
+# Clean sample-level dataset ----
+
+Fricke1998_samples <- Fricke1998_raw %>%
+  mutate(
+    taxon = factor(
+      taxon,
+      levels = c("Coryphodon", "Gar")
+    ),
+    
+    lmz = factor(
+      lmz,
+      levels = c(
+        "Tiffanian",
+        "CF-3",
+        "CF-2",
+        "Wa-0",
+        "Wa-1",
+        "Wa-3",
+        "Wa-4",
+        "Wa-5",
+        "Wa-6"
+      ),
+      ordered = TRUE
+    ),
+    
+    dataset = "Fricke et al. (1998)",
+    
+    proxy_type = case_when(
+      !is.na(d18Ophosphate_VSMOW) ~ "Biogenic phosphate d18O",
+      TRUE ~ NA_character_
+    ),
+    
+    geographic_scope = "Northern Bighorn Basin",
+    
+    stratigraphic_section = NA_character_,
+    
+    section_note = paste(
+      "Samples are from either the Clarks Fork Basin",
+      "or McCullough Peaks, but Table 1 does not provide",
+      "a specimen-level section assignment."
+    )
+  )
+
+
+# Specimen-level summaries
+#
+# Coryphodon teeth contain multiple serial samples. Calculate
+# one mean per tooth before calculating land-mammal-zone means,
+# so densely sampled teeth do not receive disproportionate weight.
+#
+# Gar scales are already individual sample observations.
+
+
+Fricke1998_specimen_means <- Fricke1998_samples %>%
+  group_by(
+    taxon,
+    specimen_id,
+    lmz,
+    published_age_Ma
+  ) %>%
+  summarise(
+    n_d18Op = sum(!is.na(d18Ophosphate_VSMOW)),
+    
+    mean_d18Op_VSMOW = if_else(
+      n_d18Op > 0,
+      mean(d18Ophosphate_VSMOW, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    sd_d18Op_VSMOW = if_else(
+      n_d18Op > 1,
+      sd(d18Ophosphate_VSMOW, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    n_d18Oc = sum(!is.na(d18Ocarb_VSMOW)),
+    
+    mean_d18Oc_VSMOW = if_else(
+      n_d18Oc > 0,
+      mean(d18Ocarb_VSMOW, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    sd_d18Oc_VSMOW = if_else(
+      n_d18Oc > 1,
+      sd(d18Ocarb_VSMOW, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    n_d13C = sum(!is.na(d13Ccarb_VPDB)),
+    
+    mean_d13Ccarb_VPDB = if_else(
+      n_d13C > 0,
+      mean(d13Ccarb_VPDB, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    sd_d13Ccarb_VPDB = if_else(
+      n_d13C > 1,
+      sd(d13Ccarb_VPDB, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    .groups = "drop"
+  )
+
+# Land-mammal-zone summaries
+#
+# These summaries treat individual teeth or scales as the
+# independent observational units.
+
+Fricke1998_zone_means <- Fricke1998_specimen_means %>%
+  group_by(
+    taxon,
+    lmz
+  ) %>%
+  summarise(
+    published_age_Ma = mean(
+      published_age_Ma,
+      na.rm = TRUE
+    ),
+    
+    n_specimens_d18Op = sum(
+      !is.na(mean_d18Op_VSMOW)
+    ),
+    
+    mean_d18Op_VSMOW = mean(
+      mean_d18Op_VSMOW,
+      na.rm = TRUE
+    ),
+    
+    sd_d18Op_VSMOW = if_else(
+      n_specimens_d18Op > 1,
+      sd(mean_d18Op_VSMOW, na.rm = TRUE),
+      NA_real_
+    ),
+    
+    se_d18Op_VSMOW = if_else(
+      n_specimens_d18Op > 1,
+      sd_d18Op_VSMOW / sqrt(n_specimens_d18Op),
+      NA_real_
+    ),
+    
+    d18Op_95ci_lower = if_else(
+      n_specimens_d18Op > 1,
+      mean_d18Op_VSMOW -
+        qt(0.975, df = n_specimens_d18Op - 1) *
+        se_d18Op_VSMOW,
+      NA_real_
+    ),
+    
+    d18Op_95ci_upper = if_else(
+      n_specimens_d18Op > 1,
+      mean_d18Op_VSMOW +
+        qt(0.975, df = n_specimens_d18Op - 1) *
+        se_d18Op_VSMOW,
+      NA_real_
+    ),
+    
+    .groups = "drop"
+  ) %>%
+  filter(
+    is.finite(mean_d18Op_VSMOW)
+  )
+
+# ---- Optional: separate taxon-specific plotting tables ----
+
+Fricke1998_Coryphodon <- Fricke1998_zone_means %>%
+  filter(taxon == "Coryphodon")
+
+Fricke1998_gar <- Fricke1998_zone_means %>%
+  filter(taxon == "Gar")
+
+# ---- Export processed reference tables ----
+
+write_csv(
+  Fricke1998_specimen_means,
+  here(
+    "data",
+    "processed",
+    "FrickeEtAl1998_specimen_means.csv"
+  )
+)
+
+write_csv(
+  Fricke1998_zone_means,
+  here(
+    "data",
+    "processed",
+    "FrickeEtAl1998_zone_means.csv"
+  )
+)
+
+write_csv(
+  Fricke1998_temperature_change,
+  here(
+    "data",
+    "processed",
+    "FrickeEtAl1998_temperature_change.csv"
+  )
+)
+
+
+library(tidyverse)
+library(here)
+
+# ---- Load Wing et al. (2000) MAT ----
+Wing_MAT <- read_csv(
+  here("data", "raw", "Wing_et_al_2000_LMA_MAT.csv")
+)
+
+
 # ---- Quick checks ----
+
+ggplot(
+  Wing_MAT,
+  aes(
+    x = published_age_model_2_Ma,
+    y = MAT_C
+  )
+) +
+  geom_errorbar(
+    aes(
+      ymin = MAT_C - MAT_error_C,
+      ymax = MAT_C + MAT_error_C
+    ),
+    width = 0
+  ) +
+  geom_point(size = 2) +
+  geom_line(linewidth = 0.5) +
+  scale_x_reverse() +
+  labs(
+    x = "Published age (Ma)",
+    y = "Mean annual temperature (°C)"
+  ) +
+  theme_classic()
+
+ggplot(
+  Fricke1998_zone_means,
+  aes(
+    x = published_age_Ma,
+    y = mean_d18Op_VSMOW,
+    color = taxon
+  )
+) +
+  geom_point(size = 2) +
+  geom_line(linewidth = 0.6) +
+  scale_x_reverse() +
+  labs(
+    x = "Published age (Ma)",
+    y = expression(delta^18 * O[phosphate] ~ "(\u2030 VSMOW)")
+  ) +
+  theme_classic()
+
 
 Kelson_Tornillo_D47 %>%
   count(epoch, petro_class)

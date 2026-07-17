@@ -1,0 +1,9 @@
+﻿sample,sample_position,sections_with_samples,meter_level_m,published_age_model_1_Ma,published_age_model_2_Ma,duration_Myr,MAT_C,MAT_error_C,n_entire_species,n_toothed_species
+LMA-8,single level,ECS,621,52.831,52.842,0.01,22.2,2,33,15
+LMA-7,midpoint,ECS,444,53.249,53.411,0.11,15.8,2.2,23,25
+LMA-6,midpoint,ECS,332,53.573,53.808,0.17,10.8,3.3,6,13
+LMA-5,midpoint,ECS,155,54.31,54.568,0.37,16.4,2.7,16,16
+LMA-4,midpoint,ECS,75,54.715,54.987,0.4,18.2,2.3,24,19
+LMA-3,midpoint,HCS; WES; MPS,-37,55.109,55.393,0.25,15.7,2.4,20,22
+LMA-2,midpoint,CFB; WES,-123,55.467,55.763,0.33,15.8,2.2,24,26
+LMA-1,midpoint,CFB; Bear Creek,1000,56.04,56.347,0.62,12.9,2.4,15,24

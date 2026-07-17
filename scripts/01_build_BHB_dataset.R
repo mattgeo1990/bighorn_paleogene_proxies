@@ -1821,7 +1821,229 @@ ggplot(
   ) +
   theme_classic()
 
+# -------------------------------------------------------------------
+# Interactive d13Ccarb stratigraphic plot by source
+# -------------------------------------------------------------------
 
+library(tidyverse)
+library(plotly)
+
+d13C_by_source <- BHB_multiproxy_summary %>%
+  
+  select(
+    MLA_horizon_id,
+    strat_height_m,
+    
+    Koch_mean_d13Ccarb_vpdb,
+    Koch_se_d13Ccarb_vpdb,
+    
+    Bowen_mean_d13Ccarb_vpdb,
+    Bowen_se_d13Ccarb_vpdb,
+    
+    CU_mean_d13Ccarb_vpdb,
+    Snell_mean_d13Ccarb_vpdb,
+    IPL_NuDog_d13Ccarb_VPDB
+  ) %>%
+  
+  pivot_longer(
+    cols = c(
+      Koch_mean_d13Ccarb_vpdb,
+      Bowen_mean_d13Ccarb_vpdb,
+      CU_mean_d13Ccarb_vpdb,
+      Snell_mean_d13Ccarb_vpdb,
+      IPL_NuDog_d13Ccarb_VPDB
+    ),
+    names_to = "source_raw",
+    values_to = "d13Ccarb_vpdb"
+  ) %>%
+  
+  mutate(
+    source = recode(
+      source_raw,
+      Koch_mean_d13Ccarb_vpdb  = "Koch",
+      Bowen_mean_d13Ccarb_vpdb = "Bowen et al. (2001)",
+      CU_mean_d13Ccarb_vpdb    = "CU Boulder",
+      Snell_mean_d13Ccarb_vpdb = "Snell et al. (2013)",
+      IPL_NuDog_d13Ccarb_VPDB  = "IPL NuDog"
+    ),
+    
+    # Only Koch and Bowen currently have d13C SE columns
+    d13C_se_vpdb = case_when(
+      source_raw == "Koch_mean_d13Ccarb_vpdb" ~
+        Koch_se_d13Ccarb_vpdb,
+      
+      source_raw == "Bowen_mean_d13Ccarb_vpdb" ~
+        Bowen_se_d13Ccarb_vpdb,
+      
+      TRUE ~ NA_real_
+    ),
+    
+    d13C_lower = d13Ccarb_vpdb - d13C_se_vpdb,
+    d13C_upper = d13Ccarb_vpdb + d13C_se_vpdb,
+    
+    source = factor(
+      source,
+      levels = c(
+        "Koch",
+        "Bowen et al. (2001)",
+        "CU Boulder",
+        "Snell et al. (2013)",
+        "IPL NuDog"
+      )
+    ),
+    
+    hover_text = paste0(
+      "Source: ", source,
+      "<br>Horizon: ", MLA_horizon_id,
+      "<br>Stratigraphic height: ",
+      round(strat_height_m, 1), " m",
+      "<br>δ13Ccarb: ",
+      round(d13Ccarb_vpdb, 2), "‰ VPDB",
+      ifelse(
+        is.na(d13C_se_vpdb),
+        "",
+        paste0(
+          "<br>SE: ±",
+          round(d13C_se_vpdb, 2),
+          "‰"
+        )
+      )
+    )
+  ) %>%
+  
+  filter(
+    !is.na(d13Ccarb_vpdb),
+    !is.na(strat_height_m)
+  )
+
+# Optional source-coverage summary
+d13C_source_summary <- d13C_by_source %>%
+  group_by(source) %>%
+  summarise(
+    n = n(),
+    n_horizons = n_distinct(MLA_horizon_id),
+    minimum_height_m = min(strat_height_m),
+    maximum_height_m = max(strat_height_m),
+    mean_d13Ccarb_vpdb = mean(d13Ccarb_vpdb),
+    sd_d13Ccarb_vpdb = sd(d13Ccarb_vpdb),
+    .groups = "drop"
+  )
+
+print(d13C_source_summary)
+
+# -------------------------------------------------------------------
+# Static ggplot used as the basis for the interactive figure
+# -------------------------------------------------------------------
+
+p_d13C_by_source <- ggplot(
+  d13C_by_source,
+  aes(
+    x = d13Ccarb_vpdb,
+    y = strat_height_m,
+    colour = source,
+    shape = source,
+    text = hover_text
+  )
+) +
+  
+  # Horizontal SE bars where uncertainty is available
+  geom_errorbarh(
+    aes(
+      xmin = d13C_lower,
+      xmax = d13C_upper
+    ),
+    height = 0,
+    linewidth = 0.35,
+    alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  
+  geom_point(
+    size = 2.2,
+    alpha = 0.80
+  ) +
+  
+  # PETM interval; remove this layer if not wanted
+  annotate(
+    "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = 1500,
+    ymax = 1540,
+    fill = "grey70",
+    alpha = 0.20
+  ) +
+  
+  scale_x_continuous(
+    limits = c(-17, -4),
+    breaks = seq(-16, -4, by = 2),
+    expand = expansion(mult = c(0.02, 0.03))
+  ) +
+  
+  scale_y_continuous(
+    limits = c(0, 2300),
+    breaks = seq(0, 2300, by = 200),
+    expand = expansion(mult = c(0, 0))
+  ) +
+  
+  labs(
+    x = "δ13Ccarb (‰ VPDB)",
+    y = "Stratigraphic height (m)",
+    colour = "Source",
+    shape = "Source"
+  ) +
+  
+  theme_classic(
+    base_family = "Arial",
+    base_size = 11
+  ) +
+  
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    panel.border = element_rect(
+      colour = "black",
+      fill = NA,
+      linewidth = 0.4
+    )
+  )
+
+# -------------------------------------------------------------------
+# Convert to interactive Plotly object
+# -------------------------------------------------------------------
+
+p_d13C_by_source_interactive <- ggplotly(
+  p_d13C_by_source,
+  tooltip = "text",
+  width = 850,
+  height = 900
+) %>%
+  
+  layout(
+    hovermode = "closest",
+    legend = list(
+      title = list(text = "<b>Source</b>"),
+      itemclick = "toggle",
+      itemdoubleclick = "toggleothers"
+    ),
+    margin = list(
+      l = 80,
+      r = 180,
+      b = 70,
+      t = 25
+    )
+  ) %>%
+  
+  config(
+    displaylogo = FALSE,
+    responsive = TRUE,
+    modeBarButtonsToRemove = c(
+      "lasso2d",
+      "select2d"
+    )
+  )
+
+p_d13C_by_source_interactive
 
 # 13. Data Availability ------
 

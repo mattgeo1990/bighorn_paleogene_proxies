@@ -1,0 +1,9 @@
+taxon,interval,time_span_start_Ma,time_span_end_Ma,delta_d18Ophosphate_permil,delta_d18O_ingested_water_permil,delta_d18O_precipitation_permil,estimated_delta_temperature_C,temperature_type,source
+Coryphodon,Cf-2 to Wa-0,55.86,55.5,1.8,2.4,2.4,4.0,surface temperature,"Fricke et al. (1998), Table 2"
+Coryphodon,Wa-0 to Wa-1,55.5,55.48,-1.4,-1.9,-1.9,-3.3,surface temperature,"Fricke et al. (1998), Table 2"
+Coryphodon,Wa-1 to Wa-4,55.48,53.59,-1.4,-1.9,-1.9,-3.3,surface temperature,"Fricke et al. (1998), Table 2"
+Coryphodon,Wa-4 to Wa-6,53.59,52.71,1.3,1.7,1.7,2.9,surface temperature,"Fricke et al. (1998), Table 2"
+Gar,Cf-3 to Wa-0,55.62,55.5,2.0,,2.4,1.7,river-water temperature,"Fricke et al. (1998), Table 2"
+Gar,Wa-0 to Wa-1,55.5,55.48,-1.2,,-1.9,-3.0,river-water temperature,"Fricke et al. (1998), Table 2"
+Gar,Wa-1 to Wa-4,55.48,53.59,-1.2,,-1.9,-3.0,river-water temperature,"Fricke et al. (1998), Table 2"
+Gar,Wa-4 to Wa-6,53.59,52.71,0.4,,1.7,5.7,river-water temperature,"Fricke et al. (1998), Table 2"

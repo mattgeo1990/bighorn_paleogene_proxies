@@ -261,6 +261,7 @@ d13C_obs_all <- BHB_multiproxy_summary %>%
   ) %>%
   filter(!is.na(d13Ccarb_vpdb), !is.na(strat_height_m))
 
+
 p_d13C_strat_clean <- ggplot() +
   add_petm() +
   geom_errorbarh(
@@ -295,52 +296,58 @@ p_d13C_strat_clean <- ggplot() +
 
 # Compact rolling-mean d13Ccarb stratigraphic panel -----
 
+# Compact d13Ccarb stratigraphic panel ----
+
 library(dplyr)
 library(ggplot2)
-install.packages("slider")
 library(slider)
 library(svglite)
 
-d13c_panel_width_in  <- 1
-d13c_panel_height_in <- 3
+d13c_panel_width_in  <- 1.5
+d13c_panel_height_in <- 3.2598
 
-# Plot limits
 d13c_y_limits <- c(0, 2300)
 d13c_y_breaks <- seq(0, 2300, by = 200)
 
-# Rolling-window width in stratigraphic meters
-rolling_window_m <- 100
+# Check the exact source names first
+unique(d13C_obs_all$source)
 
-# Calculate centered rolling mean by stratigraphic height
-d13C_rolling <- d13C_obs_all %>%
+# Retain Bowen and Koch only
+d13C_plot_data <- d13C_obs_all %>%
   filter(
+    grepl("Bowen|Koch", source),
     !is.na(strat_height_m),
     !is.na(d13Ccarb_vpdb),
     strat_height_m >= d13c_y_limits[1],
     strat_height_m <= d13c_y_limits[2]
   ) %>%
-  arrange(strat_height_m) %>%
+  arrange(strat_height_m)
+
+# First average replicate measurements at identical stratigraphic heights
+d13C_by_height <- d13C_plot_data %>%
   group_by(strat_height_m) %>%
   summarise(
     d13Ccarb_vpdb = mean(d13Ccarb_vpdb, na.rm = TRUE),
     .groups = "drop"
   ) %>%
+  arrange(strat_height_m) %>%
   mutate(
-    d13C_rolling_mean = slide_index_dbl(
-      .x = d13Ccarb_vpdb,
-      .i = strat_height_m,
-      .f = ~ mean(.x, na.rm = TRUE),
-      .before = rolling_window_m / 2,
-      .after = rolling_window_m / 2,
-      .complete = FALSE
+    # Three-height centered running median
+    d13C_smooth = slide_dbl(
+      d13Ccarb_vpdb,
+      median,
+      .before = 1,
+      .after = 1,
+      .complete = FALSE,
+      na.rm = TRUE
     )
   )
 
-# Horizontal limits based on both observations and rolling mean
+# Horizontal limits
 d13c_x_limits <- range(
   c(
-    d13C_obs_all$d13Ccarb_vpdb,
-    d13C_rolling$d13C_rolling_mean
+    d13C_plot_data$d13Ccarb_vpdb,
+    d13C_by_height$d13C_smooth
   ),
   na.rm = TRUE
 )
@@ -354,26 +361,22 @@ d13c_x_limits <- c(
 
 p_d13C_compact <- ggplot() +
   
-  # Raw observations shown lightly for context
+  # Raw observations
   geom_point(
-    data = d13C_obs_all %>%
-      filter(
-        !is.na(d13Ccarb_vpdb),
-        !is.na(strat_height_m)
-      ),
+    data = d13C_plot_data,
     aes(
       x = d13Ccarb_vpdb,
       y = strat_height_m
     ),
-    size = 0.75,
+    size = 0.65,
     alpha = 0.20
   ) +
   
-  # Rolling mean line
+  # Three-point running median
   geom_path(
-    data = d13C_rolling,
+    data = d13C_by_height,
     aes(
-      x = d13C_rolling_mean,
+      x = d13C_smooth,
       y = strat_height_m
     ),
     linewidth = 0.65,
@@ -426,14 +429,22 @@ p_d13C_compact <- ggplot() +
       linewidth = 0.25
     ),
     
-    axis.ticks.length.x = grid::unit(
-      1,
-      "mm"
+    axis.ticks.length.x = grid::unit(1, "mm"),
+    
+    axis.title.y = element_blank(),
+    
+    axis.text.y = element_text(
+      family = "Arial",
+      size = 6,
+      colour = "black",
+      margin = margin(r = 2)
     ),
     
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.title.y = element_blank(),
+    axis.ticks.y = element_line(
+      linewidth = 0.25
+    ),
+    
+    axis.ticks.length.y = grid::unit(1, "mm"),
     
     axis.line = element_line(
       linewidth = 0.28
@@ -445,12 +456,13 @@ p_d13C_compact <- ggplot() +
       t = 0,
       r = 2,
       b = 2,
-      l = 0,
+      l = 2,
       unit = "pt"
     )
   )
 
-p_d13C_compact
+p_d13C_compact 
+
 
 # -------------------------------------------------------------------
 # Export

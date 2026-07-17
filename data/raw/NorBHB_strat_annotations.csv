@@ -1,26 +1,27 @@
 ﻿depth_m,type,label,notes
 0,Unit,Mantua Quarry,
 15,Unit,Probable unconformity,
+331,Unit,Belt Ash,
 56,Sample,SC-264,
-85,Sample,SC-429,Phenacodus
+85,Sample,SC-429,
 115,Boundary,Ti-f2,
 155,Sample,SC-263,
 180,Sample,SC-412,
 190,Sample,SC-415,
 215,Sample,SC-262,
 300,Sample,SC-261,
-331,Ash,Belt Ash,
+331,Ash,Belt Ash,Anthills
 343,Flora,USNM 42041 flora,
-377,Sample,SC-243,Anthills
-395,Sample,SC-240,
+377,Sample,SC-243,
+395,Sample,SC-240,lowest Probathyopsis
 450,Sample,SC-239,
-530,Sample,SC-246,lowest Probathyopsis
+530,Sample,SC-246,
 560,Sample,SC-228,
 635,Sample,SC-242,
 695,Sample,SC-252,
 720,Boundary,Ti-5b base from WB,
 780,Sample,SC-223,
 790,Boundary,Ti-6 base from WB,
-800,Sample,SC-086,
+800,Sample,SC-086,lowest rodent
 840,Sample,SC-377,
-930,Sample,SC-83,lowest rodent
+930,Sample,SC-83,

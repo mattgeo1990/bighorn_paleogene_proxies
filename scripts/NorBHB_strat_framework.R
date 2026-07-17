@@ -151,7 +151,8 @@ sample_types <- c(
 
 # Stratigraphic columns to retain, in left-to-right order
 column_order <- c(
-  "Formation",
+    "Epoch",
+"Formation",
   "Chron",
   "Biozone"
 )
@@ -159,15 +160,17 @@ column_order <- c(
 # Header labels shown above the columns
 column_headers <- c(
   Formation = "Formation",
-  Chron = "Chron",
-  Biozone = "Mammal\nbiozone"
+  Epoch     = "Epoch",
+  Chron     = "Chron",
+  Biozone   = "Mammal\nbiozone"
 )
 
 # Column widths in arbitrary plotting units
 column_widths <- c(
-  Formation = 0.48,
-  Chron = 0.40,
-  Biozone = 0.52
+  Formation = 0.4,
+  Epoch     = 0.4,
+  Chron     = 0.4,
+  Biozone   = 0.5
 )
 
 column_gap <- 0.00
@@ -460,18 +463,6 @@ p_strat_framework <- ggplot() +
     lineheight = 0.92
   ) +
   
-  # Emphasize only the Fort Union–Willwood boundary
-  geom_segment(
-    aes(
-      x = formation_xmin,
-      xend = formation_xmax,
-      y = formation_boundary_m,
-      yend = formation_boundary_m
-    ),
-    linewidth = 0.75,
-    lineend = "square",
-    inherit.aes = FALSE
-  ) +
   
   scale_y_continuous(
     limits = strat_y_limits,
