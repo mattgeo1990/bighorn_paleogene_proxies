@@ -1,11 +1,23 @@
 # 06_process_reference_datasets.R
 # Purpose:
-#   Process external reference datasets for comparison with BHB records.
+#   Import, clean, summarize, visualize, and export published datasets used
+#   to compare with the northern Bighorn Basin multiproxy record.
 #
-# Outputs:
+# Reference datasets:
+#   1. Harper et al. (2024): marine CO2 and SST
+#   2. Kelson et al.: Tornillo Basin carbonate clumped isotopes
+#   3. Fricke et al. (1998): mammal and gar apatite isotope records
+#   4. Wing et al. (2000): leaf-margin MAT estimates
+#   5. GTS2020: updated BHB age-model tie points
+#
+# Main outputs:
 #   - Harper2024_CO2_SST_processed.csv
 #   - Kelson_Tornillo_D47_processed.csv
 #   - Kelson_Tornillo_D47_strat_age_filtered.csv
+#   - FrickeEtAl1998_specimen_means.csv
+#   - FrickeEtAl1998_zone_means.csv
+#   - FrickeEtAl1998_temperature_change.csv
+#   - WingEtAl2000_LMA_MAT_processed.csv
 #   - BHB_GTS2020_tiepoints.csv
 #   - BHB_GTS2020_age_model.csv
 
@@ -13,23 +25,31 @@
 library(tidyverse)
 library(here)
 library(zoo)
+library(readr)
 
-# --- Output directories ----
-dir.create(here("data", "processed"), recursive = TRUE, showWarnings = FALSE)
-dir.create(here("figures", "reference_datasets"), recursive = TRUE, showWarnings = FALSE)
+# ---- Create output directories ----
+processed_dir <- here("data", "processed")
+figure_dir <- here("figures", "reference_datasets")
 
-# ---- 1. Harper et al. (2024) CO2 and SST reference records -----------
+dir.create(processed_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
+
+# - 1. Harper et al. (2024): CO2 and SST reference records -----
 
 
-Harper2024_CO2 <- read_csv(
-  here("data", "raw", "HarperEtAl2024_co2_out.csv")
+Harper2024_CO2_raw <- read_csv(
+  here("data", "raw", "HarperEtAl2024_co2_out.csv"),
+  show_col_types = FALSE
 )
 
-Harper2024_SST <- read_csv(
-  here("data", "raw", "HarperEtAl2024_sst_out.csv")
+Harper2024_SST_raw <- read_csv(
+  here("data", "raw", "HarperEtAl2024_sst_out.csv"),
+  show_col_types = FALSE
 )
 
-Harper2024_CO2_SST <- Harper2024_CO2 %>%
+# Join the records by age, calculate three-point anchors, and then fit
+# lightly smoothed splines for plotting broad trends.
+Harper2024_CO2_SST <- Harper2024_CO2_raw %>%
   transmute(
     Age_Ma = age / 1000,
     Harper2024_mean_CO2_ppm = mean,
@@ -37,7 +57,7 @@ Harper2024_CO2_SST <- Harper2024_CO2 %>%
     Harper2024_CO2_upper95_ppm = `97.50%`
   ) %>%
   left_join(
-    Harper2024_SST %>%
+    Harper2024_SST_raw %>%
       transmute(
         Age_Ma = age / 1000,
         Harper2024_mean_SST_C = mean,
@@ -52,17 +72,19 @@ Harper2024_CO2_SST <- Harper2024_CO2 %>%
       Harper2024_mean_SST_C,
       width = 3,
       FUN = mean,
-      fill = NA,
+      fill = NA_real_,
       align = "center",
-      partial = TRUE
+      partial = TRUE,
+      na.rm = TRUE
     ),
     Harper2024_CO2_anchor_ppm = rollapply(
       Harper2024_mean_CO2_ppm,
       width = 3,
       FUN = mean,
-      fill = NA,
+      fill = NA_real_,
       align = "center",
-      partial = TRUE
+      partial = TRUE,
+      na.rm = TRUE
     )
   )
 
@@ -89,8 +111,12 @@ Harper2024_CO2_SST <- Harper2024_CO2_SST %>%
   ) %>%
   arrange(desc(Age_Ma))
 
-# --- 2. Kelson Tornillo / Big Bend D47 reference dataset ----
 
+# --- 2. Kelson Tornillo / Big Bend carbonate D47 dataset ----
+
+
+# Samples excluded only from stratigraphic and age-domain plots.
+# They remain in the complete processed dataset.
 Kelson_exclude_strat_age <- c(
   "BB-TF3-14-003",
   "BB-TF2-14-036",
@@ -102,7 +128,8 @@ Kelson_exclude_strat_age <- c(
 )
 
 Kelson_Tornillo_raw <- read_csv(
-  here("data", "raw", "kelson_tornillo_D47.csv")
+  here("data", "raw", "kelson_tornillo_D47.csv"),
+  show_col_types = FALSE
 )
 
 Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
@@ -145,116 +172,73 @@ Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
   filter(!is.na(Age_Ma)) %>%
   arrange(desc(Age_Ma))
 
-# Filtered version for strat/age plots only
 Kelson_Tornillo_D47_strat_age <- Kelson_Tornillo_D47 %>%
   filter(!sample_id %in% Kelson_exclude_strat_age)
 
+Kelson_Tornillo_micrite_strat_age <- Kelson_Tornillo_D47_strat_age %>%
+  filter(
+    petro_class == "Micrite",
+    !is.na(T47_C),
+    !is.na(Age_Ma)
+  )
 
-# --- 3. Fricke et al. (1998) biogenic apatite isotope records ---------
-# Northern Bighorn Basin: Clarks Fork Basin and McCullough Peaks
+# ---3. Fricke et al. (1998): biogenic apatite isotope records ------- 
+
+# Geographic scope: Clarks Fork Basin and McCullough Peaks,
+# northern Bighorn Basin.
 #
 # Important:
-# - published_age_Ma uses the original Fricke et al. age model.
-# - within_specimen_height_mm is position along a tooth or scale,
-#   NOT stratigraphic height.
-# - Individual specimens cannot be assigned confidently to either
-#   Clarks Fork Basin or McCullough Peaks from Table 1 alone.
-
-
-library(tidyverse)
-library(here)
-
-# Load extracted sample-level isotope data ----
+#   - published_age_Ma uses the original Fricke et al. age model.
+#   - within_specimen_height_mm records position along a tooth or scale;
+#     it is NOT stratigraphic height.
+#   - Table 1 does not identify a section for each specimen.
 
 Fricke1998_raw <- read_csv(
-  here(
-    "data",
-    "raw",
-    "FrickeEtAl1998_Table1_isotope_data.csv"
-  ),
+  here("data", "raw", "FrickeEtAl1998_Table1_isotope_data.csv"),
   show_col_types = FALSE
 )
-
-# Load published temperature-change estimates ----
 
 Fricke1998_temperature_change <- read_csv(
-  here(
-    "data",
-    "raw",
-    "FrickeEtAl1998_Table2_temperature_change.csv"
-  ),
+  here("data", "raw", "FrickeEtAl1998_Table2_temperature_change.csv"),
   show_col_types = FALSE
 )
-
-# Clean sample-level dataset ----
 
 Fricke1998_samples <- Fricke1998_raw %>%
   mutate(
-    taxon = factor(
-      taxon,
-      levels = c("Coryphodon", "Gar")
-    ),
-    
+    taxon = factor(taxon, levels = c("Coryphodon", "Gar")),
     lmz = factor(
       lmz,
       levels = c(
-        "Tiffanian",
-        "CF-3",
-        "CF-2",
-        "Wa-0",
-        "Wa-1",
-        "Wa-3",
-        "Wa-4",
-        "Wa-5",
-        "Wa-6"
+        "Tiffanian", "CF-3", "CF-2", "Wa-0", "Wa-1",
+        "Wa-3", "Wa-4", "Wa-5", "Wa-6"
       ),
       ordered = TRUE
     ),
-    
     dataset = "Fricke et al. (1998)",
-    
-    proxy_type = case_when(
-      !is.na(d18Ophosphate_VSMOW) ~ "Biogenic phosphate d18O",
-      TRUE ~ NA_character_
+    proxy_type = if_else(
+      !is.na(d18Ophosphate_VSMOW),
+      "Biogenic phosphate d18O",
+      NA_character_
     ),
-    
     geographic_scope = "Northern Bighorn Basin",
-    
     stratigraphic_section = NA_character_,
-    
     section_note = paste(
-      "Samples are from either the Clarks Fork Basin",
-      "or McCullough Peaks, but Table 1 does not provide",
-      "a specimen-level section assignment."
+      "Samples are from either the Clarks Fork Basin or McCullough Peaks,",
+      "but Table 1 does not provide specimen-level section assignments."
     )
   )
 
-
-# Specimen-level summaries
-#
-# Coryphodon teeth contain multiple serial samples. Calculate
-# one mean per tooth before calculating land-mammal-zone means,
-# so densely sampled teeth do not receive disproportionate weight.
-#
-# Gar scales are already individual sample observations.
-
-
+# First calculate one mean per independent specimen. This prevents a densely
+# sampled Coryphodon tooth from receiving more weight than another tooth.
 Fricke1998_specimen_means <- Fricke1998_samples %>%
-  group_by(
-    taxon,
-    specimen_id,
-    lmz,
-    published_age_Ma
-  ) %>%
+  group_by(taxon, specimen_id, lmz, published_age_Ma) %>%
   summarise(
     n_d18Op = sum(!is.na(d18Ophosphate_VSMOW)),
-    
     mean_d18Op_VSMOW = if_else(
       n_d18Op > 0,
       mean(d18Ophosphate_VSMOW, na.rm = TRUE),
       NA_real_
     ),
-    
     sd_d18Op_VSMOW = if_else(
       n_d18Op > 1,
       sd(d18Ophosphate_VSMOW, na.rm = TRUE),
@@ -262,13 +246,11 @@ Fricke1998_specimen_means <- Fricke1998_samples %>%
     ),
     
     n_d18Oc = sum(!is.na(d18Ocarb_VSMOW)),
-    
     mean_d18Oc_VSMOW = if_else(
       n_d18Oc > 0,
       mean(d18Ocarb_VSMOW, na.rm = TRUE),
       NA_real_
     ),
-    
     sd_d18Oc_VSMOW = if_else(
       n_d18Oc > 1,
       sd(d18Ocarb_VSMOW, na.rm = TRUE),
@@ -276,191 +258,194 @@ Fricke1998_specimen_means <- Fricke1998_samples %>%
     ),
     
     n_d13C = sum(!is.na(d13Ccarb_VPDB)),
-    
     mean_d13Ccarb_VPDB = if_else(
       n_d13C > 0,
       mean(d13Ccarb_VPDB, na.rm = TRUE),
       NA_real_
     ),
-    
     sd_d13Ccarb_VPDB = if_else(
       n_d13C > 1,
       sd(d13Ccarb_VPDB, na.rm = TRUE),
       NA_real_
     ),
-    
     .groups = "drop"
   )
 
-# Land-mammal-zone summaries
-#
-# These summaries treat individual teeth or scales as the
-# independent observational units.
-
+# Then summarize independent specimens within each taxon and land-mammal zone.
 Fricke1998_zone_means <- Fricke1998_specimen_means %>%
-  group_by(
-    taxon,
-    lmz
-  ) %>%
+  group_by(taxon, lmz) %>%
   summarise(
-    published_age_Ma = mean(
-      published_age_Ma,
-      na.rm = TRUE
+    published_age_Ma = mean(published_age_Ma, na.rm = TRUE),
+    n_specimens_d18Op = sum(!is.na(mean_d18Op_VSMOW)),
+    zone_mean_d18Op_VSMOW = if_else(
+      n_specimens_d18Op > 0,
+      mean(mean_d18Op_VSMOW, na.rm = TRUE),
+      NA_real_
     ),
-    
-    n_specimens_d18Op = sum(
-      !is.na(mean_d18Op_VSMOW)
-    ),
-    
-    mean_d18Op_VSMOW = mean(
-      mean_d18Op_VSMOW,
-      na.rm = TRUE
-    ),
-    
-    sd_d18Op_VSMOW = if_else(
+    zone_sd_d18Op_VSMOW = if_else(
       n_specimens_d18Op > 1,
       sd(mean_d18Op_VSMOW, na.rm = TRUE),
       NA_real_
     ),
-    
-    se_d18Op_VSMOW = if_else(
+    zone_se_d18Op_VSMOW = if_else(
       n_specimens_d18Op > 1,
-      sd_d18Op_VSMOW / sqrt(n_specimens_d18Op),
+      zone_sd_d18Op_VSMOW / sqrt(n_specimens_d18Op),
       NA_real_
     ),
-    
-    d18Op_95ci_lower = if_else(
-      n_specimens_d18Op > 1,
-      mean_d18Op_VSMOW -
-        qt(0.975, df = n_specimens_d18Op - 1) *
-        se_d18Op_VSMOW,
-      NA_real_
-    ),
-    
-    d18Op_95ci_upper = if_else(
-      n_specimens_d18Op > 1,
-      mean_d18Op_VSMOW +
-        qt(0.975, df = n_specimens_d18Op - 1) *
-        se_d18Op_VSMOW,
-      NA_real_
-    ),
-    
     .groups = "drop"
   ) %>%
-  filter(
-    is.finite(mean_d18Op_VSMOW)
-  )
+  mutate(
+    d18Op_95ci_lower = if_else(
+      n_specimens_d18Op > 1,
+      zone_mean_d18Op_VSMOW -
+        qt(0.975, df = n_specimens_d18Op - 1) * zone_se_d18Op_VSMOW,
+      NA_real_
+    ),
+    d18Op_95ci_upper = if_else(
+      n_specimens_d18Op > 1,
+      zone_mean_d18Op_VSMOW +
+        qt(0.975, df = n_specimens_d18Op - 1) * zone_se_d18Op_VSMOW,
+      NA_real_
+    )
+  ) %>%
+  filter(is.finite(zone_mean_d18Op_VSMOW))
 
-# ---- Optional: separate taxon-specific plotting tables ----
-
+# Convenient taxon-specific plotting tables.
 Fricke1998_Coryphodon <- Fricke1998_zone_means %>%
   filter(taxon == "Coryphodon")
 
 Fricke1998_gar <- Fricke1998_zone_means %>%
   filter(taxon == "Gar")
 
-# ---- Export processed reference tables ----
+# --- 4. Wing et al. (2000): leaf-margin MAT estimates ----
+# The published meter levels are section-specific and should not be treated as
+# equivalent to the Polecat Bench composite stratigraphic-height scale.
 
-write_csv(
-  Fricke1998_specimen_means,
-  here(
-    "data",
-    "processed",
-    "FrickeEtAl1998_specimen_means.csv"
+Wing2000_MAT <- read_csv(
+  here("data", "raw", "Wing_et_al_2000_LMA_MAT.csv"),
+  show_col_types = FALSE
+) %>%
+  arrange(desc(published_age_model_2_Ma)) %>%
+  mutate(
+    dataset = "Wing et al. (2000)",
+    proxy_type = "Leaf-margin MAT",
+    geographic_scope = "Bighorn Basin"
   )
+
+# --- 4. Fricke and Wing, 2004: d18Op/LMA temp and d18Owater estimates North America -------
+
+
+# Load Fricke & Wing (2004) dataset
+fw <- read_csv(
+  here("data", "raw", "Fricke&Wing2004_MAT_d18Owater.csv")
 )
 
-write_csv(
-  Fricke1998_zone_means,
-  here(
-    "data",
-    "processed",
-    "FrickeEtAl1998_zone_means.csv"
-  )
-)
-
-write_csv(
-  Fricke1998_temperature_change,
-  here(
-    "data",
-    "processed",
-    "FrickeEtAl1998_temperature_change.csv"
-  )
-)
-
-
-library(tidyverse)
-library(here)
-
-# ---- Load Wing et al. (2000) MAT ----
-Wing_MAT <- read_csv(
-  here("data", "raw", "Wing_et_al_2000_LMA_MAT.csv")
-)
-
-
-# ---- Quick checks ----
-
+# Plot MAT vs paleolatitude
 ggplot(
-  Wing_MAT,
+  fw,
   aes(
-    x = published_age_model_2_Ma,
-    y = MAT_C
+    x = Paleolatitude,
+    y = MAAT,
+    shape = Interval == "PETM"
   )
+) +
+  geom_point(size = 3.5, stroke = 1) +
+  scale_shape_manual(
+    values = c(16, 17),
+    labels = c("Background", "PETM"),
+    name = NULL
+  ) +
+  labs(
+    x = "Paleolatitude (°N)",
+    y = "Mean annual temperature (°C)"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position = "top"
+  )
+
+# 5. Kelson et al. (2026) D17O of modern soil waters -----------
+
+modern_soilwater <- read_csv(
+  here(
+    "data",
+    "excel files",
+    "jrkelson-CZ17O_soilwater-efc3bd3",
+    "sw.csv"
+  ),
+  show_col_types = FALSE
+) %>%
+  filter(
+    !is.na(dp18O),
+    !is.na(D17O_pmg),
+    
+    # Follow the filtering used in the source manuscript:
+    siteID.1 %in% c("MOJ", "JOR", "REY", "ESGR"),
+    siteID.1 != "JOR" | siteID.2 == "CSAND"
+  )
+
+
+# --- Quick diagnostic plots ----
+
+p_Wing2000_MAT <- ggplot(
+  Wing2000_MAT,
+  aes(x = published_age_model_2_Ma, y = MAT_C)
 ) +
   geom_errorbar(
     aes(
       ymin = MAT_C - MAT_error_C,
       ymax = MAT_C + MAT_error_C
     ),
-    width = 0
+    width = 0,
+    linewidth = 0.4
   ) +
-  geom_point(size = 2) +
   geom_line(linewidth = 0.5) +
+  geom_point(size = 2) +
   scale_x_reverse() +
   labs(
     x = "Published age (Ma)",
-    y = "Mean annual temperature (°C)"
+    y = "Mean annual temperature (°C)",
+    title = "Wing et al. (2000) leaf-margin MAT"
   ) +
-  theme_classic()
+  theme_classic(base_size = 11)
 
-ggplot(
+p_Wing2000_MAT 
+
+p_Fricke1998_d18Op <- ggplot(
   Fricke1998_zone_means,
   aes(
     x = published_age_Ma,
-    y = mean_d18Op_VSMOW,
-    color = taxon
+    y = zone_mean_d18Op_VSMOW,
+    shape = taxon,
+    group = taxon
   )
 ) +
-  geom_point(size = 2) +
-  geom_line(linewidth = 0.6) +
+  geom_errorbar(
+    aes(
+      ymin = d18Op_95ci_lower,
+      ymax = d18Op_95ci_upper
+    ),
+    width = 0,
+    linewidth = 0.35,
+    alpha = 0.6,
+    na.rm = TRUE
+  ) +
+  geom_line(linewidth = 0.5, na.rm = TRUE) +
+  geom_point(size = 2, na.rm = TRUE) +
   scale_x_reverse() +
   labs(
     x = "Published age (Ma)",
-    y = expression(delta^18 * O[phosphate] ~ "(\u2030 VSMOW)")
+    y = expression(delta^18 * O[phosphate] ~ "(‰ VSMOW)"),
+    shape = "Taxon",
+    title = "Fricke et al. (1998) biogenic phosphate"
   ) +
-  theme_classic()
+  theme_classic(base_size = 11)
 
-
-Kelson_Tornillo_D47 %>%
-  count(epoch, petro_class)
-
-Kelson_Tornillo_D47_strat_age %>%
-  count(epoch, petro_class)
-
-summary(Kelson_Tornillo_D47$T47_C)
-summary(Kelson_Tornillo_D47$d18Ocarb_vpdb)
-summary(Kelson_Tornillo_D47$d18Ocarb_vsmow)
-
-# ---- Plot: Kelson D47 temperature vs d18Ocarb ----
-# Full dataset retained here.
+p_Fricke1998_d18Op 
 
 p_Kelson_T47_d18Ocarb <- Kelson_Tornillo_D47 %>%
   filter(!is.na(T47_C), !is.na(d18Ocarb_vsmow)) %>%
-  ggplot(aes(
-    x = T47_C,
-    y = d18Ocarb_vsmow,
-    shape = petro_class
-  )) +
+  ggplot(aes(x = T47_C, y = d18Ocarb_vsmow, shape = petro_class)) +
   geom_errorbarh(
     aes(
       xmin = T47_C - T47_se_C,
@@ -481,7 +466,7 @@ p_Kelson_T47_d18Ocarb <- Kelson_Tornillo_D47 %>%
     alpha = 0.35,
     na.rm = TRUE
   ) +
-  geom_point(size = 2.2, alpha = 0.80) +
+  geom_point(size = 2.2, alpha = 0.8) +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = expression(delta^18 * O[carb] ~ "(‰ VSMOW)"),
@@ -491,33 +476,21 @@ p_Kelson_T47_d18Ocarb <- Kelson_Tornillo_D47 %>%
 
 p_Kelson_T47_d18Ocarb
 
-# ---- Plot: Kelson micrite-only D47 temperature vs age ----
-# Excluded samples removed here.
-
-Kelson_Tornillo_micrite_strat_age <- Kelson_Tornillo_D47_strat_age %>%
-  filter(
-    petro_class == "Micrite",
-    !is.na(T47_C),
-    !is.na(Age_Ma)
-  )
-
-p_Kelson_micrite_T47_age <- ggplot(Kelson_Tornillo_micrite_strat_age) +
+p_Kelson_micrite_T47_age <- ggplot(
+  Kelson_Tornillo_micrite_strat_age,
+  aes(x = T47_C, y = Age_Ma)
+) +
   geom_errorbarh(
     aes(
       xmin = T47_C - T47_se_C,
-      xmax = T47_C + T47_se_C,
-      y = Age_Ma
+      xmax = T47_C + T47_se_C
     ),
     height = 0,
     linewidth = 0.35,
     alpha = 0.45,
     na.rm = TRUE
   ) +
-  geom_point(
-    aes(x = T47_C, y = Age_Ma),
-    size = 1.8,
-    alpha = 0.75
-  ) +
+  geom_point(size = 1.8, alpha = 0.75) +
   scale_y_reverse() +
   scale_x_continuous(
     breaks = seq(10, 70, by = 10),
@@ -531,119 +504,68 @@ p_Kelson_micrite_T47_age <- ggplot(Kelson_Tornillo_micrite_strat_age) +
   ) +
   theme_classic(base_size = 11)
 
-p_Kelson_micrite_T47_age
+# Display quick checks when the script is run interactively.
+if (interactive()) {
+  print(p_Wing2000_MAT)
+  print(p_Fricke1998_d18Op)
+  print(p_Kelson_T47_d18Ocarb)
+  print(p_Kelson_micrite_T47_age)
+  
+  print(Kelson_Tornillo_D47 %>% count(epoch, petro_class))
+  print(Kelson_Tornillo_D47_strat_age %>% count(epoch, petro_class))
+}
 
-# ============================================================
-# 3. GTS2020 BHB age-model update
-# ============================================================
-
-GTS2020_tiepoints <- tribble(
-  ~tie_point, ~strat_height_m, ~Age_Ma, ~source,
-  "C26n",     NA_real_,        59.237, "GTS2020",
-  "C25r",     NA_real_,        58.959, "GTS2020",
-  "C25n",     NA_real_,        57.656, "GTS2020",
-  "C24r",     NA_real_,        57.101, "GTS2020",
-  "C24n.3n",  NA_real_,        53.900, "GTS2020"
-)
-
-BHB_multiproxy_summary <- read_csv(
-  here("data", "processed", "BHB_multiproxy_summary.csv")
-)
-
-BHB_GTS2020_tiepoints_clean <- GTS2020_tiepoints %>%
-  filter(!is.na(strat_height_m), !is.na(Age_Ma)) %>%
-  arrange(strat_height_m)
-
-BHB_GTS2020_age_model <- BHB_multiproxy_summary %>%
-  distinct(MLA_horizon_id, strat_height_m) %>%
-  filter(!is.na(strat_height_m)) %>%
-  arrange(strat_height_m) %>%
-  mutate(
-    Age_Ma_GTS2020 = approx(
-      x = BHB_GTS2020_tiepoints_clean$strat_height_m,
-      y = BHB_GTS2020_tiepoints_clean$Age_Ma,
-      xout = strat_height_m,
-      rule = 1
-    )$y
-  )
-
-p_BHB_GTS2020_age_model <- ggplot() +
-  geom_path(
-    data = BHB_GTS2020_age_model,
-    aes(x = Age_Ma_GTS2020, y = strat_height_m),
-    linewidth = 0.8,
-    na.rm = TRUE
-  ) +
-  geom_point(
-    data = BHB_GTS2020_tiepoints_clean,
-    aes(x = Age_Ma, y = strat_height_m),
-    size = 2
-  ) +
-  geom_text(
-    data = BHB_GTS2020_tiepoints_clean,
-    aes(x = Age_Ma, y = strat_height_m, label = tie_point),
-    hjust = -0.05,
-    size = 3
-  ) +
-  scale_x_reverse() +
-  labs(
-    x = "Age (Ma; GTS2020)",
-    y = "Stratigraphic height (m)",
-    title = "BHB GTS2020 age-depth model"
-  ) +
-  theme_classic(base_size = 11)
-
-p_BHB_GTS2020_age_model
-
-# ============================================================
-# 4. Save processed outputs
-# ============================================================
+# -- Export processed datasets for downstream use ----
+# All downstream scripts should load these processed files rather than
+# re-reading or re-cleaning the original source data.
 
 write_csv(
   Harper2024_CO2_SST,
-  here("data", "processed", "Harper2024_CO2_SST_processed.csv")
+  file.path(processed_dir, "Harper2024_CO2_SST_processed.csv")
 )
 
 write_csv(
   Kelson_Tornillo_D47,
-  here("data", "processed", "Kelson_Tornillo_D47_processed.csv")
+  file.path(processed_dir, "Kelson_Tornillo_D47_processed.csv")
 )
 
 write_csv(
   Kelson_Tornillo_D47_strat_age,
-  here("data", "processed", "Kelson_Tornillo_D47_strat_age_filtered.csv")
+  file.path(processed_dir, "Kelson_Tornillo_D47_strat_age_filtered.csv")
 )
 
 write_csv(
-  GTS2020_tiepoints,
-  here("data", "processed", "BHB_GTS2020_tiepoints.csv")
+  Kelson_Tornillo_micrite_strat_age,
+  file.path(processed_dir, "Kelson_Tornillo_micrite_strat_age_filtered.csv")
 )
 
 write_csv(
-  BHB_GTS2020_age_model,
-  here("data", "processed", "BHB_GTS2020_age_model.csv")
+  Fricke1998_samples,
+  file.path(processed_dir, "FrickeEtAl1998_samples_processed.csv")
 )
 
-ggsave(
-  here("figures", "reference_datasets", "Kelson_T47_vs_d18Ocarb.png"),
-  p_Kelson_T47_d18Ocarb,
-  width = 5,
-  height = 4,
-  dpi = 600
+write_csv(
+  Fricke1998_specimen_means,
+  file.path(processed_dir, "FrickeEtAl1998_specimen_means.csv")
 )
 
-ggsave(
-  here("figures", "reference_datasets", "Kelson_micrite_T47_vs_age.png"),
-  p_Kelson_micrite_T47_age,
-  width = 4,
-  height = 6,
-  dpi = 600
+write_csv(
+  Fricke1998_zone_means,
+  file.path(processed_dir, "FrickeEtAl1998_zone_means.csv")
 )
 
-ggsave(
-  here("figures", "reference_datasets", "BHB_GTS2020_age_model.png"),
-  p_BHB_GTS2020_age_model,
-  width = 5,
-  height = 6,
-  dpi = 600
+write_csv(
+  Fricke1998_temperature_change,
+  file.path(processed_dir, "FrickeEtAl1998_temperature_change.csv")
 )
+
+write_csv(
+  Wing2000_MAT,
+  file.path(processed_dir, "WingEtAl2000_LMA_MAT_processed.csv")
+)
+
+# Optional confirmation when run interactively.
+if (interactive()) {
+  message("Processed reference datasets exported to: ", processed_dir)
+}
+

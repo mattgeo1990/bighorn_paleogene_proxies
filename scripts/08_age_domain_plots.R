@@ -4,6 +4,7 @@
 library(tidyverse)
 library(here)
 library(patchwork)
+library(ggstance)
 
 # ---- Shared age plot settings ----
 
@@ -166,6 +167,10 @@ p_T47_age_clean <- ggplot() +
     y = "Age (Ma)"
   ) +
   theme_age_panel
+
+library(tidyverse)
+library(ggstance)
+
 
 # ---- d13C carbonate age plot ----
 

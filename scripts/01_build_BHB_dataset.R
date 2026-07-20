@@ -84,7 +84,7 @@ IPL_sample_list <- read.csv(
 # by Matthew Allen using the same reporting framework.
 
 IPL_D17O_data <- read.csv(
-  here("data", "raw", "all_data_pre-June2026_PaleogeneBHB_IPL17O_standardized_columns.csv")
+  here("data", "raw", "all_data_PgBHB_IPL17O_CODEX_AUTOMATED_CORRECTIONS.csv")
 )
 
 names(IPL_D17O_data)
@@ -270,13 +270,13 @@ ggplotly(
   p,
   tooltip = "text"
 )
-# Manually exclude analyses with anomalously high X33 mismatch.
+# Manually exclude analyses with anomalously high X33 mismatch, very low O2 yields, or that have suspiciously anomolous D17O values.
 # These exclusions are based on analytical QC, not on Δ′17Ocarb value.
-high_mismatch <- c("5699", "5841")
+excluded_17O <- c("5699", "5841", "6332", "6325", "6344")
 
 # Inspect excluded high-mismatch analyses.
 IPL_D17O_data %>%
-  filter(IPL_num %in% high_mismatch) %>%
+  filter(IPL_num %in% excluded_17O) %>%
   select(
     IPL_num,
     MLA_sample_id,
@@ -288,7 +288,7 @@ IPL_D17O_data %>%
 
 # Remove high-mismatch analyses before summary statistics.
 IPL_D17O_data_clean <- IPL_D17O_data %>%
-  filter(!IPL_num %in% high_mismatch)
+  filter(!IPL_num %in% excluded_17O)
 
 # Examine relationship between analytical mismatch and Δ′17Ocarb.
 plot(
@@ -356,6 +356,52 @@ IPL_D17O_data_final <- IPL_D17O_data_clean %>%
 # All excluded analyses remain archived in the raw dataset.
 # Remove singletons ?
 # IPL17O_summary <- IPL17O_summary %>% filter(n > 1)
+
+
+
+# Δ′17Ocarb versus δ′18Ocarb: SPAR versus primary carbonate
+
+D17O_d18O_plot_data <- IPL_D17O_data_final %>%
+  mutate(
+    carbonate_type = if_else(
+      grepl("SPAR", MLA_sample_id, ignore.case = TRUE),
+      "SPAR",
+      "Primary carbonate"
+    )
+  ) %>%
+  filter(
+    !is.na(dp18Ocarb_SMOWSLAP),
+    !is.na(Dp17Ocarb_permeg_final_correction)
+  )
+
+ggplot(
+  D17O_d18O_plot_data,
+  aes(
+    x = dp18Ocarb_SMOWSLAP,
+    y = Dp17Ocarb_permeg_final_correction,
+    shape = carbonate_type
+  )
+) +
+  geom_point(
+    size = 3,
+    alpha = 0.8,
+    color = "gray30"
+  ) +
+  scale_shape_manual(
+    values = c(
+      "Primary carbonate" = 16,
+      "SPAR" = 17
+    )
+  ) +
+  labs(
+    x = expression(delta*"'"^18*O[carb] ~ ("\u2030, VSMOW–SLAP")),
+    y = expression(Delta*"'"^17*O[carb] ~ ("per meg")),
+    shape = "Carbonate type"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "right"
+  )
 
 
 # 4. Clean IPL Δ47 data ---------------------------------------

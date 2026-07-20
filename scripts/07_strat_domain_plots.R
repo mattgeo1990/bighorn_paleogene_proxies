@@ -625,29 +625,41 @@ p_biozone_strat <- ggplot(biozones) +
     plot.margin = margin(4, 2, 4, 4)
   )
 
-# ---- Panel figures ----
+# ---- Full-domain panel figures ----
 
 p_T47_panel <- p_T47_strat_clean +
-  labs(tag = "A")
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "A"
+  )
 
 p_d13C_panel <- p_d13C_strat_clean +
-  labs(y = NULL, tag = "B") +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "B"
   )
 
 p_d18Ow_panel <- p_d18Ow_strat_clean +
-  labs(y = NULL, tag = "C") +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "C"
   )
 
-p_strat_panel_T_d13C <- p_biozone_strat + p_T47_panel + p_d13C_panel +
+p_D17Orsw_panel <- p_D17Orsw_strat_clean +
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "D"
+  )
+
+
+# ---- Assemble full-domain figures ----
+
+p_strat_panel_T_d13C <-
+  p_biozone_strat +
+  p_T47_panel +
+  p_d13C_panel +
   plot_layout(
     nrow = 1,
-    ncol = 3,
     widths = c(0.25, 1, 1)
   ) +
   plot_annotation(
@@ -656,10 +668,13 @@ p_strat_panel_T_d13C <- p_biozone_strat + p_T47_panel + p_d13C_panel +
     )
   )
 
-p_strat_panel_T_d13C_d18Ow <- p_biozone_strat + p_T47_panel + p_d13C_panel + p_d18Ow_panel +
+p_strat_panel_T_d13C_d18Ow <-
+  p_biozone_strat +
+  p_T47_panel +
+  p_d13C_panel +
+  p_d18Ow_panel +
   plot_layout(
     nrow = 1,
-    ncol = 4,
     widths = c(0.25, 1, 1, 1)
   ) +
   plot_annotation(
@@ -668,18 +683,13 @@ p_strat_panel_T_d13C_d18Ow <- p_biozone_strat + p_T47_panel + p_d13C_panel + p_d
     )
   )
 
-p_D17Orsw_panel <- p_D17Orsw_strat_clean +
-  labs(y = NULL, tag = "C") +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
-  )
-
-p_strat_panel_T_d18Ow_D17Orsw <- 
-  p_biozone_strat + p_T47_panel + p_d18Ow_panel + p_D17Orsw_panel +
+p_strat_panel_T_d18Ow_D17Orsw <-
+  p_biozone_strat +
+  p_T47_panel +
+  p_d18Ow_panel +
+  p_D17Orsw_panel +
   plot_layout(
     nrow = 1,
-    ncol = 4,
     widths = c(0.25, 1, 1, 1)
   ) +
   plot_annotation(
@@ -688,11 +698,18 @@ p_strat_panel_T_d18Ow_D17Orsw <-
     )
   )
 
-
-p_strat_panel_T_d13C
-p_strat_panel_T_d13C_d18Ow
-p_strat_panel_T_d18Ow_D17Orsw
-
+p_strat_panel_D17Orsw <-
+  p_biozone_strat +
+  p_D17Orsw_panel +
+  plot_layout(
+    nrow = 1,
+    widths = c(0.25, 1)
+  ) +
+  plot_annotation(
+    theme = theme(
+      plot.tag = element_text(face = "bold", size = 12)
+    )
+  )
 # ---- Save outputs ----
 
 
@@ -735,8 +752,7 @@ ggsave(
   height = 6,
   dpi = 600
 )
-
-# ---- P-E boundary zoom panels: 1200–1800 m ----
+# ---- P–E boundary zoom panels: 1200–1800 m ----
 
 pe_y_limits <- c(1200, 1800)
 pe_y_breaks <- seq(1200, 1800, by = 100)
@@ -749,16 +765,26 @@ shared_pe_y_scale <- function() {
   )
 }
 
-# Rebuild biozone panel for zoomed interval
+# ---- Biozone panel for zoomed interval ----
+
 p_biozone_strat_PE <- ggplot(biozones) +
   geom_rect(
-    aes(xmin = 0, xmax = 1, ymin = ymin, ymax = ymax),
+    aes(
+      xmin = 0,
+      xmax = 1,
+      ymin = ymin,
+      ymax = ymax
+    ),
     fill = "grey90",
     color = "grey45",
     linewidth = 0.25
   ) +
   geom_text(
-    aes(x = 0.5, y = (ymin + ymax) / 2, label = Zone),
+    aes(
+      x = 0.5,
+      y = (ymin + ymax) / 2,
+      label = Zone
+    ),
     size = 2.8
   ) +
   scale_y_continuous(
@@ -766,45 +792,60 @@ p_biozone_strat_PE <- ggplot(biozones) +
     breaks = pe_y_breaks,
     expand = c(0, 0)
   ) +
-  scale_x_continuous(expand = c(0, 0)) +
-  labs(x = NULL, y = NULL) +
-  theme_void(base_size = 10) +
+  scale_x_continuous(
+    expand = c(0, 0)
+  ) +
+  labs(
+    x = NULL,
+    y = "Stratigraphic height (m)"
+  ) +
+  theme_classic(base_size = 10) +
   theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.line.x = element_blank(),
+    axis.title.y = element_text(size = 10),
+    axis.text.y = element_text(size = 9),
+    axis.ticks.y = element_line(),
     plot.margin = margin(4, 2, 4, 4)
   )
 
-# Apply zoom scale to each proxy panel
+# ---- Apply zoom scale to each proxy panel ----
+
 p_T47_panel_PE <- p_T47_strat_clean +
   shared_pe_y_scale() +
-  labs(tag = "A")
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "A"
+  )
 
 p_d13C_panel_PE <- p_d13C_strat_clean +
   shared_pe_y_scale() +
-  labs(y = NULL, tag = "B") +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "B"
   )
 
 p_d18Ow_panel_PE <- p_d18Ow_strat_clean +
   shared_pe_y_scale() +
-  labs(y = NULL, tag = "C") +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "C"
   )
 
 p_D17Orsw_panel_PE <- p_D17Orsw_strat_clean +
   shared_pe_y_scale() +
-  labs(y = NULL, tag = "D") +
-  theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank()
+  labs(
+    y = "Stratigraphic height (m)",
+    tag = "D"
   )
 
-# Panel: T47 + d13C
-p_strat_panel_T_d13C_PE <- 
-  p_biozone_strat_PE + p_T47_panel_PE + p_d13C_panel_PE +
+# ---- Panel: T47 + d13C ----
+
+p_strat_panel_T_d13C_PE <-
+  p_biozone_strat_PE +
+  p_T47_panel_PE +
+  p_d13C_panel_PE +
   plot_layout(
     nrow = 1,
     ncol = 3,
@@ -812,13 +853,20 @@ p_strat_panel_T_d13C_PE <-
   ) +
   plot_annotation(
     theme = theme(
-      plot.tag = element_text(face = "bold", size = 12)
+      plot.tag = element_text(
+        face = "bold",
+        size = 12
+      )
     )
   )
 
-# Panel: T47 + d13C + d18Ow
-p_strat_panel_T_d13C_d18Ow_PE <- 
-  p_biozone_strat_PE + p_T47_panel_PE + p_d13C_panel_PE + p_d18Ow_panel_PE +
+# ---- Panel: T47 + d13C + d18Ow ----
+
+p_strat_panel_T_d13C_d18Ow_PE <-
+  p_biozone_strat_PE +
+  p_T47_panel_PE +
+  p_d13C_panel_PE +
+  p_d18Ow_panel_PE +
   plot_layout(
     nrow = 1,
     ncol = 4,
@@ -826,13 +874,20 @@ p_strat_panel_T_d13C_d18Ow_PE <-
   ) +
   plot_annotation(
     theme = theme(
-      plot.tag = element_text(face = "bold", size = 12)
+      plot.tag = element_text(
+        face = "bold",
+        size = 12
+      )
     )
   )
 
-# Panel: T47 + d18Ow + D17Orsw
-p_strat_panel_T_d18Ow_D17Orsw_PE <- 
-  p_biozone_strat_PE + p_T47_panel_PE + p_d18Ow_panel_PE + p_D17Orsw_panel_PE +
+# ---- Panel: T47 + d18Ow + D17Orsw ----
+
+p_strat_panel_T_d18Ow_D17Orsw_PE <-
+  p_biozone_strat_PE +
+  p_T47_panel_PE +
+  p_d18Ow_panel_PE +
+  p_D17Orsw_panel_PE +
   plot_layout(
     nrow = 1,
     ncol = 4,
@@ -840,37 +895,87 @@ p_strat_panel_T_d18Ow_D17Orsw_PE <-
   ) +
   plot_annotation(
     theme = theme(
-      plot.tag = element_text(face = "bold", size = 12)
+      plot.tag = element_text(
+        face = "bold",
+        size = 12
+      )
     )
   )
+
+# ---- Panel: strat + D17Orsw ----
+
+p_strat_panel_D17Orsw_PE <-
+  p_biozone_strat_PE +
+  p_D17Orsw_panel_PE +
+  plot_layout(
+    nrow = 1,
+    ncol = 2,
+    widths = c(0.25, 1, 1, 1)
+  ) +
+  plot_annotation(
+    theme = theme(
+      plot.tag = element_text(
+        face = "bold",
+        size = 12
+      )
+    )
+  )
+
+# ---- Display plots ----
 
 p_strat_panel_T_d13C_PE
 p_strat_panel_T_d13C_d18Ow_PE
 p_strat_panel_T_d18Ow_D17Orsw_PE
+p_strat_panel_D17Orsw_PE
+
+# ---- Save plots ----
+
+dir.create(
+  here("figures", "strat_domain"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
 
 ggsave(
-  here("figures", "strat_domain", "BHB_strat_panel_T47_d13C_PE_zoom.png"),
-  p_strat_panel_T_d13C_PE,
+  filename = here(
+    "figures",
+    "strat_domain",
+    "BHB_strat_panel_T47_d13C_PE_zoom.png"
+  ),
+  plot = p_strat_panel_T_d13C_PE,
   width = 11.5,
   height = 6,
-  dpi = 600
+  dpi = 600,
+  bg = "white"
 )
 
 ggsave(
-  here("figures", "strat_domain", "BHB_strat_panel_T47_d13C_d18Ow_PE_zoom.png"),
-  p_strat_panel_T_d13C_d18Ow_PE,
+  filename = here(
+    "figures",
+    "strat_domain",
+    "BHB_strat_panel_T47_d13C_d18Ow_PE_zoom.png"
+  ),
+  plot = p_strat_panel_T_d13C_d18Ow_PE,
   width = 12,
   height = 6,
-  dpi = 600
+  dpi = 600,
+  bg = "white"
 )
 
 ggsave(
-  here("figures", "strat_domain", "BHB_strat_panel_T47_d18Ow_D17Orsw_PE_zoom.png"),
-  p_strat_panel_T_d18Ow_D17Orsw_PE,
+  filename = here(
+    "figures",
+    "strat_domain",
+    "BHB_strat_panel_T47_d18Ow_D17Orsw_PE_zoom.png"
+  ),
+  plot = p_strat_panel_T_d18Ow_D17Orsw_PE,
   width = 12,
   height = 6,
-  dpi = 600
+  dpi = 600,
+  bg = "white"
 )
+
+# ---- Save biozone table ----
 
 write_csv(
   biozones,
