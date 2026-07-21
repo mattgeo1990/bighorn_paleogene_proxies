@@ -787,14 +787,14 @@ write_csv(
   temp_screening_flags,
   here("data", "processed", "temperature_screening_flags.csv")
 )
-
 # ---- Dual clumped-isotope screening: D47 versus D48 ----
 
 library(tidyverse)
 library(plotly)
 library(here)
 
-# MATLAB-derived paired clumped-isotope results
+# ---- Load data ----
+
 dual_clumped_raw <- read_csv(
   here(
     "data",
@@ -804,7 +804,6 @@ dual_clumped_raw <- read_csv(
   show_col_types = FALSE
 )
 
-# Bighorn identifiers and stratigraphic information
 BHB_D47_summary <- read_csv(
   here(
     "data",
@@ -814,13 +813,18 @@ BHB_D47_summary <- read_csv(
   show_col_types = FALSE
 )
 
-# Retain included Bighorn sample analyses and join by IPL number
+# ---- Match paired D47-D48 analyses to Bighorn horizons ----
+
 BHB_dual_clumped <- dual_clumped_raw %>%
   filter(
     Type.1 == "Sample",
     ignoreAnalysis == "include",
     !is.na(D472),
-    !is.na(D484)
+    !is.na(D484),
+    !is.na(D47.err3),
+    !is.na(D48.err5),
+    D47.err3 > 0,
+    D48.err5 > 0
   ) %>%
   transmute(
     IPLnum,
@@ -872,15 +876,6 @@ BHB_dual_clumped <- dual_clumped_raw %>%
     )
   )
 
-# Check the matched dataset
-BHB_dual_clumped %>%
-  summarise(
-    n_analyses = n(),
-    n_samples = n_distinct(MLA_sample_id),
-    n_horizons = n_distinct(MLA_horizon_id)
-  ) %>%
-  print()
-
 # ---- Calculate inverse-variance-weighted horizon means ----
 
 BHB_dual_clumped_horizon <- BHB_dual_clumped %>%
@@ -898,7 +893,7 @@ BHB_dual_clumped_horizon <- BHB_dual_clumped %>%
     
     D47_mean = weighted.mean(
       D47,
-      D47_weight,
+      w = D47_weight,
       na.rm = TRUE
     ),
     
@@ -908,7 +903,7 @@ BHB_dual_clumped_horizon <- BHB_dual_clumped %>%
     
     D48_mean = weighted.mean(
       D48,
-      D48_weight,
+      w = D48_weight,
       na.rm = TRUE
     ),
     
@@ -926,23 +921,118 @@ BHB_dual_clumped_horizon <- BHB_dual_clumped %>%
       "<br>Alteration likelihood: ",
       alteration_likelihood,
       "<br>Number of analyses: ", n_analyses,
-      "<br>D47: ",
+      "<br>Δ47: ",
       round(D47_mean, 4),
       " ± ", round(D47_se, 4),
-      "<br>D48: ",
+      "<br>Δ48: ",
       round(D48_mean, 4),
       " ± ", round(D48_se, 4)
     )
   )
 
-# ---- Publication-ready static plot ----
+# ---- Create cumulative screening datasets ----
 
-alteration_colors <- c(
-  "No indication" = "#333333",
-  "Possible" = "#56B4E9",
-  "Moderate" = "#E69F00",
-  "High" = "#D55E00"
+D47_D48_scenario_data <- bind_rows(
+  
+  BHB_dual_clumped_horizon %>%
+    mutate(
+      screening_scenario = "All data"
+    ),
+  
+  BHB_dual_clumped_horizon %>%
+    filter(
+      alteration_likelihood != "High"
+    ) %>%
+    mutate(
+      screening_scenario = "Exclude high likelihood"
+    ),
+  
+  BHB_dual_clumped_horizon %>%
+    filter(
+      !alteration_likelihood %in% c(
+        "Moderate",
+        "High"
+      )
+    ) %>%
+    mutate(
+      screening_scenario = "Exclude moderate or higher"
+    ),
+  
+  BHB_dual_clumped_horizon %>%
+    filter(
+      alteration_likelihood == "No indication"
+    ) %>%
+    mutate(
+      screening_scenario = "Exclude any indication"
+    )
+) %>%
+  mutate(
+    screening_scenario = factor(
+      screening_scenario,
+      levels = c(
+        "All data",
+        "Exclude high likelihood",
+        "Exclude moderate or higher",
+        "Exclude any indication"
+      )
+    )
+  )
+
+# ---- Summarize fitted models ----
+
+D47_D48_model_summary <- D47_D48_scenario_data %>%
+  group_by(screening_scenario) %>%
+  group_modify(
+    ~ {
+      model <- lm(
+        D48_mean ~ D47_mean,
+        data = .x
+      )
+      
+      model_summary <- summary(model)
+      
+      tibble(
+        n_horizons = nrow(.x),
+        intercept = unname(coef(model)[1]),
+        slope = unname(coef(model)[2]),
+        slope_se = unname(
+          model_summary$coefficients[2, "Std. Error"]
+        ),
+        p_value = unname(
+          model_summary$coefficients[2, "Pr(>|t|)"]
+        ),
+        r_squared = model_summary$r.squared
+      )
+    }
+  ) %>%
+  ungroup()
+
+print(D47_D48_model_summary)
+
+# ---- Plot styles ----
+
+scenario_colors <- c(
+  "All data" = "#000000",
+  "Exclude high likelihood" = "#0072B2",
+  "Exclude moderate or higher" = "#E69F00",
+  "Exclude any indication" = "#D55E00"
 )
+
+scenario_fills <- c(
+  "All data" = "#999999",
+  "Exclude high likelihood" = "#56B4E9",
+  "Exclude moderate or higher" = "#F0E442",
+  "Exclude any indication" = "#E69F00"
+)
+
+alteration_shapes <- c(
+  "No indication" = 21,
+  "Possible" = 22,
+  "Moderate" = 24,
+  "High" = 23
+)
+
+# ---- Publication-ready static plot ----
 
 p_D47_D48 <- ggplot() +
   
@@ -954,8 +1044,26 @@ p_D47_D48 <- ggplot() +
       y = D48
     ),
     color = "grey65",
-    size = 1.3,
-    alpha = 0.35
+    size = 1.2,
+    alpha = 0.25
+  ) +
+  
+  # Confidence ribbons and regression lines
+  geom_smooth(
+    data = D47_D48_scenario_data,
+    aes(
+      x = D47_mean,
+      y = D48_mean,
+      color = screening_scenario,
+      fill = screening_scenario,
+      group = screening_scenario
+    ),
+    method = "lm",
+    formula = y ~ x,
+    se = TRUE,
+    level = 0.95,
+    linewidth = 1,
+    alpha = 0.10
   ) +
   
   # Horizontal uncertainty on horizon means
@@ -964,12 +1072,11 @@ p_D47_D48 <- ggplot() +
     aes(
       xmin = D47_mean - D47_se,
       xmax = D47_mean + D47_se,
-      y = D48_mean,
-      color = alteration_likelihood
+      y = D48_mean
     ),
     height = 0,
-    linewidth = 0.55,
-    show.legend = FALSE
+    linewidth = 0.45,
+    color = "grey45"
   ) +
   
   # Vertical uncertainty on horizon means
@@ -978,12 +1085,11 @@ p_D47_D48 <- ggplot() +
     aes(
       x = D47_mean,
       ymin = D48_mean - D48_se,
-      ymax = D48_mean + D48_se,
-      color = alteration_likelihood
+      ymax = D48_mean + D48_se
     ),
     width = 0,
-    linewidth = 0.55,
-    show.legend = FALSE
+    linewidth = 0.45,
+    color = "grey45"
   ) +
   
   # Horizon means
@@ -992,33 +1098,57 @@ p_D47_D48 <- ggplot() +
     aes(
       x = D47_mean,
       y = D48_mean,
-      color = alteration_likelihood
+      shape = alteration_likelihood
     ),
     size = 3,
-    alpha = 0.95
+    stroke = 0.8,
+    fill = "white",
+    color = "black"
   ) +
   
   scale_color_manual(
-    values = alteration_colors,
+    values = scenario_colors,
     drop = FALSE
+  ) +
+  
+  scale_fill_manual(
+    values = scenario_fills,
+    drop = FALSE
+  ) +
+  
+  scale_shape_manual(
+    values = alteration_shapes,
+    drop = FALSE
+  ) +
+  
+  guides(
+    color = guide_legend(
+      title = "Screening scenario",
+      order = 1
+    ),
+    fill = "none",
+    shape = guide_legend(
+      title = "Alteration likelihood",
+      order = 2
+    )
   ) +
   
   labs(
     x = expression(Delta[47]),
     y = expression(Delta[48]),
-    color = "Alteration likelihood",
     title = expression(
       "Dual clumped-isotope composition: " *
         Delta[47] * " versus " * Delta[48]
     ),
     subtitle =
-      "Colored points are horizon means ±1 SE; gray points are individual analyses"
+      "Lines show linear fits with 95% confidence intervals"
   ) +
   
   theme_classic(base_size = 13) +
   
   theme(
     legend.position = "top",
+    legend.box = "vertical",
     legend.justification = "left",
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9),
@@ -1030,57 +1160,118 @@ p_D47_D48 <- ggplot() +
 p_D47_D48
 
 ggsave(
-  here("figures", "BHB_D47_D48_static.png"),
+  here(
+    "figures",
+    "BHB_D47_D48_screening_trends.png"
+  ),
   p_D47_D48,
-  width = 7,
-  height = 6,
+  width = 8,
+  height = 7,
   dpi = 600
 )
 
 # ---- Interactive plot ----
-# ---- Interactive D47-D48 plot ----
 
-p_D47_D48_interactive_base <- ggplot(
-  BHB_dual_clumped_horizon,
-  aes(
-    x = D47_mean,
-    y = D48_mean,
-    color = alteration_likelihood,
-    text = hover_text
-  )
-) +
+p_D47_D48_interactive_base <- ggplot() +
+  
+  # Scenario confidence ribbons and trend lines
+  geom_smooth(
+    data = D47_D48_scenario_data,
+    aes(
+      x = D47_mean,
+      y = D48_mean,
+      color = screening_scenario,
+      fill = screening_scenario,
+      group = screening_scenario
+    ),
+    method = "lm",
+    formula = y ~ x,
+    se = TRUE,
+    level = 0.95,
+    linewidth = 1,
+    alpha = 0.10
+  ) +
+  
+  # Horizon uncertainty
   geom_errorbarh(
+    data = BHB_dual_clumped_horizon,
     aes(
       xmin = D47_mean - D47_se,
-      xmax = D47_mean + D47_se
+      xmax = D47_mean + D47_se,
+      y = D48_mean
     ),
     height = 0,
-    linewidth = 0.5,
+    linewidth = 0.45,
+    color = "grey55",
     show.legend = FALSE
   ) +
+  
   geom_errorbar(
+    data = BHB_dual_clumped_horizon,
     aes(
+      x = D47_mean,
       ymin = D48_mean - D48_se,
       ymax = D48_mean + D48_se
     ),
     width = 0,
-    linewidth = 0.5,
+    linewidth = 0.45,
+    color = "grey55",
     show.legend = FALSE
   ) +
-  geom_point(size = 3) +
+  
+  # Interactive horizon points
+  geom_point(
+    data = BHB_dual_clumped_horizon,
+    aes(
+      x = D47_mean,
+      y = D48_mean,
+      shape = alteration_likelihood,
+      text = hover_text
+    ),
+    size = 3,
+    stroke = 0.8,
+    fill = "white",
+    color = "black"
+  ) +
+  
   scale_color_manual(
-    values = alteration_colors,
+    values = scenario_colors,
     drop = FALSE
   ) +
+  
+  scale_fill_manual(
+    values = scenario_fills,
+    drop = FALSE
+  ) +
+  
+  scale_shape_manual(
+    values = alteration_shapes,
+    drop = FALSE
+  ) +
+  
+  guides(
+    color = guide_legend(
+      title = "Screening scenario",
+      order = 1
+    ),
+    fill = "none",
+    shape = guide_legend(
+      title = "Alteration likelihood",
+      order = 2
+    )
+  ) +
+  
   labs(
     x = "\u039447",
     y = "\u039448",
-    color = "Alteration likelihood",
     title = "\u039447 versus \u039448"
   ) +
+  
   theme_classic(base_size = 13) +
+  
   theme(
-    legend.position = "top"
+    legend.position = "top",
+    legend.box = "vertical"
   )
 
 p_D47_D48_interactive <- ggplotly(
@@ -1093,7 +1284,7 @@ p_D47_D48_interactive <- ggplotly(
     legend = list(
       orientation = "h",
       x = 0,
-      y = 1.12
+      y = 1.15
     )
   )
 

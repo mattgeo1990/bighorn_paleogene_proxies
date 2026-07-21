@@ -426,21 +426,54 @@ IPL_D47_primary_data <- IPL_D47_data %>%
 # Visualize all individual Δ47 temperature replicates from primary (non-SPAR)
 # pedogenic carbonate samples to assess temperature variability with stratigraphy
 # and identify potential outliers or stratigraphic trends.
-ggplot(IPL_D47_primary_data,
-       aes(x = T47_preferred,
-           y = strat_height_m)) +
+ggplot() +
+  # Individual replicate measurements
   geom_point(
-    size = 2,
-    alpha = 0.7,
-    color = "gray40"
+    data = IPL_D47_primary_data,
+    aes(
+      x = T47_preferred,
+      y = strat_height_m
+    ),
+    size = 1.4,
+    alpha = 0.25,
+    color = "gray40",
+    position = position_jitter(height = 2, width = 0)
   ) +
+  
+  # Uncertainty on horizon means
+  geom_errorbarh(
+    data = IPLD47_primary_summary,
+    aes(
+      xmin = IPLD47_mean_T47_C - IPLD47_se_T47_C,
+      xmax = IPLD47_mean_T47_C + IPLD47_se_T47_C,
+      y = strat_height_m
+    ),
+    height = 0,
+    linewidth = 0.6,
+    color = "#0072B2"
+  ) +
+  
+  # Horizon means
+  geom_point(
+    data = IPLD47_primary_summary,
+    aes(
+      x = IPLD47_mean_T47_C,
+      y = strat_height_m
+    ),
+    size = 2.5,
+    color = "#0072B2"
+  ) +
+  
   labs(
-    x = expression("Temperature from " * Delta[47] * " (" * degree * "C)"),
-    y = "Stratigraphic Level (m)",
-    title = expression("Replicate-Level " * T[47] * " Values")
+    x = expression(
+      Delta[47] * "-derived temperature (" * degree * "C)"
+    ),
+    y = "Stratigraphic height (m)",
+    title = expression(Delta[47] * " temperatures by horizon"),
+    subtitle = "Blue: horizon mean ±1 SE; gray: individual replicates"
   ) +
-  theme_classic()
-
+  
+  theme_classic(base_size = 13)
 
 # Plot Δ47 temperatures by sample ID
 #
