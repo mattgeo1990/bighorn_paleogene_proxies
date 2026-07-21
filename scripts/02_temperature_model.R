@@ -13,51 +13,109 @@ BHB_multiproxy_summary <- read_csv(
 )
 # ---- Temperature screening scheme ----
 
-screening_scheme <- "exclude_all_suspect"
-# options:
+screening_scheme <- "none"
+
+# Options:
 # "none"
-# "exclude_heavy"
-# "exclude_heavy_moderate"
-# "exclude_all_suspect"
+# "exclude_high_likelihood"
+# "exclude_moderate_or_higher"
+# "exclude_any_alteration_indication"
+
+valid_screening_schemes <- c(
+  "none",
+  "exclude_high_likelihood",
+  "exclude_moderate_or_higher",
+  "exclude_any_alteration_indication"
+)
+
+if (!screening_scheme %in% valid_screening_schemes) {
+  stop(
+    "Unknown screening_scheme: ", screening_scheme,
+    "\nValid options are: ",
+    paste(valid_screening_schemes, collapse = ", ")
+  )
+}
 
 temp_screening_flags <- read_csv(
-  here("data", "processed", "temperature_screening_flags.csv")
+  here("data", "processed", "temperature_screening_flags.csv"),
+  show_col_types = FALSE
 )
 
 needed_screening_cols <- c(
-  "exclude_heavy",
-  "exclude_heavy_moderate",
-  "exclude_all_suspect"
+  "exclude_high_likelihood",
+  "exclude_moderate_or_higher",
+  "exclude_any_alteration_indication"
 )
 
-for (col in needed_screening_cols) {
-  if (!col %in% names(temp_screening_flags)) {
-    temp_screening_flags[[col]] <- FALSE
-  }
+missing_screening_cols <- setdiff(
+  c("MLA_horizon_id", needed_screening_cols),
+  names(temp_screening_flags)
+)
+
+if (length(missing_screening_cols) > 0) {
+  stop(
+    "temperature_screening_flags.csv is missing: ",
+    paste(missing_screening_cols, collapse = ", "),
+    "\nRegenerate it by running diagenesis_screening.R."
+  )
+}
+
+if (anyDuplicated(temp_screening_flags$MLA_horizon_id)) {
+  stop("temperature_screening_flags.csv contains duplicate MLA_horizon_id values.")
 }
 
 BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
-  select(-any_of(c(
-    needed_screening_cols,
-    "exclude_from_temp_model"
-  ))) %>%
+  select(
+    -any_of(c(
+      needed_screening_cols,
+      "alteration_likelihood",
+      "exclude_from_temp_model"
+    ))
+  ) %>%
   left_join(
     temp_screening_flags,
     by = "MLA_horizon_id"
   ) %>%
   mutate(
     across(
-      any_of(needed_screening_cols),
+      all_of(needed_screening_cols),
       ~ replace_na(.x, FALSE)
     ),
-    exclude_from_temp_model = case_when(
-      screening_scheme == "none" ~ FALSE,
-      screening_scheme == "exclude_heavy" ~ exclude_heavy,
-      screening_scheme == "exclude_heavy_moderate" ~ exclude_heavy_moderate,
-      screening_scheme == "exclude_all_suspect" ~ exclude_all_suspect,
-      TRUE ~ FALSE
-    )
+    
+    alteration_likelihood =
+      replace_na(alteration_likelihood, "no_indication"),
+    
+    exclude_from_temp_model =
+      if (screening_scheme == "none") {
+        FALSE
+      } else {
+        .data[[screening_scheme]]
+      }
   )
+
+# ---- Verify screening ----
+
+screening_check <- BHB_multiproxy_summary %>%
+  count(
+    alteration_likelihood,
+    exclude_from_temp_model,
+    name = "n_horizons"
+  )
+
+print(screening_check)
+
+excluded_horizons <- BHB_multiproxy_summary %>%
+  filter(exclude_from_temp_model) %>%
+  select(
+    MLA_horizon_id,
+    strat_height_m,
+    alteration_likelihood
+  ) %>%
+  arrange(strat_height_m)
+
+print(excluded_horizons, n = Inf)
+
+
 # ---- Build temperature observation table ----
 # IPL, CU, and Snell are kept as separate observations.
 # CU reports 2SE, so convert to SE.
@@ -204,7 +262,224 @@ BHB_multiproxy_with_temperature <- BHB_multiproxy_summary %>%
     by = c("MLA_horizon_id", "strat_height_m")
   )
 
-# ---- Diagnostic plot ----
+# ---- Diagnostic plots ----
+
+# ---- Compare all three alteration-screening scenarios ----
+
+comparison_scenarios <- c(
+  "exclude_high_likelihood",
+  "exclude_moderate_or_higher",
+  "exclude_any_alteration_indication"
+)
+
+scenario_labels <- c(
+  "exclude_high_likelihood" =
+    "Exclude high likelihood",
+  "exclude_moderate_or_higher" =
+    "Exclude moderate or higher",
+  "exclude_any_alteration_indication" =
+    "Exclude any indication"
+)
+
+build_temperature_scenario <- function(screen_column) {
+  
+  # Apply the selected screen and create source-level observations
+  scenario_obs <- BHB_multiproxy_summary %>%
+    filter(!.data[[screen_column]]) %>%
+    select(
+      MLA_horizon_id,
+      strat_height_m,
+      IPLD47_mean_T47_C,
+      IPLD47_se_T47_C,
+      CU_mean_T47_C,
+      CU_2se_T47_C,
+      Snell_mean_T47_C,
+      Snell_se_T47_C
+    ) %>%
+    pivot_longer(
+      cols = c(
+        IPLD47_mean_T47_C,
+        CU_mean_T47_C,
+        Snell_mean_T47_C
+      ),
+      names_to = "source",
+      values_to = "T_C"
+    ) %>%
+    mutate(
+      source = case_when(
+        source == "IPLD47_mean_T47_C" ~ "IPL",
+        source == "CU_mean_T47_C" ~ "CU",
+        source == "Snell_mean_T47_C" ~ "Snell"
+      ),
+      T_se_C = case_when(
+        source == "IPL" ~ IPLD47_se_T47_C,
+        source == "CU" ~ CU_2se_T47_C / 2,
+        source == "Snell" ~ Snell_se_T47_C
+      )
+    ) %>%
+    select(
+      MLA_horizon_id,
+      strat_height_m,
+      source,
+      T_C,
+      T_se_C
+    ) %>%
+    filter(
+      !is.na(T_C),
+      !is.na(strat_height_m)
+    )
+  
+  # Substitute a valid SE where SE is missing or zero
+  fallback_se <- median(
+    scenario_obs$T_se_C[
+      !is.na(scenario_obs$T_se_C) &
+        scenario_obs$T_se_C > 0
+    ],
+    na.rm = TRUE
+  )
+  
+  scenario_obs <- scenario_obs %>%
+    mutate(
+      T_se_C = if_else(
+        is.na(T_se_C) | T_se_C <= 0,
+        fallback_se,
+        T_se_C
+      ),
+      weight = 1 / T_se_C^2
+    )
+  
+  # Collapse multiple observations to one value per horizon
+  scenario_horizon <- scenario_obs %>%
+    group_by(MLA_horizon_id, strat_height_m) %>%
+    summarise(
+      T_measured_C = weighted.mean(
+        T_C,
+        w = weight,
+        na.rm = TRUE
+      ),
+      .groups = "drop"
+    ) %>%
+    arrange(strat_height_m) %>%
+    mutate(
+      T_model_anchor_C = zoo::rollapply(
+        T_measured_C,
+        width = 3,
+        FUN = mean,
+        fill = NA,
+        align = "center",
+        partial = TRUE
+      )
+    )
+  
+  # Fit the same spline used by the main temperature model
+  scenario_spline <- smooth.spline(
+    x = scenario_horizon$strat_height_m,
+    y = scenario_horizon$T_model_anchor_C,
+    spar = 0.35
+  )
+  
+  scenario_prediction <- predict(
+    scenario_spline,
+    x = prediction_grid$strat_height_m
+  )
+  
+  prediction_grid %>%
+    transmute(
+      MLA_horizon_id,
+      strat_height_m,
+      T_model_C = as.numeric(scenario_prediction$y),
+      screening_scenario = scenario_labels[[screen_column]],
+      n_excluded_horizons =
+        sum(BHB_multiproxy_summary[[screen_column]])
+    )
+}
+
+# Build and combine all three models
+temperature_scenario_models <- purrr::map_dfr(
+  comparison_scenarios,
+  build_temperature_scenario
+) %>%
+  mutate(
+    screening_scenario = factor(
+      screening_scenario,
+      levels = unname(scenario_labels[comparison_scenarios])
+    )
+  )
+
+# Report how many horizons each scenario excludes
+temperature_scenario_models %>%
+  distinct(
+    screening_scenario,
+    n_excluded_horizons
+  ) %>%
+  print()
+
+scenario_colors <- c(
+  "Exclude high likelihood" = "#0072B2",
+  "Exclude moderate or higher" = "#E69F00",
+  "Exclude any indication" = "#D55E00"
+)
+
+p_temperature_scenarios <- ggplot(
+  temperature_scenario_models,
+  aes(
+    x = T_model_C,
+    y = strat_height_m,
+    color = screening_scenario
+  )
+) +
+  annotate(
+    "rect",
+    xmin = -Inf,
+    xmax = Inf,
+    ymin = 1500,
+    ymax = 1540,
+    fill = "grey70",
+    alpha = 0.25
+  ) +
+  geom_path(
+    aes(group = screening_scenario),
+    linewidth = 1.2
+  ) +
+  scale_color_manual(values = scenario_colors) +
+  scale_x_continuous(
+    breaks = seq(10, 75, by = 5),
+    limits = c(10, 75),
+    expand = expansion(mult = c(0.02, 0.04))
+  ) +
+  scale_y_continuous(
+    breaks = seq(500, 2300, by = 100),
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  labs(
+    x = expression(
+      Delta[47] * "-derived temperature (" * degree * "C)"
+    ),
+    y = "Stratigraphic height (m)",
+    color = "Alteration screen"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    legend.position = "top",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9)
+  )
+
+p_temperature_scenarios
+
+ggsave(
+  here(
+    "figures",
+    "BHB_temperature_screening_scenarios.png"
+  ),
+  p_temperature_scenarios,
+  width = 7,
+  height = 8,
+  dpi = 600
+)
+
+
+
 library(ggplot2)
 library(dplyr)
 library(here)

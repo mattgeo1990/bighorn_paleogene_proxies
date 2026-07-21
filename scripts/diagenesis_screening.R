@@ -180,7 +180,7 @@ p_d18Ocarb_T47
 # ---- Simple d18Owater evolution / diagenesis model ----
 
 ggplot(
-  BHB_d18Ow_recon %>%
+  BHB_multiproxy_final %>%
     filter(
       !is.na(T_recon_C),
       !is.na(d18Ocarb_vsmow)
@@ -736,21 +736,22 @@ ggplot(
     panel.grid.major = element_line(color = "grey85", linewidth = 0.3),
     panel.grid.minor = element_blank()
   )
+# Qualitative likelihood that temperature was affected by alteration
 
-tier1_heavy <- c(
+alteration_likelihood_high <- c(
   "PK95-SC-4",
   "PK95-SC-279",
   "PK95-SC-242",
   "PK95-SC-27"
 )
 
-tier2_moderate <- c(
+alteration_likelihood_moderate <- c(
   "PK95-SC-176",
   "PK95-SC-246",
   "PK95-SC-118up"
 )
 
-tier3_possible <- c(
+alteration_likelihood_possible <- c(
   "PK95-SC-187",
   "PK95-SC-160",
   "PK95-SC-6"
@@ -758,24 +759,31 @@ tier3_possible <- c(
 
 temp_screening_flags <- tibble(
   MLA_horizon_id = unique(c(
-    tier1_heavy,
-    tier2_moderate,
-    tier3_possible
+    alteration_likelihood_high,
+    alteration_likelihood_moderate,
+    alteration_likelihood_possible
   ))
 ) %>%
   mutate(
-    exclude_heavy = MLA_horizon_id %in% tier1_heavy,
+    alteration_likelihood = case_when(
+      MLA_horizon_id %in% alteration_likelihood_high ~ "high",
+      MLA_horizon_id %in% alteration_likelihood_moderate ~ "moderate",
+      MLA_horizon_id %in% alteration_likelihood_possible ~ "possible",
+      TRUE ~ "no_indication"
+    ),
     
-    exclude_heavy_moderate =
-      MLA_horizon_id %in% c(
-        tier1_heavy,
-        tier2_moderate
-      ),
+    # Cumulative screening options
+    exclude_high_likelihood =
+      alteration_likelihood == "high",
     
-    exclude_all_suspect =
-      MLA_horizon_id %in% c(
-        tier1_heavy,
-        tier2_moderate,
-        tier3_possible
-      )
+    exclude_moderate_or_higher =
+      alteration_likelihood %in% c("high", "moderate"),
+    
+    exclude_any_alteration_indication =
+      alteration_likelihood %in% c("high", "moderate", "possible")
   )
+
+write_csv(
+  temp_screening_flags,
+  here("data", "processed", "temperature_screening_flags.csv")
+)

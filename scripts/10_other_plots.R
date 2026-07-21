@@ -38,6 +38,11 @@ Kelson_temp_ltg <- Kelson_Tornillo_D47 %>%
   filter(stage_group %in% c("Thanetian", "Ypresian"))
 
 # ---- Prep BHB temperature data ----
+
+BHB_multiproxy_final <- read.csv(here::here("data", "processed",
+  "BHB_multiproxy_final.csv"))
+
+
 BHB_temp_ltg <- BHB_multiproxy_final %>%
   filter(!is.na(Age_Ma)) %>%
   mutate(
@@ -210,7 +215,8 @@ kelson_soilwater <- read_csv(
 
 # ---- Reconstructed Bighorn Basin soil waters ----
 
-BHB_water_isotope_space <- BHB_D17Orsw_recon %>%
+
+BHB_water_isotope_space <- BHB_multiproxy_final %>%
   filter(
     !is.na(strat_height_m),
     !is.na(d18Ow_mean_vsmow),
@@ -479,7 +485,7 @@ reconstruction_color <- "#2166AC"
     # ---- Temperature versus reconstructed Δ′17O soil water ----
     # Vertical error bars use the carbonate Δ′17O 95% CI.
     
-    BHB_T_D17Orsw <- BHB_D17Orsw_recon %>%
+    BHB_T_D17Orsw <- BHB_multiproxy_final %>%
       filter(
         !is.na(T_recon_C),
         !is.na(T_recon_se_C),
@@ -579,7 +585,7 @@ reconstruction_color <- "#2166AC"
     
     # ---- Temperature versus carbonate Δ′17O ----
     
-    BHB_T_D17Ocarb <- BHB_D17Orsw_recon %>%
+    BHB_T_D17Ocarb <- BHB_multiproxy_final %>%
       filter(
         !is.na(T_recon_C),
         !is.na(T_recon_se_C),
@@ -677,3 +683,5 @@ reconstruction_color <- "#2166AC"
       height = 5.5,
       dpi = 600
     )
+    
+    
