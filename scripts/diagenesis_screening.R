@@ -486,7 +486,7 @@ ggplotly(
 
 # ---- Interactive: micrite vs spar/altered T47-d18Ow space ----
 
-micrite_T_d18Ow <- BHB_d18Ow_recon %>%
+micrite_T_d18Ow <- BHB_multiproxy_final %>%
   filter(
     T_recon_source == "IPL measured T47",
     !is.na(T_recon_C),
@@ -787,3 +787,314 @@ write_csv(
   temp_screening_flags,
   here("data", "processed", "temperature_screening_flags.csv")
 )
+
+# ---- Dual clumped-isotope screening: D47 versus D48 ----
+
+library(tidyverse)
+library(plotly)
+library(here)
+
+# MATLAB-derived paired clumped-isotope results
+dual_clumped_raw <- read_csv(
+  here(
+    "data",
+    "processed",
+    "Nu_Dog_Clump_Session22_Oct 2025-July2026_Matlab-2_MLAcleaned.csv"
+  ),
+  show_col_types = FALSE
+)
+
+# Bighorn identifiers and stratigraphic information
+BHB_D47_summary <- read_csv(
+  here(
+    "data",
+    "raw",
+    "IPL_D47_BHB_Pg_Summary_June2026.csv"
+  ),
+  show_col_types = FALSE
+)
+
+# Retain included Bighorn sample analyses and join by IPL number
+BHB_dual_clumped <- dual_clumped_raw %>%
+  filter(
+    Type.1 == "Sample",
+    ignoreAnalysis == "include",
+    !is.na(D472),
+    !is.na(D484)
+  ) %>%
+  transmute(
+    IPLnum,
+    analysis_name = Sample_Name,
+    DateTime,
+    D47 = D472,
+    D47_se = D47.err3,
+    D48 = D484,
+    D48_se = D48.err5
+  ) %>%
+  inner_join(
+    BHB_D47_summary %>%
+      select(
+        IPLnum,
+        MLA_sample_id,
+        MLA_horizon_id,
+        strat_height_m,
+        T47_preferred
+      ),
+    by = "IPLnum"
+  ) %>%
+  left_join(
+    temp_screening_flags %>%
+      select(
+        MLA_horizon_id,
+        alteration_likelihood
+      ),
+    by = "MLA_horizon_id"
+  ) %>%
+  mutate(
+    alteration_likelihood = replace_na(
+      alteration_likelihood,
+      "no_indication"
+    ),
+    alteration_likelihood = factor(
+      alteration_likelihood,
+      levels = c(
+        "no_indication",
+        "possible",
+        "moderate",
+        "high"
+      ),
+      labels = c(
+        "No indication",
+        "Possible",
+        "Moderate",
+        "High"
+      )
+    )
+  )
+
+# Check the matched dataset
+BHB_dual_clumped %>%
+  summarise(
+    n_analyses = n(),
+    n_samples = n_distinct(MLA_sample_id),
+    n_horizons = n_distinct(MLA_horizon_id)
+  ) %>%
+  print()
+
+# ---- Calculate inverse-variance-weighted horizon means ----
+
+BHB_dual_clumped_horizon <- BHB_dual_clumped %>%
+  mutate(
+    D47_weight = 1 / D47_se^2,
+    D48_weight = 1 / D48_se^2
+  ) %>%
+  group_by(
+    MLA_horizon_id,
+    strat_height_m,
+    alteration_likelihood
+  ) %>%
+  summarise(
+    n_analyses = n(),
+    
+    D47_mean = weighted.mean(
+      D47,
+      D47_weight,
+      na.rm = TRUE
+    ),
+    
+    D47_se = sqrt(
+      1 / sum(D47_weight, na.rm = TRUE)
+    ),
+    
+    D48_mean = weighted.mean(
+      D48,
+      D48_weight,
+      na.rm = TRUE
+    ),
+    
+    D48_se = sqrt(
+      1 / sum(D48_weight, na.rm = TRUE)
+    ),
+    
+    .groups = "drop"
+  ) %>%
+  mutate(
+    hover_text = paste0(
+      "Horizon: ", MLA_horizon_id,
+      "<br>Stratigraphic height: ",
+      round(strat_height_m, 1), " m",
+      "<br>Alteration likelihood: ",
+      alteration_likelihood,
+      "<br>Number of analyses: ", n_analyses,
+      "<br>D47: ",
+      round(D47_mean, 4),
+      " ± ", round(D47_se, 4),
+      "<br>D48: ",
+      round(D48_mean, 4),
+      " ± ", round(D48_se, 4)
+    )
+  )
+
+# ---- Publication-ready static plot ----
+
+alteration_colors <- c(
+  "No indication" = "#333333",
+  "Possible" = "#56B4E9",
+  "Moderate" = "#E69F00",
+  "High" = "#D55E00"
+)
+
+p_D47_D48 <- ggplot() +
+  
+  # Individual analyses
+  geom_point(
+    data = BHB_dual_clumped,
+    aes(
+      x = D47,
+      y = D48
+    ),
+    color = "grey65",
+    size = 1.3,
+    alpha = 0.35
+  ) +
+  
+  # Horizontal uncertainty on horizon means
+  geom_errorbarh(
+    data = BHB_dual_clumped_horizon,
+    aes(
+      xmin = D47_mean - D47_se,
+      xmax = D47_mean + D47_se,
+      y = D48_mean,
+      color = alteration_likelihood
+    ),
+    height = 0,
+    linewidth = 0.55,
+    show.legend = FALSE
+  ) +
+  
+  # Vertical uncertainty on horizon means
+  geom_errorbar(
+    data = BHB_dual_clumped_horizon,
+    aes(
+      x = D47_mean,
+      ymin = D48_mean - D48_se,
+      ymax = D48_mean + D48_se,
+      color = alteration_likelihood
+    ),
+    width = 0,
+    linewidth = 0.55,
+    show.legend = FALSE
+  ) +
+  
+  # Horizon means
+  geom_point(
+    data = BHB_dual_clumped_horizon,
+    aes(
+      x = D47_mean,
+      y = D48_mean,
+      color = alteration_likelihood
+    ),
+    size = 3,
+    alpha = 0.95
+  ) +
+  
+  scale_color_manual(
+    values = alteration_colors,
+    drop = FALSE
+  ) +
+  
+  labs(
+    x = expression(Delta[47]),
+    y = expression(Delta[48]),
+    color = "Alteration likelihood",
+    title = expression(
+      "Dual clumped-isotope composition: " *
+        Delta[47] * " versus " * Delta[48]
+    ),
+    subtitle =
+      "Colored points are horizon means ±1 SE; gray points are individual analyses"
+  ) +
+  
+  theme_classic(base_size = 13) +
+  
+  theme(
+    legend.position = "top",
+    legend.justification = "left",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9),
+    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 11),
+    plot.title = element_text(face = "bold")
+  )
+
+p_D47_D48
+
+ggsave(
+  here("figures", "BHB_D47_D48_static.png"),
+  p_D47_D48,
+  width = 7,
+  height = 6,
+  dpi = 600
+)
+
+# ---- Interactive plot ----
+# ---- Interactive D47-D48 plot ----
+
+p_D47_D48_interactive_base <- ggplot(
+  BHB_dual_clumped_horizon,
+  aes(
+    x = D47_mean,
+    y = D48_mean,
+    color = alteration_likelihood,
+    text = hover_text
+  )
+) +
+  geom_errorbarh(
+    aes(
+      xmin = D47_mean - D47_se,
+      xmax = D47_mean + D47_se
+    ),
+    height = 0,
+    linewidth = 0.5,
+    show.legend = FALSE
+  ) +
+  geom_errorbar(
+    aes(
+      ymin = D48_mean - D48_se,
+      ymax = D48_mean + D48_se
+    ),
+    width = 0,
+    linewidth = 0.5,
+    show.legend = FALSE
+  ) +
+  geom_point(size = 3) +
+  scale_color_manual(
+    values = alteration_colors,
+    drop = FALSE
+  ) +
+  labs(
+    x = "\u039447",
+    y = "\u039448",
+    color = "Alteration likelihood",
+    title = "\u039447 versus \u039448"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    legend.position = "top"
+  )
+
+p_D47_D48_interactive <- ggplotly(
+  p_D47_D48_interactive_base,
+  tooltip = "text"
+) %>%
+  layout(
+    xaxis = list(title = "\u039447"),
+    yaxis = list(title = "\u039448"),
+    legend = list(
+      orientation = "h",
+      x = 0,
+      y = 1.12
+    )
+  )
+
+p_D47_D48_interactive
