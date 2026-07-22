@@ -65,6 +65,12 @@ Harper2024_CO2_SST <- read_csv(
   here("data", "processed", "Harper2024_CO2_SST_processed.csv")
 )
 
+Snell2013_alldata <- read_csv(
+  here("data", "raw", "SnellEtAl2013_summary.csv")
+)
+
+
+
 biozones <- read_csv(
   here(
     "data",
@@ -105,6 +111,9 @@ biozones_age <- biozones %>%
   )
 
 biozones_age
+
+
+
 
 # ---- Add age to temperature model and observations ----
 

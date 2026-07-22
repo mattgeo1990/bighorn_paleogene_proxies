@@ -64,15 +64,21 @@ check_levels <- function(df, strat_col, id_col) {
 #   among locality, paleosol, horizon, nodule, and powder matter.
 
 # Stratigraphic framework:
-#   Unless otherwise noted, strat_height_m is meters above the K–Pg boundary
-#   in the northern Bighorn Basin composite section.
+#   strat_height_m is the native stratigraphic height for the composite section
+#   identified by composite_section:
+#     CFB  = Clarks Fork Basin / Polecat Bench
+#     MCP  = McCullough Peaks
+#     SBHB = southern Bighorn Basin
+#   Stratigraphic heights from different composite sections are not directly
+#   comparable and must never be joined without composite_section.
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load IPL sample list (PB and SC samples)
 
 IPL_sample_list <- read.csv(
   here("data", "raw", "SandCoulee_Polecat_nodules.csv")
-)
+) %>%
+  mutate(composite_section = "CFB")
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,7 +91,8 @@ IPL_sample_list <- read.csv(
 
 IPL_D17O_data <- read.csv(
   here("data", "raw", "all_data_PgBHB_IPL17O_CODEX_AUTOMATED_CORRECTIONS.csv")
-)
+) %>%
+  mutate(composite_section = "CFB")
 
 names(IPL_D17O_data)
 
@@ -98,7 +105,8 @@ names(IPL_D17O_data)
 
 IPL_D47_data <- read.csv(
   here("data", "raw", "IPL_D47_BHB_Pg_Summary_June2026.csv")
-)
+) %>%
+  mutate(composite_section = "CFB")
 
 names(IPL_D47_data)
 table(IPL_D47_data$MLA_horizon_id)
@@ -115,6 +123,7 @@ CU_data <- read_csv(
   here("data", "raw", "PETM_clumped.csv")
 ) %>%
   mutate(
+    composite_section = "CFB",
     d18Oc_SMOW = to_VSMOW(d18Ocarb_VPBD, eq = "IUPAC")
   ) %>%
   round_depth()
@@ -124,6 +133,7 @@ CU_summary <- CU_data %>%
     CU_sample_id = CU_Sample_ID,
     MLA_sample_id,
     MLA_horizon_id,
+    composite_section,
     strat_height_m,
     
     CU_mean_d13Ccarb_vpdb   = d13C_VPBD,
@@ -150,15 +160,22 @@ CU_summary <- CU_data %>%
 Snell2013 <- read_csv(
   here("data", "raw", "SnellEtAl2013_summary.csv")
 ) %>%
+  mutate(
+    section = str_to_upper(str_trim(section)),
+    composite_section = section
+  ) %>%
   round_depth()
+
+names(Snell2013) 
 
 Snell2013_summary <- Snell2013 %>%
   transmute(
+    snell2013_age_ma = snell2013_age_ma,
+    composite_section,
     Snell_sample_id = Snell_Sample_ID,
     MLA_sample_id,
     MLA_horizon_id,
     strat_height_m,
-    Snell_Age_Ma = Age_Ma,
     Snell_sample_type = Sample_Type,
     
     Snell_mean_d18Ow_vsmow   = Average_d18Ow_permil_SMOW,
@@ -169,8 +186,11 @@ Snell2013_summary <- Snell2013 %>%
     Snell_se_D47   = D47_1se,
     
     Snell_mean_T47_C = Average_Temp_C,
-    Snell_se_T47_C   = Temp_1se
+    Snell_se_T47_C   = Temp_1se,
+    Comments = Comments
   )
+
+
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,6 +203,8 @@ koch <- read_csv(
   here("data", "raw", "Koch_SC_nodules_isotopes.csv")
 ) %>%
   mutate(
+    section = str_to_upper(str_trim(section)),
+    composite_section = section,
     Koch_d13Ccarb_vpdb  = d13C_VPDB,
     Koch_d18Ocarb_vpdb  = d18Ocarb_VPDB,
     Koch_d18Ocarb_vsmow = d18Ocarb_VSMOW
@@ -192,6 +214,7 @@ koch <- read_csv(
     Locality,
     MLA_sample_id,
     MLA_horizon_id,
+    composite_section,
     strat_height_m,
     Koch_d13Ccarb_vpdb,
     Koch_d18Ocarb_vpdb,
@@ -211,6 +234,7 @@ bowen <- read_csv(
   here("data", "raw", "Bowen2001_IsotopeData.csv")
 ) %>%
   mutate(
+    composite_section        = "CFB",
     Bowen_d13Ccarb_vpdb     = as.numeric(d13C_VPDB),
     Bowen_d18Ocarb_vpdb     = as.numeric(d18Ocarb_VPDB),
     Bowen_d18Ocarb_vsmow    = as.numeric(d18Ocarb_VSMOW)
@@ -220,6 +244,7 @@ bowen <- read_csv(
     Bowen_Sample_ID,
     MLA_sample_id,
     MLA_horizon_id,
+    composite_section,
     strat_height_m,
     Bowen_d13Ccarb_vpdb,
     Bowen_d18Ocarb_vpdb,
@@ -755,10 +780,10 @@ table(Snell2013_summary$Snell_sample_group)
 # Sample types are represented by point shape so primary paleosol micrites can
 # be visually distinguished from altered carbonates, fracture spars, and
 # bivalve fossils.
-
+names(Snell2013_summary)
 ggplot(Snell2013_summary,
        aes(x = Snell_mean_T47_C,
-           y = Snell_Age_Ma,
+           y = snell2013_age_ma,
            shape = Snell_sample_type)) +
   
   geom_point(size = 3) +
@@ -1142,7 +1167,7 @@ nrow(bowen_spar)
 generic_sd <- 12
 
 IPL17O_summary <- IPL_D17O_data_final %>%
-  group_by(MLA_horizon_id) %>%
+  group_by(composite_section, MLA_horizon_id) %>%
   summarise(
     
     # δ′17O carbonate
@@ -1183,9 +1208,9 @@ IPL17O_summary <- IPL_D17O_data_final %>%
   # one stratigraphic position from the project sample list.
   left_join(
     IPL_sample_list %>%
-      select(MLA_horizon_id, strat_height_m) %>%
+      select(composite_section, MLA_horizon_id, strat_height_m) %>%
       distinct(),
-    by = "MLA_horizon_id"
+    by = c("composite_section", "MLA_horizon_id")
   ) %>%
   
   mutate(
@@ -1234,7 +1259,7 @@ max_or_na <- function(x) {
 
 summarize_IPLD47 <- function(data, sample_type) {
   data %>%
-    group_by(MLA_sample_id, MLA_horizon_id) %>%
+    group_by(composite_section, MLA_sample_id, MLA_horizon_id) %>%
     summarise(
       strat_height_m = mean_or_na(strat_height_m),
       
@@ -1316,7 +1341,7 @@ write_csv(
 # Summarize Koch primary carbonate data
 
 koch_summary <- koch_primary %>%
-  group_by(MLA_horizon_id, strat_height_m) %>%
+  group_by(composite_section, MLA_horizon_id, strat_height_m) %>%
   summarise(
     Koch_mean_d13Ccarb_vpdb = mean(Koch_d13Ccarb_vpdb, na.rm = TRUE),
     Koch_se_d13Ccarb_vpdb   = sd(Koch_d13Ccarb_vpdb, na.rm = TRUE) /
@@ -1340,7 +1365,7 @@ koch_summary <- koch_primary %>%
 # Summarize Koch fracture spar data
 
 koch_spar_summary <- koch_spar %>%
-  group_by(MLA_horizon_id, strat_height_m) %>%
+  group_by(composite_section, MLA_horizon_id, strat_height_m) %>%
   summarise(
     KochSPAR_mean_d13Ccarb_vpdb = mean(Koch_d13Ccarb_vpdb, na.rm = TRUE),
     KochSPAR_se_d13Ccarb_vpdb   = sd(Koch_d13Ccarb_vpdb, na.rm = TRUE) /
@@ -1405,7 +1430,7 @@ ggplot(koch_summary,
 # Summarize Bowen primary carbonate data
 
 bowen_summary <- bowen_primary %>%
-  group_by(MLA_horizon_id, strat_height_m) %>%
+  group_by(composite_section, MLA_horizon_id, strat_height_m) %>%
   summarise(
     Bowen_mean_d13Ccarb_vpdb = mean(Bowen_d13Ccarb_vpdb, na.rm = TRUE),
     Bowen_se_d13Ccarb_vpdb   = sd(Bowen_d13Ccarb_vpdb, na.rm = TRUE) /
@@ -1435,17 +1460,17 @@ bowen_summary <- bowen_primary %>%
 #    BowenExcluded_se_d13Ccarb_vpdb   = sd(Bowen_d13Ccarb_vpdb, na.rm = TRUE) /
 #      sqrt(sum(!is.na(Bowen_d13Ccarb_vpdb))),
 #    BowenExcluded_n_d13Ccarb         = sum(!is.na(Bowen_d13Ccarb_vpdb)),
-    
+
 #    BowenExcluded_mean_d18Ocarb_vpdb = mean(Bowen_d18Ocarb_vpdb, na.rm = TRUE),
 #    BowenExcluded_se_d18Ocarb_vpdb   = sd(Bowen_d18Ocarb_vpdb, na.rm = TRUE) /
 #      sqrt(sum(!is.na(Bowen_d18Ocarb_vpdb))),
 #    BowenExcluded_n_d18Ocarb_vpdb    = sum(!is.na(Bowen_d18Ocarb_vpdb)),
-    
+
 #    BowenExcluded_mean_d18Ocarb_vsmow = mean(Bowen_d18Ocarb_vsmow, na.rm = TRUE),
 #    BowenExcluded_se_d18Ocarb_vsmow   = sd(Bowen_d18Ocarb_vsmow, na.rm = TRUE) /
 #     sqrt(sum(!is.na(Bowen_d18Ocarb_vsmow))),
 #    BowenExcluded_n_d18Ocarb_vsmow    = sum(!is.na(Bowen_d18Ocarb_vsmow)),
-    
+
 #   .groups = "drop"
 # )
 
@@ -1510,6 +1535,7 @@ spar_altered_combined <- bind_rows(
       sample_type = "SPAR",
       MLA_sample_id,
       MLA_horizon_id,
+      composite_section,
       strat_height_m,
       d13Ccarb_vpdb = IPL_NuDog_d13Ccarb_VPDB,
       d18Ocarb_vpdb = IPL_NuDog_d18Ocarb_VPDB,
@@ -1528,6 +1554,7 @@ spar_altered_combined <- bind_rows(
       sample_type = Snell_sample_type,
       MLA_sample_id,
       MLA_horizon_id,
+      composite_section,
       strat_height_m,
       d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
       d18Ocarb_vpdb = NA_real_,
@@ -1546,6 +1573,7 @@ spar_altered_combined <- bind_rows(
       sample_type = Snell_sample_type,
       MLA_sample_id,
       MLA_horizon_id,
+      composite_section,
       strat_height_m,
       d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
       d18Ocarb_vpdb = NA_real_,
@@ -1557,7 +1585,7 @@ spar_altered_combined <- bind_rows(
       T47_se_C = Snell_se_T47_C
     )
 ) %>%
-  arrange(strat_height_m, MLA_horizon_id, source, MLA_sample_id)
+  arrange(composite_section, strat_height_m, MLA_horizon_id, source, MLA_sample_id)
 
 # 9. Combine summaries by horizon / strat ----------------------
 
@@ -1565,7 +1593,7 @@ spar_altered_combined <- bind_rows(
 # Check whether each summary has one row per MLA_horizon_id
 check_horizon_dupes <- function(df) {
   df %>%
-    count(MLA_horizon_id) %>%
+    count(composite_section, MLA_horizon_id) %>%
     filter(n > 1)
 }
 
@@ -1594,20 +1622,20 @@ lapply(summary_list, function(x) nrow(x))
 BHB_multiproxy_summary <- summary_list %>%
   purrr::reduce(
     full_join,
-    by = c("MLA_horizon_id", "strat_height_m")
+    by = c("composite_section", "MLA_horizon_id", "strat_height_m")
   ) %>%
-  arrange(strat_height_m)
+  arrange(composite_section, strat_height_m)
 
 check_horizon_dupes(BHB_multiproxy_summary)
 
 BHB_multiproxy_summary %>%
- filter(MLA_horizon_id == "PK95-SC-295") %>%
- select(MLA_horizon_id, strat_height_m)
+  filter(MLA_horizon_id == "PK95-SC-295") %>%
+  select(composite_section, MLA_horizon_id, strat_height_m)
 
 # Summarize spar / altered data by horizon 
 
 spar_altered_horizon_summary <- spar_altered_combined %>%
-  group_by(MLA_horizon_id) %>%
+  group_by(composite_section, MLA_horizon_id) %>%
   summarise(
     strat_height_m = mean(strat_height_m, na.rm = TRUE),
     
@@ -1642,120 +1670,433 @@ spar_altered_horizon_summary <- spar_altered_combined %>%
       ~ if_else(is.nan(.x) | is.infinite(.x), NA_real_, .x)
     )
   ) %>%
-  arrange(strat_height_m)
+  arrange(composite_section, strat_height_m)
 
-# 10. Age Model --------------
+# 10. Site-specific age models --------------------------------------------
 
-# Assign ages to all horizons using the composite Bighorn Basin age model.
+# Build independent age-depth models for:
+#   CFB  = Clarks Fork Basin / Polecat Bench
+#   MCP  = McCullough Peaks
+#   SBHB = southern Bighorn Basin
 #
-# matthews_age_model contains age-depth tie points derived from a combination
-# of:
-#   (1) the astronomically calibrated Polecat Bench core chronology of
-#       Westerhold et al. (2018), projected onto Polecat Bench outcrop
-#       stratigraphic heights using the onset of the PETM carbon isotope
-#       excursion (CIE) as a shared datum, and
-#   (2) the paleomagnetic age model of Secord et al. (2006), which provides
-#       age control outside the interval directly constrained by Westerhold
-#       et al. (2018).
+# Each horizon retains its native composite-section stratigraphic position.
+# Ages are calculated only from the priors belonging to that section.
 #
-# Ages for individual horizons are obtained by linear interpolation between
-# adjacent age-depth tie points. Horizons falling outside the modeled range
-# are assigned NA (rule = 1).
+# Ages are linearly interpolated between adjacent tie points. Samples outside
+# the range of the priors are linearly extrapolated using the slope of the
+# nearest pair of tie points.
+#
+# Age_uncertainty_index is a relative measure of distance from direct age
+# control, not a formal age error:
+#   0 = at a tie point
+#   1 = halfway between adjacent tie points
+# Values outside the prior range increase with extrapolation distance.
 
-age_priors <- read.csv(
+
+# Load age priors
+
+CFB_age_priors<- read.csv(
   here("data", "raw", "PCB-CFB_age_priors.csv")
 )
 
-str(age_priors)
+MCP_age_priors <- read.csv(
+  here("data", "raw", "MCP_age_priors.csv")
+)
 
-# ---- Continuous composite age model ------
+SBHB_age_priors <- read.csv(
+  here("data", "raw", "SBHB_age_priors.csv")
+)
 
-age_priors <- age_priors %>%
-  mutate(
-    est_Depth_m_PCB_outcrop = as.numeric(est_Depth_m_PCB_outcrop),
-    Age_Ma_best_estimate = as.numeric(Age_Ma_best_estimate)
+
+
+# ---- Standardize age-prior tables ---------------------------------------
+
+CFB_age_priors_clean <- CFB_age_priors %>%
+  transmute(
+    composite_section = "CFB",
+    strat_height_m = as.numeric(est_Depth_m_PCB_outcrop),
+    prior_Age_Ma = as.numeric(Age_Ma_best_estimate)
   ) %>%
   filter(
-    !is.na(est_Depth_m_PCB_outcrop),
-    !is.na(Age_Ma_best_estimate)
+    !is.na(strat_height_m),
+    !is.na(prior_Age_Ma)
   ) %>%
-  arrange(est_Depth_m_PCB_outcrop)
+  distinct(strat_height_m, .keep_all = TRUE) %>%
+  arrange(strat_height_m)
 
-BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
-  mutate(
-    Age_Ma = approx(
-      x = age_priors$est_Depth_m_PCB_outcrop,
-      y = age_priors$Age_Ma_best_estimate,
-      xout = strat_height_m,
-      rule = 1
-    )$y
+
+MCP_age_priors_clean <- MCP_age_priors %>%
+  transmute(
+    composite_section = "MCP",
+    strat_height_m = as.numeric(Koch2003_m_above_Kpg),
+    prior_Age_Ma = as.numeric(Age_Ma)
+  ) %>%
+  filter(
+    !is.na(strat_height_m),
+    !is.na(prior_Age_Ma)
+  ) %>%
+  distinct(strat_height_m, .keep_all = TRUE) %>%
+  arrange(strat_height_m)
+
+
+SBHB_age_priors_clean <- SBHB_age_priors %>%
+  transmute(
+    composite_section = "SBHB",
+    strat_height_m = as.numeric(Koch2003_level_m),
+    prior_Age_Ma = as.numeric(Age_Ma)
+  ) %>%
+  filter(
+    !is.na(strat_height_m),
+    !is.na(prior_Age_Ma)
+  ) %>%
+  distinct(strat_height_m, .keep_all = TRUE) %>%
+  arrange(strat_height_m)
+
+
+# Check that each model contains at least two usable tie points
+
+age_prior_counts <- bind_rows(
+  CFB_age_priors_clean,
+  MCP_age_priors_clean,
+  SBHB_age_priors_clean
+) %>%
+  count(composite_section, name = "n_age_priors")
+
+if (any(age_prior_counts$n_age_priors < 2)) {
+  stop(
+    "Every composite section must contain at least two usable age priors."
+  )
+}
+
+
+# ---- Age-model prediction function --------------------------------------
+
+predict_section_age <- function(xout, priors) {
+  
+  priors <- priors %>%
+    filter(
+      !is.na(strat_height_m),
+      !is.na(prior_Age_Ma)
+    ) %>%
+    distinct(strat_height_m, .keep_all = TRUE) %>%
+    arrange(strat_height_m)
+  
+  x <- priors$strat_height_m
+  y <- priors$prior_Age_Ma
+  n <- length(x)
+  
+  if (n < 2) {
+    stop("At least two unique age-depth tie points are required.")
+  }
+  
+  # Begin with interpolation inside the prior range.
+  predicted_age <- approx(
+    x = x,
+    y = y,
+    xout = xout,
+    rule = 1,
+    ties = "ordered"
+  )$y
+  
+  # Linear extrapolation below the lowest prior.
+  lower_slope <- (y[2] - y[1]) / (x[2] - x[1])
+  
+  below <- !is.na(xout) & xout < x[1]
+  
+  predicted_age[below] <-
+    y[1] + lower_slope * (xout[below] - x[1])
+  
+  # Linear extrapolation above the highest prior.
+  upper_slope <-
+    (y[n] - y[n - 1]) / (x[n] - x[n - 1])
+  
+  above <- !is.na(xout) & xout > x[n]
+  
+  predicted_age[above] <-
+    y[n] + upper_slope * (xout[above] - x[n])
+  
+  # Identify the location of each prediction relative to age control.
+  age_model_position <- case_when(
+    is.na(xout) ~ NA_character_,
+    xout < x[1] ~ "extrapolated_below",
+    xout > x[n] ~ "extrapolated_above",
+    xout %in% x ~ "tie_point",
+    TRUE ~ "interpolated"
+  )
+  
+  # Distance in meters to the nearest age prior.
+  distance_to_nearest_prior_m <- vapply(
+    xout,
+    function(z) {
+      if (is.na(z)) {
+        return(NA_real_)
+      }
+      
+      min(abs(z - x))
+    },
+    numeric(1)
+  )
+  
+  # Relative uncertainty index:
+  #   0 at a tie point
+  #   1 halfway between adjacent priors
+  #   increasing away from the model during extrapolation
+  age_uncertainty_index <- rep(NA_real_, length(xout))
+  
+  for (i in seq_along(xout)) {
+    
+    z <- xout[i]
+    
+    if (is.na(z)) {
+      next
+    }
+    
+    if (z < x[1]) {
+      
+      # Scale lower extrapolation by the width of the first interval.
+      age_uncertainty_index[i] <-
+        (x[1] - z) / (x[2] - x[1])
+      
+    } else if (z > x[n]) {
+      
+      # Scale upper extrapolation by the width of the last interval.
+      age_uncertainty_index[i] <-
+        (z - x[n]) / (x[n] - x[n - 1])
+      
+    } else {
+      
+      # Locate the interval containing the sample.
+      lower_index <- findInterval(
+        z,
+        x,
+        all.inside = TRUE
+      )
+      
+      if (z %in% x) {
+        
+        age_uncertainty_index[i] <- 0
+        
+      } else {
+        
+        upper_index <- lower_index + 1
+        
+        w <- (
+          z - x[lower_index]
+        ) / (
+          x[upper_index] - x[lower_index]
+        )
+        
+        # Smooth grading:
+        # 0 at either bounding tie point and 1 at the midpoint.
+        age_uncertainty_index[i] <- 4 * w * (1 - w)
+      }
+    }
+  }
+  
+  tibble(
+    predicted_Age_Ma = predicted_age,
+    age_model_position = age_model_position,
+    distance_to_nearest_prior_m =
+      distance_to_nearest_prior_m,
+    Age_uncertainty_index =
+      age_uncertainty_index
+  )
+}
+
+
+# ---- Generate predictions for each section ------------------------------
+
+CFB_predictions <- predict_section_age(
+  xout = if_else(
+    BHB_multiproxy_summary$composite_section == "CFB",
+    BHB_multiproxy_summary$strat_height_m,
+    NA_real_
+  ),
+  priors = CFB_age_priors_clean
+) %>%
+  rename(
+    CFB_Age_Ma = predicted_Age_Ma,
+    CFB_age_model_position = age_model_position,
+    CFB_distance_to_prior_m = distance_to_nearest_prior_m,
+    CFB_Age_uncertainty_index = Age_uncertainty_index
   )
 
-# Quick-look age model diagnostics
 
-# Age-depth model
-ggplot() +
-  geom_line(
-    data = tibble(
-      strat_height_m = seq(
-        min(age_priors$est_Depth_m_PCB_outcrop),
-        max(age_priors$est_Depth_m_PCB_outcrop),
-        by = 1
-      )
-    ) %>%
-      mutate(
-        Age_Ma = approx(
-          x = age_priors$est_Depth_m_PCB_outcrop,
-          y = age_priors$Age_Ma_best_estimate,
-          xout = strat_height_m,
-          rule = 1
-        )$y
-      ),
-    aes(x = Age_Ma, y = strat_height_m),
-    linewidth = 1
+MCP_predictions <- predict_section_age(
+  xout = if_else(
+    BHB_multiproxy_summary$composite_section == "MCP",
+    BHB_multiproxy_summary$strat_height_m,
+    NA_real_
+  ),
+  priors = MCP_age_priors_clean
+) %>%
+  rename(
+    MCP_Age_Ma = predicted_Age_Ma,
+    MCP_age_model_position = age_model_position,
+    MCP_distance_to_prior_m = distance_to_nearest_prior_m,
+    MCP_Age_uncertainty_index = Age_uncertainty_index
+  )
+
+
+SBHB_predictions <- predict_section_age(
+  xout = if_else(
+    BHB_multiproxy_summary$composite_section == "SBHB",
+    BHB_multiproxy_summary$strat_height_m,
+    NA_real_
+  ),
+  priors = SBHB_age_priors_clean
+) %>%
+  rename(
+    SBHB_Age_Ma = predicted_Age_Ma,
+    SBHB_age_model_position = age_model_position,
+    SBHB_distance_to_prior_m = distance_to_nearest_prior_m,
+    SBHB_Age_uncertainty_index = Age_uncertainty_index
+  )
+
+
+# ---- Add section-specific and compiled ages ------------------------------
+
+BHB_multiproxy_summary <- bind_cols(
+  BHB_multiproxy_summary,
+  CFB_predictions,
+  MCP_predictions,
+  SBHB_predictions
+) %>%
+  mutate(
+    
+    # Downstream-facing age column.
+    Age_Ma = case_when(
+      composite_section == "CFB" ~ CFB_Age_Ma,
+      composite_section == "MCP" ~ MCP_Age_Ma,
+      composite_section == "SBHB" ~ SBHB_Age_Ma,
+      TRUE ~ NA_real_
+    ),
+    
+    # Compiled model-position flag.
+    age_model_position = case_when(
+      composite_section == "CFB" ~ CFB_age_model_position,
+      composite_section == "MCP" ~ MCP_age_model_position,
+      composite_section == "SBHB" ~ SBHB_age_model_position,
+      TRUE ~ NA_character_
+    ),
+    
+    # Compiled distance to nearest age prior.
+    distance_to_nearest_prior_m = case_when(
+      composite_section == "CFB" ~ CFB_distance_to_prior_m,
+      composite_section == "MCP" ~ MCP_distance_to_prior_m,
+      composite_section == "SBHB" ~ SBHB_distance_to_prior_m,
+      TRUE ~ NA_real_
+    ),
+    
+    # Compiled relative uncertainty index.
+    Age_uncertainty_index = case_when(
+      composite_section == "CFB" ~
+        CFB_Age_uncertainty_index,
+      composite_section == "MCP" ~
+        MCP_Age_uncertainty_index,
+      composite_section == "SBHB" ~
+        SBHB_Age_uncertainty_index,
+      TRUE ~ NA_real_
+    )
+  )
+
+
+# ---- Checks --------------------------------------------------------------
+
+BHB_multiproxy_summary %>%
+  count(
+    composite_section,
+    age_model_position
+  )
+
+BHB_multiproxy_summary %>%
+  filter(is.na(Age_Ma)) %>%
+  select(
+    MLA_horizon_id,
+    composite_section,
+    strat_height_m,
+    Age_Ma
+  )
+
+BHB_multiproxy_summary %>%
+  select(
+    MLA_horizon_id,
+    composite_section,
+    strat_height_m,
+    CFB_Age_Ma,
+    MCP_Age_Ma,
+    SBHB_Age_Ma,
+    Age_Ma,
+    age_model_position,
+    distance_to_nearest_prior_m,
+    Age_uncertainty_index
+  ) %>%
+  arrange(
+    composite_section,
+    strat_height_m
+  )
+
+
+# ---- Age-model diagnostic plot ------------------------------------------
+
+all_age_priors <- bind_rows(
+  CFB_age_priors_clean,
+  MCP_age_priors_clean,
+  SBHB_age_priors_clean
+)
+
+ggplot(
+  BHB_multiproxy_summary %>%
+    filter(
+      !is.na(Age_Ma),
+      !is.na(strat_height_m)
+    ),
+  aes(
+    x = Age_Ma,
+    y = strat_height_m,
+    color = Age_uncertainty_index
+  )
+) +
+  geom_point(
+    size = 2,
+    alpha = 0.85
   ) +
   geom_point(
-    data = age_priors,
-    aes(x = Age_Ma_best_estimate, y = est_Depth_m_PCB_outcrop),
-    size = 2
+    data = all_age_priors,
+    aes(
+      x = prior_Age_Ma,
+      y = strat_height_m
+    ),
+    inherit.aes = FALSE,
+    shape = 21,
+    fill = "white",
+    color = "black",
+    size = 2.5,
+    stroke = 0.8
+  ) +
+  facet_wrap(
+    ~ composite_section,
+    scales = "free_y"
   ) +
   scale_x_reverse() +
+  scale_color_viridis_c(
+    option = "magma",
+    direction = 1,
+    name = "Relative age-model\nuncertainty"
+  ) +
   labs(
-    title = "Composite age-depth model",
-    subtitle = "Piecewise linear interpolation through stratigraphic age priors",
+    title = "Site-specific Bighorn Basin age models",
+    subtitle = paste(
+      "Dark colors indicate proximity to age control;",
+      "light colors indicate greater interpolation uncertainty"
+    ),
     x = "Age (Ma)",
     y = "Stratigraphic height above K-Pg (m)"
   ) +
   theme_classic()
 
 
-# ---- Apply composite age model to BHB multiproxy summary 
-
-age_priors_clean <- age_priors %>%
-  mutate(
-    est_Depth_m_PCB_outcrop = as.numeric(est_Depth_m_PCB_outcrop),
-    Age_Ma_best_estimate = as.numeric(Age_Ma_best_estimate)
-  ) %>%
-  filter(
-    !is.na(est_Depth_m_PCB_outcrop),
-    !is.na(Age_Ma_best_estimate)
-  ) %>%
-  arrange(est_Depth_m_PCB_outcrop)
-
-BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
-  mutate(
-    Age_Ma = approx(
-      x = age_priors_clean$est_Depth_m_PCB_outcrop,
-      y = age_priors_clean$Age_Ma_best_estimate,
-      xout = strat_height_m,
-      rule = 1
-    )$y
-  )
-
-# Quick check
-BHB_multiproxy_summary %>%
-  select(MLA_horizon_id, strat_height_m, Age_Ma) %>%
-  arrange(strat_height_m)
+# ---- Proxy data in age space --------------------------------------------
 
 ggplot(
   BHB_multiproxy_summary %>%
@@ -1765,11 +2106,16 @@ ggplot(
     ),
   aes(
     x = Age_Ma,
-    y = Koch_mean_d13Ccarb_vpdb
+    y = Koch_mean_d13Ccarb_vpdb,
+    color = Age_uncertainty_index
   )
 ) +
-  geom_point(alpha = 0.8, size = 2) +
+  geom_point(
+    size = 2,
+    alpha = 0.85
+  ) +
   geom_smooth(
+    aes(group = 1),
     method = "loess",
     span = 0.2,
     se = FALSE,
@@ -1777,13 +2123,17 @@ ggplot(
     color = "black"
   ) +
   scale_x_reverse() +
+  scale_color_viridis_c(
+    option = "magma",
+    direction = 1,
+    name = "Relative age-model\nuncertainty"
+  ) +
   labs(
     x = "Age (Ma)",
     y = "Koch d13Ccarb (per mil VPDB)",
     title = "Koch paleosol carbonate d13C in age space"
   ) +
   theme_classic()
-
 # ---- Add geologic stage from age model ----
 BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
   mutate(

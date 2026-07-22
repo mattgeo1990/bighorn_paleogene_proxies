@@ -229,6 +229,11 @@ p_T47_strat_clean <- ggplot() +
   ) +
   theme_strat_panel
 
+# All BHB prior temp data by strat ------------
+
+
+
+
 # ---- d13C carbonate plot ----
 
 d13C_obs_all <- BHB_multiproxy_summary %>%
@@ -294,7 +299,6 @@ p_d13C_strat_clean <- ggplot() +
   ) +
   theme_strat_panel
 
-# Compact rolling-mean d13Ccarb stratigraphic panel -----
 
 # Compact d13Ccarb stratigraphic panel ----
 

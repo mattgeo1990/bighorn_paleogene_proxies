@@ -51,6 +51,40 @@ spar_T_d18Ow <- spar_d18Ow_recon %>%
     !is.na(d18Ow_vsmow)
   )
 
+d18Ow_plot_data <- bind_rows(
+  micrite_T_d18Ow %>%
+    transmute(type = "Micrite", d18Ow = d18Ow_mean_vsmow),
+  spar_T_d18Ow %>%
+    transmute(type = "Spar / altered", d18Ow = d18Ow_vsmow)
+)
+
+ggplot(d18Ow_plot_data, aes(x = type, y = d18Ow)) +
+  geom_jitter(
+    width = 0.12,
+    size = 2,
+    alpha = 0.35,
+    color = "grey35"
+  ) +
+  stat_summary(
+    fun.data = mean_se,
+    geom = "errorbar",
+    width = 0.15,
+    linewidth = 0.8,
+    color = "#0072B2"
+  ) +
+  stat_summary(
+    fun = mean,
+    geom = "point",
+    size = 3.5,
+    color = "#0072B2"
+  ) +
+  labs(
+    x = NULL,
+    y = expression(delta^18 * O[water] ~ "(‰ VSMOW)")
+  ) +
+  theme_classic(base_size = 13)
+
+
 # ---- Combine micrite and spar/altered data for plotting ----
 micrite_plot <- micrite_T_d18Ow %>%
   transmute(
