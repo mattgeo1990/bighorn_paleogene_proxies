@@ -27,6 +27,14 @@ library(here)
 library(zoo)
 library(readr)
 
+# Prevent unsaved exploratory ggplot expressions from creating Rplots.pdf
+# during non-interactive pipeline runs. Explicit ggsave() calls are unaffected.
+opened_null_graphics_device <- FALSE
+if (!interactive()) {
+  grDevices::pdf(file = NULL)
+  opened_null_graphics_device <- TRUE
+}
+
 # ---- Create output directories ----
 processed_dir <- here("data", "processed")
 figure_dir <- here("figures", "reference_datasets")
@@ -130,7 +138,17 @@ Kelson_exclude_strat_age <- c(
 Kelson_Tornillo_raw <- read_csv(
   here("data", "raw", "kelson_tornillo_D47.csv"),
   show_col_types = FALSE
-)
+) %>%
+  # Normalize Unicode source headers immediately so the pipeline is stable
+  # across operating-system locale settings.
+  rename(
+    D47_source = 12,
+    D47_sd_source = 13,
+    D47_se_source = 14,
+    T47_source_C = 16,
+    T47_se_source_C = 17,
+    T47_95CI_source_C = 18
+  )
 
 Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
   transmute(
@@ -149,14 +167,14 @@ Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
     d18Ocarb_sd = `d18O SD`,
     d18Ocarb_se = d18O_SE,
     
-    D47 = `∆47 a`,
-    D47_sd = `∆47_SD`,
-    D47_se = `∆47 SE`,
+    D47 = D47_source,
+    D47_sd = D47_sd_source,
+    D47_se = D47_se_source,
     n_replicates = `n (# of replicates)`,
     
-    T47_C = `T(∆47) b`,
-    T47_se_C = `T(∆47) SE`,
-    T47_95CI_C = `T(∆47) 95 % CI`,
+    T47_C = T47_source_C,
+    T47_se_C = T47_se_source_C,
+    T47_95CI_C = T47_95CI_source_C,
     
     d18Ow_vsmow = d18Owater,
     d18Ow_error = `d18Ow error`
@@ -332,13 +350,53 @@ Wing2000_MAT <- read_csv(
     geographic_scope = "Bighorn Basin"
   )
 
-# --- 4. Fricke and Wing, 2004: d18Op/LMA temp and d18Owater estimates North America -------
+# --- 5. Fricke and Wing (2004): North American temperature estimates ----
 
 
 # Load Fricke & Wing (2004) dataset
 fw <- read_csv(
-  here("data", "raw", "Fricke&Wing2004_MAT_d18Owater.csv")
+  here("data", "raw", "Fricke&Wing2004_MAT_d18Owater.csv"),
+  show_col_types = FALSE
 )
+
+# The source table provides two Bighorn Basin estimates tied to mammalian
+# biozones rather than sample-specific numerical ages. Preserve that coarse
+# temporal resolution instead of treating the values as precisely dated.
+# Wa-0 is bracketed by the project PETM interval; Wa-6 is bracketed using the
+# taxon-specific ages carried by the Fricke et al. (1998) reference table.
+FrickeWing2004_BHB_MAAT <- fw %>%
+  filter(str_detect(Locality, fixed("Bighorn Basin"))) %>%
+  transmute(
+    dataset = "Fricke and Wing (2004)",
+    proxy_type = "Isotope/LMA MAAT estimate",
+    geographic_scope = "Bighorn Basin",
+    interval = Interval,
+    biozone = NALMA,
+    paleolatitude_deg_n = Paleolatitude,
+    temperature_C = parse_number(as.character(MAAT)),
+    Age_Ma = case_when(
+      biozone == "Wa-0" ~ 55.90,
+      biozone == "Wa-6" ~ mean(c(52.83, 53.01)),
+      TRUE ~ NA_real_
+    ),
+    age_younger_ma = case_when(
+      biozone == "Wa-0" ~ 55.75,
+      biozone == "Wa-6" ~ 52.83,
+      TRUE ~ NA_real_
+    ),
+    age_older_ma = case_when(
+      biozone == "Wa-0" ~ 55.93,
+      biozone == "Wa-6" ~ 53.01,
+      TRUE ~ NA_real_
+    ),
+    age_basis = case_when(
+      biozone == "Wa-0" ~
+        "Project Wa-0/PETM datum; interval shown as 55.93-55.75 Ma",
+      biozone == "Wa-6" ~
+        "Range of Fricke et al. (1998) taxon-specific Wa-6 ages",
+      TRUE ~ "No numerical age assignment"
+    )
+  )
 
 # Plot MAT vs paleolatitude
 ggplot(
@@ -364,7 +422,93 @@ ggplot(
     legend.position = "top"
   )
 
-# 5. Kelson et al. (2026) D17O of modern soil waters -----------
+#-- 6.) ZB20a Astronomical Forcing at 47 Degrees North ---------------------
+#
+# The compact raw input is a 1-kyr extract of the pre-computed ZB20a(1,1)
+# astronomical solution distributed with Kocken and Zeebe (2026):
+# https://doi.org/10.1029/2025PA005287
+# https://github.com/japhir/paleoinsolation
+#
+# Daily-mean top-of-atmosphere insolation is calculated at 47 degrees north
+# for Northern Hemisphere summer solstice (true solar longitude = 90 degrees)
+# using S0 = 1360.7 W m-2. The equations follow the authors' R implementation.
+# Ages are the solution's astronomical ages relative to J2000 and are plotted
+# on the same Ma axis as GTS2020-positioned proxy ages. No phase shift or tuning
+# to the BHB data is applied. ZB20a eccentricity is geologically supported over
+# this interval, but exact precession/obliquity phase becomes less secure before
+# approximately 58 Ma; the processed table retains that interpretation flag.
+
+ZB20a_orbital <- read_csv(
+  here("data", "raw", "ZB20a_1-1_Thanetian_Ypresian_1kyr.csv"),
+  show_col_types = FALSE
+) %>%
+  filter(
+    if_all(
+      c(eccentricity, obliquity_rad, longitude_perihelion_rad),
+      ~ !is.na(.x)
+    )
+  )
+
+daily_insolation <- function(
+    eccentricity,
+    obliquity_rad,
+    longitude_perihelion_rad,
+    latitude_rad,
+    solar_longitude_rad,
+    solar_constant_w_m2 = 1360.7) {
+  true_anomaly <- solar_longitude_rad - longitude_perihelion_rad
+  earth_sun_distance <-
+    (1 - eccentricity^2) /
+    (1 + eccentricity * cos(true_anomaly))
+  sin_declination <- sin(obliquity_rad) * sin(solar_longitude_rad)
+  cos_declination <- sqrt(1 - sin_declination^2)
+  sin_lat_sin_dec <- sin(latitude_rad) * sin_declination
+  cos_lat_cos_dec <- cos(latitude_rad) * cos_declination
+  cos_hour_angle <- pmin(
+    pmax(-1, -sin_lat_sin_dec / cos_lat_cos_dec),
+    1
+  )
+  hour_angle <- acos(cos_hour_angle)
+  sin_hour_angle <- sqrt(1 - cos_hour_angle^2)
+
+  solar_constant_w_m2 / (pi * earth_sun_distance^2) *
+    (hour_angle * sin_lat_sin_dec +
+       cos_lat_cos_dec * sin_hour_angle)
+}
+
+BHB_insolation_47N <- ZB20a_orbital %>%
+  transmute(
+    Age_Ma = age_ma,
+    astronomical_time_kyr_j2000 = time_kyr_j2000,
+    eccentricity,
+    obliquity_deg = obliquity_rad * 180 / pi,
+    climatic_precession,
+    summer_solstice_insolation_w_m2 = daily_insolation(
+      eccentricity = eccentricity,
+      obliquity_rad = obliquity_rad,
+      longitude_perihelion_rad = longitude_perihelion_rad,
+      latitude_rad = 47 * pi / 180,
+      solar_longitude_rad = pi / 2,
+      solar_constant_w_m2 = 1360.7
+    ),
+    paleolatitude_deg_n = 47,
+    solar_longitude_deg = 90,
+    solar_constant_w_m2 = 1360.7,
+    astronomical_solution = "ZB20a(1,1)",
+    chronology_alignment =
+      "Native astronomical age plotted on GTS2020 Ma axis; no phase shift",
+    phase_interpretation = if_else(
+      Age_Ma > 58,
+      paste(
+        "Precession/obliquity phase less secure;",
+        "interpret exact insolation peaks cautiously"
+      ),
+      "Geologically supported ZB20a interval"
+    )
+  ) %>%
+  arrange(desc(Age_Ma))
+
+#-- 7.) Kelson et al. (2026) D17O of Modern Soil Waters --------------------
 
 modern_soilwater <- read_csv(
   here(
@@ -386,6 +530,53 @@ modern_soilwater <- read_csv(
 
 
 # --- Quick diagnostic plots ----
+
+#-- 8.) Assemble Non-CFB Soil-Carbonate Reference Records ------------------
+
+# Script 01 is the authoritative cleaning location for Snell and Koch. This
+# script consumes those processed summaries rather than repeating their source
+# cleaning. Only non-CFB observations enter the regional reference table.
+Snell_soilcarb_processed <- read_csv(
+  here("data", "processed", "SnellEtAl2013_soilcarb_summary.csv"),
+  show_col_types = FALSE
+)
+
+Koch_soilcarb_processed <- read_csv(
+  here("data", "processed", "Koch_soilcarb_summary.csv"),
+  show_col_types = FALSE
+)
+
+BHB_regional_soilcarb_reference_summary <- bind_rows(
+  Snell_soilcarb_processed %>%
+    filter(section_id != "CFB") %>%
+    transmute(
+      dataset = "Snell et al. (2013)",
+      section_id,
+      MLA_horizon_id,
+      strat_height_m,
+      published_age_ma = snell2013_age_ma,
+      d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
+      d18Ocarb_vsmow = Snell_mean_d18Ocarb_vsmow,
+      T47_C = Snell_mean_T47_C,
+      T47_se_C = Snell_se_T47_C,
+      published_d18Owater_vsmow = Snell_mean_d18Ow_vsmow
+    ),
+  Koch_soilcarb_processed %>%
+    filter(section_id != "CFB") %>%
+    transmute(
+      dataset = "Koch et al.",
+      section_id,
+      MLA_horizon_id,
+      strat_height_m,
+      published_age_ma = NA_real_,
+      d13Ccarb_vpdb = Koch_mean_d13Ccarb_vpdb,
+      d18Ocarb_vsmow = Koch_mean_d18Ocarb_vsmow,
+      T47_C = NA_real_,
+      T47_se_C = NA_real_,
+      published_d18Owater_vsmow = NA_real_
+    )
+) %>%
+  arrange(section_id, strat_height_m)
 
 p_Wing2000_MAT <- ggplot(
   Wing2000_MAT,
@@ -564,8 +755,26 @@ write_csv(
   file.path(processed_dir, "WingEtAl2000_LMA_MAT_processed.csv")
 )
 
+write_csv(
+  FrickeWing2004_BHB_MAAT,
+  file.path(processed_dir, "FrickeWing2004_BHB_MAAT_processed.csv")
+)
+
+write_csv(
+  BHB_insolation_47N,
+  file.path(processed_dir, "BHB_ZB20a_summer_insolation_47N.csv")
+)
+
+write_csv(
+  BHB_regional_soilcarb_reference_summary,
+  file.path(processed_dir, "BHB_regional_soilcarb_reference_summary.csv")
+)
+
 # Optional confirmation when run interactively.
 if (interactive()) {
   message("Processed reference datasets exported to: ", processed_dir)
 }
 
+if (opened_null_graphics_device) {
+  grDevices::dev.off()
+}

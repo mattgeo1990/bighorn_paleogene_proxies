@@ -1,0 +1,5 @@
+screening_scenario,screen_column,n_total_horizons,n_excluded_horizons,n_retained_horizons
+All data,none,165,0,165
+Exclude high likelihood,exclude_high_likelihood,165,4,161
+Exclude moderate or higher,exclude_moderate_or_higher,165,7,158
+Exclude any indication,exclude_any_alteration_indication,165,10,155

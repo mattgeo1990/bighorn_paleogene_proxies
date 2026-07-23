@@ -1,4 +1,4 @@
-# 05_soilwater_D17O_reconstructions.R
+# Legacy script: superseded by 05_reconstruct_CFB_soilwater.R
 # Purpose: Probabilistically reconstruct soil-water D17O from carbonate
 #          triple oxygen isotope data and reconstructed temperature.
 

@@ -1,16 +1,26 @@
 
-# 01_build_BHB_dataset.R
-# Purpose: Load, clean, summarize, and combine BHB proxy datasets
-# Outputs: Clean proxy-specific summaries + BHB multiproxy master by strat
+# 01_build_CFB_soilcarb_dataset.R
+# Purpose:
+#   Clean and summarize the carbonate-isotope datasets used in this project,
+#   preserve complete source-specific Snell and Koch summaries across sections,
+#   and assemble the primary CFB soil-carbonate isotope dataset.
+#
+# Scientific scope:
+#   The integrated dataset produced here is restricted to section_id == "CFB".
+#   Non-CFB Snell and Koch observations are retained in their source-specific
+#   processed files for later use as regional reference records.
+#
+# Main output:
+#   data/processed/CFB_soilcarb_isotope_summary.csv
 
 
-# 1. Setup ----------------------------------------------------
+#-- 1.) Setup ---------------------------------------------------------------
 # Load required packages
 
 library(tidyverse)
 library(here)
 library(isogeochem)
-library(plotly)
+library(plotly) # retained temporarily for legacy QC plots during restructuring
 
 # source(here::here("scripts", "00_setup.R"))
 
@@ -42,7 +52,7 @@ check_levels <- function(df, strat_col, id_col) {
 }
 
 
-# 2. Load raw data --------------------------------------------
+#-- 2.) Load Raw Carbonate Datasets ----------------------------------------
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Data model notes
@@ -64,21 +74,21 @@ check_levels <- function(df, strat_col, id_col) {
 #   among locality, paleosol, horizon, nodule, and powder matter.
 
 # Stratigraphic framework:
-#   strat_height_m is the native stratigraphic height for the composite section
-#   identified by composite_section:
+#   strat_height_m is the native stratigraphic height for section_id.
+#   identified by section_id:
 #     CFB  = Clarks Fork Basin / Polecat Bench
 #     MCP  = McCullough Peaks
-#     SBHB = southern Bighorn Basin
-#   Stratigraphic heights from different composite sections are not directly
-#   comparable and must never be joined without composite_section.
+#   Stratigraphic heights from different sections are not directly
+#   comparable and must never be joined without section_id.
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load IPL sample list (PB and SC samples)
 
-IPL_sample_list <- read.csv(
-  here("data", "raw", "SandCoulee_Polecat_nodules.csv")
+IPL_sample_list <- read_csv(
+  here("data", "raw", "SandCoulee_Polecat_nodules.csv"),
+  show_col_types = FALSE
 ) %>%
-  mutate(composite_section = "CFB")
+  mutate(section_id = "CFB")
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,7 +102,7 @@ IPL_sample_list <- read.csv(
 IPL_D17O_data <- read.csv(
   here("data", "raw", "all_data_PgBHB_IPL17O_CODEX_AUTOMATED_CORRECTIONS.csv")
 ) %>%
-  mutate(composite_section = "CFB")
+  mutate(section_id = "CFB")
 
 names(IPL_D17O_data)
 
@@ -106,7 +116,7 @@ names(IPL_D17O_data)
 IPL_D47_data <- read.csv(
   here("data", "raw", "IPL_D47_BHB_Pg_Summary_June2026.csv")
 ) %>%
-  mutate(composite_section = "CFB")
+  mutate(section_id = "CFB")
 
 names(IPL_D47_data)
 table(IPL_D47_data$MLA_horizon_id)
@@ -123,7 +133,7 @@ CU_data <- read_csv(
   here("data", "raw", "PETM_clumped.csv")
 ) %>%
   mutate(
-    composite_section = "CFB",
+    section_id = "CFB",
     d18Oc_SMOW = to_VSMOW(d18Ocarb_VPBD, eq = "IUPAC")
   ) %>%
   round_depth()
@@ -133,7 +143,7 @@ CU_summary <- CU_data %>%
     CU_sample_id = CU_Sample_ID,
     MLA_sample_id,
     MLA_horizon_id,
-    composite_section,
+    section_id,
     strat_height_m,
     
     CU_mean_d13Ccarb_vpdb   = d13C_VPBD,
@@ -162,7 +172,7 @@ Snell2013 <- read_csv(
 ) %>%
   mutate(
     section = str_to_upper(str_trim(section)),
-    composite_section = section
+    section_id = section
   ) %>%
   round_depth()
 
@@ -171,7 +181,7 @@ names(Snell2013)
 Snell2013_summary <- Snell2013 %>%
   transmute(
     snell2013_age_ma = snell2013_age_ma,
-    composite_section,
+    section_id,
     Snell_sample_id = Snell_Sample_ID,
     MLA_sample_id,
     MLA_horizon_id,
@@ -204,7 +214,7 @@ koch <- read_csv(
 ) %>%
   mutate(
     section = str_to_upper(str_trim(section)),
-    composite_section = section,
+    section_id = section,
     Koch_d13Ccarb_vpdb  = d13C_VPDB,
     Koch_d18Ocarb_vpdb  = d18Ocarb_VPDB,
     Koch_d18Ocarb_vsmow = d18Ocarb_VSMOW
@@ -214,7 +224,7 @@ koch <- read_csv(
     Locality,
     MLA_sample_id,
     MLA_horizon_id,
-    composite_section,
+    section_id,
     strat_height_m,
     Koch_d13Ccarb_vpdb,
     Koch_d18Ocarb_vpdb,
@@ -234,7 +244,7 @@ bowen <- read_csv(
   here("data", "raw", "Bowen2001_IsotopeData.csv")
 ) %>%
   mutate(
-    composite_section        = "CFB",
+    section_id        = "CFB",
     Bowen_d13Ccarb_vpdb     = as.numeric(d13C_VPDB),
     Bowen_d18Ocarb_vpdb     = as.numeric(d18Ocarb_VPDB),
     Bowen_d18Ocarb_vsmow    = as.numeric(d18Ocarb_VSMOW)
@@ -244,7 +254,7 @@ bowen <- read_csv(
     Bowen_Sample_ID,
     MLA_sample_id,
     MLA_horizon_id,
-    composite_section,
+    section_id,
     strat_height_m,
     Bowen_d13Ccarb_vpdb,
     Bowen_d18Ocarb_vpdb,
@@ -451,7 +461,10 @@ IPL_D47_primary_data <- IPL_D47_data %>%
 # Visualize all individual Δ47 temperature replicates from primary (non-SPAR)
 # pedogenic carbonate samples to assess temperature variability with stratigraphy
 # and identify potential outliers or stratigraphic trends.
-ggplot() +
+# This summary-level QC plot is generated only after the horizon summary exists.
+# Keeping the transformation stage independent prevents reliance on objects
+# left in an interactive workspace from a previous run.
+if (FALSE) ggplot() +
   # Individual replicate measurements
   geom_point(
     data = IPL_D47_primary_data,
@@ -1167,7 +1180,7 @@ nrow(bowen_spar)
 generic_sd <- 12
 
 IPL17O_summary <- IPL_D17O_data_final %>%
-  group_by(composite_section, MLA_horizon_id) %>%
+  group_by(section_id, MLA_horizon_id) %>%
   summarise(
     
     # δ′17O carbonate
@@ -1208,9 +1221,9 @@ IPL17O_summary <- IPL_D17O_data_final %>%
   # one stratigraphic position from the project sample list.
   left_join(
     IPL_sample_list %>%
-      select(composite_section, MLA_horizon_id, strat_height_m) %>%
+      select(section_id, MLA_horizon_id, strat_height_m) %>%
       distinct(),
-    by = c("composite_section", "MLA_horizon_id")
+    by = c("section_id", "MLA_horizon_id")
   ) %>%
   
   mutate(
@@ -1259,7 +1272,7 @@ max_or_na <- function(x) {
 
 summarize_IPLD47 <- function(data, sample_type) {
   data %>%
-    group_by(composite_section, MLA_sample_id, MLA_horizon_id) %>%
+    group_by(section_id, MLA_sample_id, MLA_horizon_id) %>%
     summarise(
       strat_height_m = mean_or_na(strat_height_m),
       
@@ -1341,7 +1354,7 @@ write_csv(
 # Summarize Koch primary carbonate data
 
 koch_summary <- koch_primary %>%
-  group_by(composite_section, MLA_horizon_id, strat_height_m) %>%
+  group_by(section_id, MLA_horizon_id, strat_height_m) %>%
   summarise(
     Koch_mean_d13Ccarb_vpdb = mean(Koch_d13Ccarb_vpdb, na.rm = TRUE),
     Koch_se_d13Ccarb_vpdb   = sd(Koch_d13Ccarb_vpdb, na.rm = TRUE) /
@@ -1365,7 +1378,7 @@ koch_summary <- koch_primary %>%
 # Summarize Koch fracture spar data
 
 koch_spar_summary <- koch_spar %>%
-  group_by(composite_section, MLA_horizon_id, strat_height_m) %>%
+  group_by(section_id, MLA_horizon_id, strat_height_m) %>%
   summarise(
     KochSPAR_mean_d13Ccarb_vpdb = mean(Koch_d13Ccarb_vpdb, na.rm = TRUE),
     KochSPAR_se_d13Ccarb_vpdb   = sd(Koch_d13Ccarb_vpdb, na.rm = TRUE) /
@@ -1430,7 +1443,7 @@ ggplot(koch_summary,
 # Summarize Bowen primary carbonate data
 
 bowen_summary <- bowen_primary %>%
-  group_by(composite_section, MLA_horizon_id, strat_height_m) %>%
+  group_by(section_id, MLA_horizon_id, strat_height_m) %>%
   summarise(
     Bowen_mean_d13Ccarb_vpdb = mean(Bowen_d13Ccarb_vpdb, na.rm = TRUE),
     Bowen_se_d13Ccarb_vpdb   = sd(Bowen_d13Ccarb_vpdb, na.rm = TRUE) /
@@ -1535,7 +1548,7 @@ spar_altered_combined <- bind_rows(
       sample_type = "SPAR",
       MLA_sample_id,
       MLA_horizon_id,
-      composite_section,
+      section_id,
       strat_height_m,
       d13Ccarb_vpdb = IPL_NuDog_d13Ccarb_VPDB,
       d18Ocarb_vpdb = IPL_NuDog_d18Ocarb_VPDB,
@@ -1554,7 +1567,7 @@ spar_altered_combined <- bind_rows(
       sample_type = Snell_sample_type,
       MLA_sample_id,
       MLA_horizon_id,
-      composite_section,
+      section_id,
       strat_height_m,
       d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
       d18Ocarb_vpdb = NA_real_,
@@ -1573,7 +1586,7 @@ spar_altered_combined <- bind_rows(
       sample_type = Snell_sample_type,
       MLA_sample_id,
       MLA_horizon_id,
-      composite_section,
+      section_id,
       strat_height_m,
       d13Ccarb_vpdb = Snell_mean_d13Ccarb_vpdb,
       d18Ocarb_vpdb = NA_real_,
@@ -1585,15 +1598,15 @@ spar_altered_combined <- bind_rows(
       T47_se_C = Snell_se_T47_C
     )
 ) %>%
-  arrange(composite_section, strat_height_m, MLA_horizon_id, source, MLA_sample_id)
+  arrange(section_id, strat_height_m, MLA_horizon_id, source, MLA_sample_id)
 
-# 9. Combine summaries by horizon / strat ----------------------
+#-- 9.) Build the Integrated CFB Soil-Carbonate Dataset --------------------
 
 
 # Check whether each summary has one row per MLA_horizon_id
 check_horizon_dupes <- function(df) {
   df %>%
-    count(composite_section, MLA_horizon_id) %>%
+    count(section_id, MLA_horizon_id) %>%
     filter(n > 1)
 }
 
@@ -1604,38 +1617,63 @@ check_horizon_dupes(Snell2013_micrite)
 check_horizon_dupes(koch_summary)
 check_horizon_dupes(bowen_summary)
 
-summary_list <- list(
+# Preserve the complete source summaries before creating analytical subsets.
+# These all-section tables are the authoritative processed versions used by
+# the later regional-reference workflow. They should not be re-cleaned there.
+Snell2013_micrite_all_sections <- Snell2013_micrite
+koch_summary_all_sections <- koch_summary
+
+# Only CFB observations enter the primary soil-carbonate compilation.
+Snell2013_micrite_CFB <- Snell2013_micrite_all_sections %>%
+  filter(section_id == "CFB")
+
+koch_summary_CFB <- koch_summary_all_sections %>%
+  filter(section_id == "CFB")
+
+CFB_summary_list <- list(
   IPL17O = IPL17O_summary,
   IPLD47 = IPLD47_primary_summary %>%
     select(-MLA_sample_id),
   CU = CU_summary %>%
     select(-MLA_sample_id),
-  Snell = Snell2013_micrite %>%
+  Snell = Snell2013_micrite_CFB %>%
     select(-MLA_sample_id),
-  Koch = koch_summary,
+  Koch = koch_summary_CFB,
   Bowen = bowen_summary
 )
 
-lapply(summary_list, function(x) nrow(x))
+lapply(CFB_summary_list, function(x) nrow(x))
 
-
-BHB_multiproxy_summary <- summary_list %>%
+CFB_soilcarb_isotope_summary <- CFB_summary_list %>%
   purrr::reduce(
     full_join,
-    by = c("composite_section", "MLA_horizon_id", "strat_height_m")
+    by = c("section_id", "MLA_horizon_id", "strat_height_m")
   ) %>%
-  arrange(composite_section, strat_height_m)
+  arrange(strat_height_m) %>%
+  relocate(
+    section_id,
+    MLA_horizon_id,
+    strat_height_m
+  )
 
-check_horizon_dupes(BHB_multiproxy_summary)
+if (any(CFB_soilcarb_isotope_summary$section_id != "CFB")) {
+  stop("The integrated CFB dataset contains a non-CFB section_id.")
+}
 
-BHB_multiproxy_summary %>%
+check_horizon_dupes(CFB_soilcarb_isotope_summary)
+
+CFB_soilcarb_isotope_summary %>%
   filter(MLA_horizon_id == "PK95-SC-295") %>%
-  select(composite_section, MLA_horizon_id, strat_height_m)
+  select(section_id, MLA_horizon_id, strat_height_m)
+
+# Temporary compatibility alias. Downstream scripts will be migrated to the
+# explicit CFB name during this restructuring and this alias can then be removed.
+BHB_multiproxy_summary <- CFB_soilcarb_isotope_summary
 
 # Summarize spar / altered data by horizon 
 
 spar_altered_horizon_summary <- spar_altered_combined %>%
-  group_by(composite_section, MLA_horizon_id) %>%
+  group_by(section_id, MLA_horizon_id) %>%
   summarise(
     strat_height_m = mean(strat_height_m, na.rm = TRUE),
     
@@ -1670,7 +1708,12 @@ spar_altered_horizon_summary <- spar_altered_combined %>%
       ~ if_else(is.nan(.x) | is.infinite(.x), NA_real_, .x)
     )
   ) %>%
-  arrange(composite_section, strat_height_m)
+  arrange(section_id, strat_height_m)
+
+# Legacy age-model block retained temporarily during the staged migration.
+# Age construction and application now belong after proxy reconstruction and
+# reference-data standardization, so this block is intentionally not executed.
+if (FALSE) {
 
 # 10. Site-specific age models --------------------------------------------
 
@@ -1713,7 +1756,7 @@ SBHB_age_priors <- read.csv(
 
 CFB_age_priors_clean <- CFB_age_priors %>%
   transmute(
-    composite_section = "CFB",
+    section_id = "CFB",
     strat_height_m = as.numeric(est_Depth_m_PCB_outcrop),
     prior_Age_Ma = as.numeric(Age_Ma_best_estimate)
   ) %>%
@@ -1727,7 +1770,7 @@ CFB_age_priors_clean <- CFB_age_priors %>%
 
 MCP_age_priors_clean <- MCP_age_priors %>%
   transmute(
-    composite_section = "MCP",
+    section_id = "MCP",
     strat_height_m = as.numeric(Koch2003_m_above_Kpg),
     prior_Age_Ma = as.numeric(Age_Ma)
   ) %>%
@@ -1741,7 +1784,7 @@ MCP_age_priors_clean <- MCP_age_priors %>%
 
 SBHB_age_priors_clean <- SBHB_age_priors %>%
   transmute(
-    composite_section = "SBHB",
+    section_id = "SBHB",
     strat_height_m = as.numeric(Koch2003_level_m),
     prior_Age_Ma = as.numeric(Age_Ma)
   ) %>%
@@ -1760,7 +1803,7 @@ age_prior_counts <- bind_rows(
   MCP_age_priors_clean,
   SBHB_age_priors_clean
 ) %>%
-  count(composite_section, name = "n_age_priors")
+  count(section_id, name = "n_age_priors")
 
 if (any(age_prior_counts$n_age_priors < 2)) {
   stop(
@@ -1908,7 +1951,7 @@ predict_section_age <- function(xout, priors) {
 
 CFB_predictions <- predict_section_age(
   xout = if_else(
-    BHB_multiproxy_summary$composite_section == "CFB",
+    BHB_multiproxy_summary$section_id == "CFB",
     BHB_multiproxy_summary$strat_height_m,
     NA_real_
   ),
@@ -1924,7 +1967,7 @@ CFB_predictions <- predict_section_age(
 
 MCP_predictions <- predict_section_age(
   xout = if_else(
-    BHB_multiproxy_summary$composite_section == "MCP",
+    BHB_multiproxy_summary$section_id == "MCP",
     BHB_multiproxy_summary$strat_height_m,
     NA_real_
   ),
@@ -1940,7 +1983,7 @@ MCP_predictions <- predict_section_age(
 
 SBHB_predictions <- predict_section_age(
   xout = if_else(
-    BHB_multiproxy_summary$composite_section == "SBHB",
+    BHB_multiproxy_summary$section_id == "SBHB",
     BHB_multiproxy_summary$strat_height_m,
     NA_real_
   ),
@@ -1966,35 +2009,35 @@ BHB_multiproxy_summary <- bind_cols(
     
     # Downstream-facing age column.
     Age_Ma = case_when(
-      composite_section == "CFB" ~ CFB_Age_Ma,
-      composite_section == "MCP" ~ MCP_Age_Ma,
-      composite_section == "SBHB" ~ SBHB_Age_Ma,
+      section_id == "CFB" ~ CFB_Age_Ma,
+      section_id == "MCP" ~ MCP_Age_Ma,
+      section_id == "SBHB" ~ SBHB_Age_Ma,
       TRUE ~ NA_real_
     ),
     
     # Compiled model-position flag.
     age_model_position = case_when(
-      composite_section == "CFB" ~ CFB_age_model_position,
-      composite_section == "MCP" ~ MCP_age_model_position,
-      composite_section == "SBHB" ~ SBHB_age_model_position,
+      section_id == "CFB" ~ CFB_age_model_position,
+      section_id == "MCP" ~ MCP_age_model_position,
+      section_id == "SBHB" ~ SBHB_age_model_position,
       TRUE ~ NA_character_
     ),
     
     # Compiled distance to nearest age prior.
     distance_to_nearest_prior_m = case_when(
-      composite_section == "CFB" ~ CFB_distance_to_prior_m,
-      composite_section == "MCP" ~ MCP_distance_to_prior_m,
-      composite_section == "SBHB" ~ SBHB_distance_to_prior_m,
+      section_id == "CFB" ~ CFB_distance_to_prior_m,
+      section_id == "MCP" ~ MCP_distance_to_prior_m,
+      section_id == "SBHB" ~ SBHB_distance_to_prior_m,
       TRUE ~ NA_real_
     ),
     
     # Compiled relative uncertainty index.
     Age_uncertainty_index = case_when(
-      composite_section == "CFB" ~
+      section_id == "CFB" ~
         CFB_Age_uncertainty_index,
-      composite_section == "MCP" ~
+      section_id == "MCP" ~
         MCP_Age_uncertainty_index,
-      composite_section == "SBHB" ~
+      section_id == "SBHB" ~
         SBHB_Age_uncertainty_index,
       TRUE ~ NA_real_
     )
@@ -2005,7 +2048,7 @@ BHB_multiproxy_summary <- bind_cols(
 
 BHB_multiproxy_summary %>%
   count(
-    composite_section,
+    section_id,
     age_model_position
   )
 
@@ -2013,7 +2056,7 @@ BHB_multiproxy_summary %>%
   filter(is.na(Age_Ma)) %>%
   select(
     MLA_horizon_id,
-    composite_section,
+    section_id,
     strat_height_m,
     Age_Ma
   )
@@ -2021,7 +2064,7 @@ BHB_multiproxy_summary %>%
 BHB_multiproxy_summary %>%
   select(
     MLA_horizon_id,
-    composite_section,
+    section_id,
     strat_height_m,
     CFB_Age_Ma,
     MCP_Age_Ma,
@@ -2032,7 +2075,7 @@ BHB_multiproxy_summary %>%
     Age_uncertainty_index
   ) %>%
   arrange(
-    composite_section,
+    section_id,
     strat_height_m
   )
 
@@ -2075,7 +2118,7 @@ ggplot(
     stroke = 0.8
   ) +
   facet_wrap(
-    ~ composite_section,
+    ~ section_id,
     scales = "free_y"
   ) +
   scale_x_reverse() +
@@ -2149,7 +2192,9 @@ BHB_multiproxy_summary <- BHB_multiproxy_summary %>%
       levels = c("Danian", "Selandian", "Thanetian", "Ypresian")
     )
   )
-# 11. Export summarized primary datasets  ---------------------
+}
+
+#-- 10.) Export Source Summaries and the CFB Compilation -------------------
 
 write_csv(
   IPL17O_summary,
@@ -2167,13 +2212,13 @@ write_csv(
 )
 
 write_csv(
-  Snell2013_micrite,
-  here("data", "processed", "Snell2013_micrite_summary.csv")
+  Snell2013_micrite_all_sections,
+  here("data", "processed", "SnellEtAl2013_soilcarb_summary.csv")
 )
 
 write_csv(
-  koch_summary,
-  here("data", "processed", "koch_summary.csv")
+  koch_summary_all_sections,
+  here("data", "processed", "Koch_soilcarb_summary.csv")
 )
 
 write_csv(
@@ -2182,8 +2227,8 @@ write_csv(
 )
 
 write_csv(
-  BHB_multiproxy_summary,
-  here("data", "processed", "BHB_multiproxy_summary.csv")
+  CFB_soilcarb_isotope_summary,
+  here("data", "processed", "CFB_soilcarb_isotope_summary.csv")
 )
 
 # Export spar / altered carbonate datasets
@@ -2205,6 +2250,11 @@ write_csv(
     "spar_altered_horizon_summary.csv"
   )
 )
+
+# Legacy exploratory and analytical-availability code is retained temporarily
+# for provenance but is no longer part of the production pipeline. Focused QC
+# checks will be reintroduced beside the transformations they validate.
+if (FALSE) {
 
 # 12. Quick checks ---------------------------------------------
 
@@ -2761,3 +2811,5 @@ p_D17O_availability <- data_availability %>%
   theme(legend.position = "none")
 
 plotly::ggplotly(p_D17O_availability, tooltip = "text")
+
+}

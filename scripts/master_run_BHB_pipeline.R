@@ -1,22 +1,51 @@
 # master_run_BHB_pipeline.R
-# Run full BHB multiproxy workflow in order
+# Run the production Bighorn Basin proxy workflow in dependency order.
+#
+# Plotting scripts are intentionally excluded while they are migrated from the
+# legacy BHB_multiproxy_* products to the explicit CFB and regional-reference
+# outputs. The production data and chronology stages below are self-contained.
 
 library(here)
 
-message("Starting BHB multiproxy pipeline...")
+message("Starting Bighorn Basin proxy-data pipeline...")
+
+# Route plots without an explicit ggsave() target to a null device during the
+# non-interactive production run. This prevents exploratory expressions in
+# retained legacy blocks from creating an untracked Rplots.pdf; all declared
+# pipeline figures are still written by their explicit ggsave() calls.
+opened_pipeline_null_device <- FALSE
+if (!interactive()) {
+  grDevices::pdf(file = NULL)
+  opened_pipeline_null_device <- TRUE
+}
 
 scripts <- c(
-  "01_build_BHB_dataset.R",
-  "02_temperature_model.R",
-  "03_analyze_d18Ocarb_data.R",
-  "04_soilwater_d18O_reconstructions.R",
-  "05_soilwater_D17O_reconstructions.R",
+  "01_build_CFB_soilcarb_dataset.R",
+  "02_analyze_CFB_carbonate_agreement.R",
+  "03_screen_CFB_clumped_diagenesis.R",
+  "04_model_CFB_temperatures.R",
+  "05_reconstruct_CFB_soilwater.R",
   "06_process_reference_datasets.R",
-  "07_strat_domain_plots.R",
-  "08_age_domain_plots.R"
+  "07_build_and_apply_BHB_age_models.R",
+  "08_model_BHB_temperatures.R",
+  "09_plot_CFB_strat_domain.R",
+  "10_plot_BHB_age_domain.R"
 )
 
 for (script in scripts) {
+  # Patchwork determines annotation and guide dimensions from the active
+  # graphics device. The null device is useful while data-processing scripts
+  # retain exploratory plot expressions, but it can compress multipanel titles
+  # during export. Close it before the explicit publication-plot stages; those
+  # scripts write every intended figure through ggsave().
+  if (
+    script == "09_plot_CFB_strat_domain.R" &&
+      opened_pipeline_null_device
+  ) {
+    grDevices::dev.off()
+    opened_pipeline_null_device <- FALSE
+  }
+
   message("\n----------------------------------------")
   message("Running: ", script)
   message("----------------------------------------\n")
@@ -26,4 +55,8 @@ for (script in scripts) {
   message("\nFinished: ", script)
 }
 
-message("\nBHB multiproxy pipeline complete.")
+if (opened_pipeline_null_device && grDevices::dev.cur() > 1) {
+  grDevices::dev.off()
+}
+
+message("\nBighorn Basin proxy-data pipeline complete.")

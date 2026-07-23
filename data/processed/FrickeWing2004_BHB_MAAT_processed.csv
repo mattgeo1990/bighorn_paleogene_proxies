@@ -1,0 +1,3 @@
+dataset,proxy_type,geographic_scope,interval,biozone,paleolatitude_deg_n,temperature_C,Age_Ma,age_younger_ma,age_older_ma,age_basis
+Fricke and Wing (2004),Isotope/LMA MAAT estimate,Bighorn Basin,Early Eocene,Wa-6,45,18.3,52.92,52.83,53.01,Range of Fricke et al. (1998) taxon-specific Wa-6 ages
+Fricke and Wing (2004),Isotope/LMA MAAT estimate,Bighorn Basin,PETM,Wa-0,45,25.3,55.9,55.75,55.93,Project Wa-0/PETM datum; interval shown as 55.93-55.75 Ma

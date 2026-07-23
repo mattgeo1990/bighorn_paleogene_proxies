@@ -1,7 +1,8 @@
-# 04_soilwater_d18O_reconstructions.R
-# Purpose: Reconstruct soil-water d18O from carbonate d18O and temperature.
+# 05_reconstruct_CFB_soilwater.R
+# Purpose: Reconstruct CFB soil-water d18O and D17O from the integrated
+#          carbonate-isotope dataset and the CFB temperature model.
 
-# ---- Load packages ----
+#-- 1.) Setup ---------------------------------------------------------------
 library(tidyverse)
 library(here)
 
@@ -9,24 +10,173 @@ library(here)
 n_mc <- 10000
 set.seed(123)
 
-# ---- Load data
-BHB <- read_csv(
-  here("data", "processed", "BHB_multiproxy_with_temperature.csv")
+#-- 2.) Load CFB Carbonate and Temperature Data ----------------------------
+CFB_soilcarb_with_temperature <- read_csv(
+  here("data", "processed", "CFB_soilcarb_with_temperature.csv"),
+  show_col_types = FALSE
 )
 
+if (any(CFB_soilcarb_with_temperature$section_id != "CFB")) {
+  stop("Soil-water reconstruction input must contain only section_id == 'CFB'.")
+}
+
+# Helper: reconstruct D17Owater after the d18Owater table has been created.
+reconstruct_CFB_D17Owater <- function(CFB_d18Ow_reconstruction) {
+
+theta_carb <- 0.5250
+lambda_ref <- 0.528
+
+CFB_D17Owater_inputs <- CFB_d18Ow_reconstruction %>%
+  filter(
+    !is.na(IPL17O_mean_Dp17Ocarb),
+    !is.na(IPL17O_mean_d17Ocarb),
+    !is.na(IPL17O_mean_d18Ocarb),
+    !is.na(T_recon_C),
+    !is.na(T_recon_se_C)
+  ) %>%
+  mutate(
+    D17Ocarb_se_used_permeg = pmax(
+      case_when(
+        !is.na(IPL17O_se_Dp17Ocarb_adj) & IPL17O_se_Dp17Ocarb_adj > 0 ~
+          IPL17O_se_Dp17Ocarb_adj,
+        !is.na(IPL17O_se_Dp17Ocarb) & IPL17O_se_Dp17Ocarb > 0 ~
+          IPL17O_se_Dp17Ocarb,
+        TRUE ~ 12
+      ),
+      12,
+      na.rm = TRUE
+    ),
+    d17Ocarb_se_used = case_when(
+      !is.na(IPL17O_se_dp17Ocarb) & IPL17O_se_dp17Ocarb > 0 ~
+        IPL17O_se_dp17Ocarb,
+      TRUE ~ 0.15
+    ),
+    d18Ocarb_se_used = case_when(
+      !is.na(IPL17O_se_dp18Ocarb) & IPL17O_se_dp18Ocarb > 0 ~
+        IPL17O_se_dp18Ocarb,
+      TRUE ~ 0.15
+    )
+  )
+
+# Prepare and reconstruct CFB soil-water D17O.
+#
+# IMPORTANT UNCERTAINTY TREATMENT
+# Delta-prime-17O is a correlated quantity calculated from delta-prime-17O
+# and delta-prime-18O. Independently resampling those two isotope ratios
+# destroys their analytical covariance and creates spurious uncertainties of
+# thousands of per meg. Instead, resample the measured carbonate
+# Delta-prime-17O and propagate that quantity directly through fractionation.
+# In logarithmic notation:
+#
+#   D17O_water = D17O_carb - 1e6 * (theta - lambda) * ln(alpha18)
+#
+# where D17O is in per meg. Carbonate d18O is therefore not an independent
+# uncertainty term in this transformation; its contribution is already
+# embodied in the measured carbonate D17O uncertainty.
+
+compute_D17Owater <- function(
+    D17O_carb_permeg,
+    T_C,
+    theta = theta_carb,
+    lambda = lambda_ref) {
+  alpha18 <- calcite_water_alpha18(T_C)
+
+  D17O_carb_permeg -
+    1e6 * (theta - lambda) * log(alpha18)
+}
+
+mc_D17Owater_one <- function(
+    D17O_mean_permeg,
+    D17O_se_permeg,
+    T_mean,
+    T_se,
+    n = n_mc) {
+  D17Owater_sim <- compute_D17Owater(
+    D17O_carb_permeg = rnorm(n, D17O_mean_permeg, D17O_se_permeg),
+    T_C = rnorm(n, T_mean, T_se)
+  )
+
+  tibble(
+    D17Orsw_mean_permeg = mean(D17Owater_sim, na.rm = TRUE),
+    D17Orsw_median_permeg = median(D17Owater_sim, na.rm = TRUE),
+    D17Orsw_sd_permeg = sd(D17Owater_sim, na.rm = TRUE),
+    D17Orsw_lower95_permeg = quantile(D17Owater_sim, 0.025, na.rm = TRUE),
+    D17Orsw_upper95_permeg = quantile(D17Owater_sim, 0.975, na.rm = TRUE)
+  )
+}
+
+CFB_D17Owater_reconstruction <- CFB_D17Owater_inputs %>%
+  mutate(
+    mc_D17Owater = pmap(
+      list(
+        IPL17O_mean_Dp17Ocarb,
+        D17Ocarb_se_used_permeg,
+        T_recon_C,
+        T_recon_se_C
+      ),
+      mc_D17Owater_one
+    )
+  ) %>%
+  unnest(mc_D17Owater) %>%
+  mutate(
+    D17O_uncertainty_method = paste(
+      "Monte Carlo propagation of measured carbonate D17O SE and",
+      "temperature SE; correlated d17O-d18O errors preserved by",
+      "resampling D17O directly"
+    )
+  )
+
+# Assemble and export the combined CFB soil-water summary.
+
+CFB_soilwater_reconstruction_summary <- CFB_d18Ow_reconstruction %>%
+  left_join(
+    CFB_D17Owater_reconstruction %>%
+      select(
+        section_id,
+        MLA_horizon_id,
+        strat_height_m,
+        D17Ocarb_se_used_permeg,
+        D17O_uncertainty_method,
+        D17Orsw_mean_permeg,
+        D17Orsw_median_permeg,
+        D17Orsw_sd_permeg,
+        D17Orsw_lower95_permeg,
+        D17Orsw_upper95_permeg
+      ),
+    by = c("section_id", "MLA_horizon_id", "strat_height_m")
+  )
+
+write_csv(
+  CFB_D17Owater_inputs,
+  here("data", "processed", "CFB_D17Owater_inputs.csv")
+)
+
+write_csv(
+  CFB_D17Owater_reconstruction,
+  here("data", "processed", "CFB_D17Owater_reconstruction.csv")
+)
+
+write_csv(
+  CFB_soilwater_reconstruction_summary,
+  here("data", "processed", "CFB_soilwater_reconstruction_summary.csv")
+)
+
+invisible(CFB_soilwater_reconstruction_summary)
+}
+
 # ---- Add placeholder columns if future U-M data are not present yet ----
-if (!"IPL_NuDog_d18Ocarb_VSMOW" %in% names(BHB)) {
-  BHB <- BHB %>%
+if (!"IPL_NuDog_d18Ocarb_VSMOW" %in% names(CFB_soilcarb_with_temperature)) {
+  CFB_soilcarb_with_temperature <- CFB_soilcarb_with_temperature %>%
     mutate(IPL_NuDog_d18Ocarb_VSMOW = NA_real_)
 }
 
-# ---- Choose carbonate d18O source ----
+#-- 3.) Select Carbonate d18O and Temperature Inputs -----------------------
 # Priority:
 #   Snell samples: use Snell d18Ocarb
 #   PB samples: use Bowen d18Ocarb
 #   PK95-SC samples: use Koch; if missing, use IPL_NuDog; if missing, use IPL17O
 
-BHB_water_inputs <- BHB %>%
+CFB_soilwater_inputs <- CFB_soilcarb_with_temperature %>%
   mutate(
     is_snell = !is.na(Snell_sample_id) & !is.na(Snell_mean_d18Ocarb_vsmow),
     
@@ -71,7 +221,7 @@ BHB_water_inputs <- BHB %>%
 # ---- Choose temperature source ----
 # Prioritize IPL measured T47. Otherwise use modeled/interpolated temperature.
 
-BHB_water_inputs <- BHB_water_inputs %>%
+CFB_soilwater_inputs <- CFB_soilwater_inputs %>%
   mutate(
     T_recon_C = case_when(
       !is.na(IPLD47_mean_T47_C) ~ IPLD47_mean_T47_C,
@@ -94,7 +244,7 @@ BHB_water_inputs <- BHB_water_inputs %>%
 # ---- Fill missing carbonate SE values ----
 default_d18Ocarb_se <- 0.15
 
-BHB_water_inputs <- BHB_water_inputs %>%
+CFB_soilwater_inputs <- CFB_soilwater_inputs %>%
   mutate(
     d18Ocarb_se_used_vsmow = case_when(
       !is.na(d18Ocarb_se_vsmow) & d18Ocarb_se_vsmow > 0 ~ d18Ocarb_se_vsmow,
@@ -109,7 +259,7 @@ calcite_water_alpha18 <- function(T_C) {
   exp((18.03 * (1000 / T_K) - 32.42) / 1000)
 }
 
-# ---- Convert carbonate d18O and temperature to water d18O ----
+#-- 4.) Reconstruct CFB Soil-Water d18O ------------------------------------
 reconstruct_d18Ow <- function(d18Ocarb_vsmow, T_C) {
   alpha18 <- calcite_water_alpha18(T_C)
   ((1000 + d18Ocarb_vsmow) / alpha18) - 1000
@@ -135,7 +285,7 @@ mc_d18Ow_one <- function(d18Ocarb_mean, d18Ocarb_se, T_mean, T_se, n = 10000) {
 }
 
 # ---- Run reconstruction ----
-BHB_d18Ow_recon <- BHB_water_inputs %>%
+CFB_d18Ow_reconstruction <- CFB_soilwater_inputs %>%
   filter(
     !is.na(d18Ocarb_vsmow),
     !is.na(d18Ocarb_se_used_vsmow),
@@ -162,7 +312,7 @@ BHB_d18Ow_recon <- BHB_water_inputs %>%
   unnest(mc)
 
 # ---- QC outputs ----
-missing_d18Ocarb <- BHB_water_inputs %>%
+missing_d18Ocarb <- CFB_soilwater_inputs %>%
   filter(!is.na(d18Ocarb_missing_flag)) %>%
   select(
     MLA_horizon_id,
@@ -170,7 +320,7 @@ missing_d18Ocarb <- BHB_water_inputs %>%
     d18Ocarb_missing_flag
   )
 
-BHB_water_inputs %>%
+CFB_soilwater_inputs %>%
   count(d18Ocarb_source)
 
 missing_d18Ocarb
@@ -178,7 +328,7 @@ missing_d18Ocarb
 # Quick look plots ------
 
 ggplot(
-  BHB_d18Ow_recon,
+  CFB_d18Ow_reconstruction,
   aes(x = d18Ow_mean_vsmow, y = strat_height_m)
 ) +
   annotate(
@@ -226,7 +376,7 @@ ggplot(
   theme_classic()
 
 ggplot(
-  BHB_d18Ow_recon,
+  CFB_d18Ow_reconstruction,
   aes(
     x = T_recon_C,
     y = d18Ow_mean_vsmow
@@ -242,7 +392,7 @@ ggplot(
   ) +
   theme_classic(base_size = 14)
 
-d18Ow_measuredT47 <- BHB_d18Ow_recon %>%
+d18Ow_measuredT47 <- CFB_d18Ow_reconstruction %>%
   filter(T_recon_source == "IPL measured T47")
 
 ggplot(
@@ -268,27 +418,30 @@ ggplot(
   theme_classic(base_size = 14)
 
 
-# ---- Save outputs ----
+#-- 5.) Export CFB d18O-Water Products -------------------------------------
 write_csv(
-  BHB_water_inputs,
-  here("data", "processed", "BHB_soilwater_inputs.csv")
+  CFB_soilwater_inputs,
+  here("data", "processed", "CFB_soilwater_inputs.csv")
 )
 
 write_csv(
-  BHB_d18Ow_recon,
-  here("data", "processed", "BHB_d18Ow_reconstruction.csv")
+  CFB_d18Ow_reconstruction,
+  here("data", "processed", "CFB_d18Owater_reconstruction.csv")
 )
 
 write_csv(
   missing_d18Ocarb,
-  here("data", "processed", "BHB_missing_selected_d18Ocarb.csv")
+  here("data", "processed", "CFB_missing_selected_d18Ocarb.csv")
 )
 
+
+# Temporary evaluation retained for provenance; not part of production.
+if (FALSE) {
 
 # TEMPORARY EVAL----------
 # ---- Check which horizons fail the d18Ow reconstruction filter ----
 
-recon_filter_check <- BHB_water_inputs %>%
+recon_filter_check <- CFB_soilwater_inputs %>%
   mutate(
     has_d18Ocarb = !is.na(d18Ocarb_vsmow),
     has_d18Ocarb_se = !is.na(d18Ocarb_se_used_vsmow),
@@ -336,3 +489,11 @@ horizons_failing_d18Ow_filter <- recon_filter_check %>%
   arrange(strat_height_m)
 
 horizons_failing_d18Ow_filter
+
+}
+
+#-- 6.) Reconstruct D17Owater and Assemble the Final CFB Summary ------------
+
+CFB_soilwater_reconstruction_summary <- reconstruct_CFB_D17Owater(
+  CFB_d18Ow_reconstruction
+)

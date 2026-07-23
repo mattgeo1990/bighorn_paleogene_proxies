@@ -1,0 +1,15 @@
+section_id,section_name,section_base_m,section_top_m,n_age_tiepoints,n_unique_strat_positions,age_order_is_monotonic,lowest_dated_position_m,highest_dated_position_m,model_eligible,model_status
+CFB,Clarks Fork Basin / Polecat Bench,0,2200,5,5,TRUE,83,1503,TRUE,eligible
+MCP,McCullough Peaks,0,2540,5,5,TRUE,1195,2515,TRUE,eligible
+CABIN_FORK,Cabin Fork,0,50,1,1,TRUE,14,14,FALSE,insufficient_absolute_control
+HWY16,Highway 16,0,75,1,1,TRUE,20,20,FALSE,insufficient_absolute_control
+CAB10,CAB 10,0,60,1,1,TRUE,14,14,FALSE,insufficient_absolute_control
+CAB3,CAB 3,0,50,1,1,TRUE,22,22,FALSE,insufficient_absolute_control
+BIG_RED_SPIT,Big Red Spit,0,50,1,1,TRUE,20,20,FALSE,insufficient_absolute_control
+PYRAMID_POINT,Pyramid Point,0,10,1,1,TRUE,5,5,FALSE,insufficient_absolute_control
+NORTH_BUTTE,North Butte,0,60,1,1,TRUE,23,23,FALSE,insufficient_absolute_control
+HONEYCOMBS,Honeycombs,0,50,1,1,TRUE,21.5,21.5,FALSE,insufficient_absolute_control
+ELK_CREEK,Elk Creek,0,634,3,3,TRUE,0,634,TRUE,eligible
+SAND_CREEK_DIVIDE,Sand Creek Divide,0,435,3,3,TRUE,95,230,TRUE,eligible
+WORLAND_EAST,Worland East,0,NA,1,1,TRUE,0,0,FALSE,insufficient_absolute_control
+FOSTER_GULCH,Foster Gulch,0,850,3,3,TRUE,260,640,TRUE,eligible

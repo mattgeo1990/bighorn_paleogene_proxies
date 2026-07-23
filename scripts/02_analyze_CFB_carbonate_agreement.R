@@ -1,13 +1,15 @@
-# 03__analyze_d18Ocarb_data.R
-# Purpose: Evaluate carbonate oxygen isotope variability among datasets
+# 02_analyze_CFB_carbonate_agreement.R
+# Purpose: Evaluate agreement among carbonate-isotope datasets immediately
+#          after construction of the integrated CFB soil-carbonate table.
 
 # ---- Load packages ----
 library(tidyverse)
 library(here)
 
 # ---- Load processed dataset ----
-BHB <- read_csv(
-  here("data", "processed", "BHB_multiproxy_with_temperature.csv")
+CFB <- read_csv(
+  here("data", "processed", "CFB_soilcarb_isotope_summary.csv"),
+  show_col_types = FALSE
 )
 
 # ============================================================
@@ -16,7 +18,7 @@ BHB <- read_csv(
 
 # ---- Build long-format carbonate dataset ----
 
-d18Ocarb_long <- BHB %>%
+d18Ocarb_long <- CFB %>%
   select(
     MLA_horizon_id,
     strat_height_m,
@@ -182,7 +184,7 @@ sd(bowen_cu_pairs$difference)
 
 t.test(bowen_cu_pairs$difference)
 
-bowen_cu_vpdb <- BHB %>%
+bowen_cu_vpdb <- CFB %>%
   select(
     MLA_horizon_id,
     strat_height_m,
@@ -216,3 +218,4 @@ write_csv(
     "d18Ocarb_dataset_agreement.csv"
   )
 )
+

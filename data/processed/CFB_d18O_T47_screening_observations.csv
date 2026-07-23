@@ -1,0 +1,62 @@
+section_id,MLA_horizon_id,strat_height_m,source,carbonate_type,T47_C,T47_se_C,d18Ocarb_vsmow,d18Ocarb_se_vsmow,alteration_likelihood
+CFB,PK95-SC-246,520,IPL micrite,Pedogenic micrite,41.34,2.9364263995543967,21.24000514,NA,moderate
+CFB,PK95-SC-242,590,IPL micrite,Pedogenic micrite,56.3,2.5,16.86139755,NA,high
+CFB,PK95-SC-279,680,IPL micrite,Pedogenic micrite,48.775,1.471606265276144,21.3324108775,NA,high
+CFB,PK95-SC-187,700,IPL micrite,Pedogenic micrite,44.3,6.314005596027507,22.3255092525,NA,possible
+CFB,PK95-SC-165,820,IPL micrite,Pedogenic micrite,28.74,1.3507775538555566,22.395208826,NA,no_indication
+CFB,PK95-SC-185,940,IPL micrite,Pedogenic micrite,29.533333333333335,1.4437605218471812,22.286145233333333,NA,no_indication
+CFB,PK95-SC-179,1080,IPL micrite,Pedogenic micrite,31.02,2.5419284018240953,22.401822688,NA,no_indication
+CFB,PK95-SC-92,1210,IPL micrite,Pedogenic micrite,28.6,2.227853974867594,22.439083676666662,NA,no_indication
+CFB,PK95-SC-118up,1325,IPL micrite,Pedogenic micrite,36.75,1.5945218719101983,20.9406720225,NA,moderate
+CFB,PK95-SC-176,1355,IPL micrite,Pedogenic micrite,46.35,2.997915942784253,22.2888823975,NA,moderate
+CFB,PK95-SC-50,1425,IPL micrite,Pedogenic micrite,36.13333333333333,1.6333333333333333,21.34606428,NA,no_indication
+CFB,PB-00-03-08,1494.4,IPL micrite,Pedogenic micrite,24.6,0.700000000000001,23.14367628,NA,no_indication
+CFB,PK95-SC-23,1495,IPL micrite,Pedogenic micrite,34.03333333333333,2.318284806585343,22.228742296666667,NA,no_indication
+CFB,PK95-SC-80-n1,1495,IPL micrite,Pedogenic micrite,23.35,7.349999999999999,22.700028595,NA,no_indication
+CFB,PK95-SC-80-n2,1495,IPL micrite,Pedogenic micrite,23.35,2.25,22.89133433,NA,no_indication
+CFB,PB-00-03-10,1495.4,IPL micrite,Pedogenic micrite,26.3,2.6999999999999993,22.27965607,NA,no_indication
+CFB,PB-00-03-16,1507.4,IPL micrite,Pedogenic micrite,32.3,1.4364307617610157,22.965054073333334,NA,no_indication
+CFB,PK95-SC-27,1525,IPL micrite,Pedogenic micrite,42.51428571428571,2.9178782711830484,20.66934256857143,NA,high
+CFB,PK95-SC-6,1530,IPL micrite,Pedogenic micrite,42.4,NA,22.77350649,NA,possible
+CFB,PK95-SC-4,1570,IPL micrite,Pedogenic micrite,54.35,11.1091928899748,22.660551765,NA,high
+CFB,PB-00-04-14,1574.7,IPL micrite,Pedogenic micrite,24.6,0.9000000000000002,22.5044691,NA,no_indication
+CFB,PB-00-04-16,1594.2,IPL micrite,Pedogenic micrite,20.166666666666668,2.0739120307069703,22.33753012,NA,no_indication
+CFB,PK95-SC-43,1600,IPL micrite,Pedogenic micrite,25.7,1.8583146486355135,22.138661776666662,NA,no_indication
+CFB,PK95-SC-160,1720,IPL micrite,Pedogenic micrite,41.7,1.873499399519519,21.928358916666667,NA,possible
+CFB,PK95-SC-133,1750,IPL micrite,Pedogenic micrite,21.425,1.2058019461475975,22.31118248,NA,no_indication
+CFB,PK95-SC-31,1760,IPL micrite,Pedogenic micrite,30.74,2.1444346574330497,22.240902542,NA,no_indication
+CFB,PK95-SC-63,1910,IPL micrite,Pedogenic micrite,31.85,1.7731798179165768,21.5352032,NA,no_indication
+CFB,PK95-SC-3,1935,IPL micrite,Pedogenic micrite,38.7,NA,22.20336115,NA,no_indication
+CFB,PK95-SC-111,2005,IPL micrite,Pedogenic micrite,38.5,0,22.76542603,NA,no_indication
+CFB,PK95-SC-148lwr,2047,IPL micrite,Pedogenic micrite,17.1,3.695041722813605,22.90728483,NA,no_indication
+CFB,PK95-SC-303,2110,IPL micrite,Pedogenic micrite,27.5,NA,22.37121146,NA,no_indication
+CFB,PB-00-03-08,1494.4,CU micrite,Pedogenic micrite,16.8,2.3,22.99827102209264,0.07240898750903,no_indication
+CFB,PB-00-03-10,1495.4,CU micrite,Pedogenic micrite,29.6,1.7,22.31819670822248,0.0443068520349,no_indication
+CFB,PB-00-03-11,1498.5,CU micrite,Pedogenic micrite,27.7,2.1,22.48393763208704,0.034093474090220004,no_indication
+CFB,PB-00-03-13,1500.3,CU micrite,Pedogenic micrite,28.2,1.8,22.886886569651843,0.07774046743778,no_indication
+CFB,PB-00-03-14,1504.9,CU micrite,Pedogenic micrite,31.8,1.9,22.29263648289404,0.10808950424602999,no_indication
+CFB,PB-00-03-16,1507.4,CU micrite,Pedogenic micrite,34.4,1.8,22.84709299992032,0.12185413003141,no_indication
+CFB,PB-00-03-17,1507.8,CU micrite,Pedogenic micrite,36.6,2.4,22.977075465654323,0.10005525561206999,no_indication
+CFB,PB-00-01-07,1508.7,CU micrite,Pedogenic micrite,33.4,1.9,22.894971528824243,0.06909933136501,no_indication
+CFB,PB-00-03-20,1512.3,CU micrite,Pedogenic micrite,35.3,1.9,22.6599222925316,0.01075303768057,no_indication
+CFB,PB-00-02-07D,1526.3,CU micrite,Pedogenic micrite,32.4,2.2,23.15594138770628,0.03401245074968,no_indication
+CFB,PB-00-02-09L,1530.5,CU micrite,Pedogenic micrite,27.2,1.8,22.808913397304003,0.07475785615125,no_indication
+CFB,PB-00-02-19,1545.1,CU micrite,Pedogenic micrite,25.1,2.5,22.2702923052884,0.0307459938583,no_indication
+CFB,PB-00-02-21,1549,CU micrite,Pedogenic micrite,31.7,NA,22.14389544941696,NA,no_indication
+CFB,PB-00-04-14,1574.7,CU micrite,Pedogenic micrite,22.4,1.6,22.45990935697136,0.05567427805544,no_indication
+CFB,PB-00-04-16,1594.2,CU micrite,Pedogenic micrite,17.5,1.7,21.95890589658536,0.06855180681673,no_indication
+CFB,SNELL-PB-00-02-32,1120,Snell micrite,Pedogenic micrite,36,3.8,22.3,NA,no_indication
+CFB,SNELL-PB-00-02-32-2,1120,Snell micrite,Pedogenic micrite,39.7,3.2,22.6,NA,no_indication
+CFB,SNELL-SC-188,1280,Snell micrite,Pedogenic micrite,31.4,6.1,21.4,NA,no_indication
+CFB,SNELL-SC-62,1305,Snell micrite,Pedogenic micrite,31.2,4.3,22.6,NA,no_indication
+CFB,PB-00-02-02,1520.5,Snell micrite,Pedogenic micrite,36.8,2.5,22.4,NA,no_indication
+CFB,SNELL-SC-351-n1,1524,Snell micrite,Pedogenic micrite,40.4,6.4,23,NA,no_indication
+CFB,SNELL-SC-15,1630,Snell micrite,Pedogenic micrite,36.9,3.2,21.8,NA,no_indication
+CFB,SNELL-SC-33,1840,Snell micrite,Pedogenic micrite,26.8,5.2,21.8,NA,no_indication
+CFB,SNELL-SC-64,1970,Snell micrite,Pedogenic micrite,36.2,1.5,22.5,NA,no_indication
+CFB,SNELL-SC-295,2210,Snell micrite,Pedogenic micrite,35.6,1.8,22.3,NA,no_indication
+CFB,PK95-SC-22,1460,IPL D47,Spar,43.5,4.299999999999997,19.565881605,0.03503831499999953,no_indication
+CFB,PK95-SC-4,1570,IPL D47,Spar,81.65,1.7499999999999998,14.11448803,0.00229020999999995,high
+CFB,SNELL-SC-191,794,Snell et al. 2013,Altered carbonate,46.6,NA,19.8,NA,not_assessed
+CFB,PB-00-02-32,NA,Snell et al. 2013,Spar,54.1,NA,16.5,NA,not_assessed
+CFB,SNELL-SC-295,NA,Snell et al. 2013,Spar,56.6,NA,14.4,NA,no_indication
