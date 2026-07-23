@@ -1,9 +1,9 @@
 # master_run_BHB_pipeline.R
 # Run the production Bighorn Basin proxy workflow in dependency order.
 #
-# Plotting scripts are intentionally excluded while they are migrated from the
-# legacy BHB_multiproxy_* products to the explicit CFB and regional-reference
-# outputs. The production data and chronology stages below are self-contained.
+# The workflow uses explicit CFB primary products and separately processed
+# regional-reference records. Plotting scripts run only after all production
+# data, chronology, soil-water, and regional-temperature products exist.
 
 library(here)
 
