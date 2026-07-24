@@ -9,6 +9,7 @@
 #-- 1.) Setup ---------------------------------------------------------------
 library(tidyverse)
 library(here)
+source(here("scripts", "helpers", "save_figure_variants.R"))
 
 dir.create(here("figures", "diagenetic_screening"), recursive = TRUE,
            showWarnings = FALSE)
@@ -136,9 +137,9 @@ p_screening_flags <- CFB_temperature_screening_flags %>%
   theme_classic(base_size = 12) +
   theme(legend.position = "none")
 
-ggsave(
-  here("figures", "diagenetic_screening", "CFB_temperature_screening_flags.png"),
-  p_screening_flags, width = 7, height = 6, dpi = 400
+save_figure_variants(
+  p_screening_flags, here("figures", "diagenetic_screening"),
+  "CFB_temperature_screening_flags", 7, 6, presentation_width = 6
 )
 
 #-- 5.) Plot T47-d18Ocarb Space with Parent-Water Contours -----------------
@@ -167,7 +168,7 @@ CFB_d18O_T47_observations <- bind_rows(
   CFB_soilcarb_isotope_summary %>%
     transmute(
       section_id, MLA_horizon_id, strat_height_m,
-      source = "IPL micrite", carbonate_type = "Pedogenic micrite",
+      source = "U-M micrite", carbonate_type = "Pedogenic micrite",
       T47_C = IPLD47_mean_T47_C,
       T47_se_C = IPLD47_se_T47_C,
       d18Ocarb_vsmow = IPL_NuDog_d18Ocarb_VSMOW,
@@ -186,7 +187,7 @@ CFB_d18O_T47_observations <- bind_rows(
   CFB_soilcarb_isotope_summary %>%
     transmute(
       section_id, MLA_horizon_id, strat_height_m,
-      source = "Snell micrite", carbonate_type = "Pedogenic micrite",
+      source = "Caltech micrite", carbonate_type = "Pedogenic micrite",
       T47_C = Snell_mean_T47_C,
       T47_se_C = Snell_se_T47_C,
       d18Ocarb_vsmow = Snell_mean_d18Ocarb_vsmow,
@@ -338,9 +339,9 @@ write_csv(
   CFB_d18Owater_equilibrium_contours,
   here("data", "processed", "CFB_d18Owater_equilibrium_contours.csv")
 )
-ggsave(
-  here("figures", "diagenetic_screening", "CFB_d18O_T47_contours.png"),
-  p_CFB_d18O_T47_contours, width = 9, height = 7.5, dpi = 400
+save_figure_variants(
+  p_CFB_d18O_T47_contours, here("figures", "diagenetic_screening"),
+  "CFB_d18O_T47_contours", 9, 7.5, presentation_width = 6
 )
 
 #-- 6.) Restore the Monte Carlo Burial-Fluid Trajectory Plot ---------------
@@ -456,13 +457,10 @@ write_csv(
   here("data", "processed", "CFB_burial_trajectory_parameters.csv")
 )
 
-ggsave(
-  here(
-    "figures", "diagenetic_screening",
-    "CFB_d18O_T47_Monte_Carlo_burial_trajectories.png"
-  ),
-  p_CFB_d18O_T47_monte_carlo,
-  width = 9, height = 7.5, dpi = 400
+save_figure_variants(
+  p_CFB_d18O_T47_monte_carlo, here("figures", "diagenetic_screening"),
+  "CFB_d18O_T47_Monte_Carlo_burial_trajectories", 9, 7.5,
+  presentation_width = 6
 )
 
 #-- 7.) Summarize Monte Carlo Paths as Nested Simulation Envelopes --------
@@ -606,13 +604,11 @@ write_csv(
   here("data", "processed", "CFB_burial_trajectory_envelope_summary.csv")
 )
 
-ggsave(
-  here(
-    "figures", "diagenetic_screening",
-    "CFB_d18O_T47_Monte_Carlo_mean_and_envelopes.png"
-  ),
+save_figure_variants(
   p_CFB_d18O_T47_monte_carlo_envelopes,
-  width = 9, height = 7.5, dpi = 400
+  here("figures", "diagenetic_screening"),
+  "CFB_d18O_T47_Monte_Carlo_mean_and_envelopes", 9, 7.5,
+  presentation_width = 6
 )
 
 #-- 8.) Evaluate Paired D47-D48 Measurements -------------------------------
@@ -737,7 +733,7 @@ p_D47_D48 <- ggplot() +
   theme_classic(base_size = 12) +
   theme(legend.position = "top")
 
-ggsave(
-  here("figures", "diagenetic_screening", "CFB_D47_D48_screening_scenarios.png"),
-  p_D47_D48, width = 8, height = 7, dpi = 400
+save_figure_variants(
+  p_D47_D48, here("figures", "diagenetic_screening"),
+  "CFB_D47_D48_screening_scenarios", 8, 7, presentation_width = 6
 )

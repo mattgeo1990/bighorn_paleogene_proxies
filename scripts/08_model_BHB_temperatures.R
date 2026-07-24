@@ -14,6 +14,7 @@
 library(tidyverse)
 library(here)
 library(patchwork)
+source(here("scripts", "helpers", "save_figure_variants.R"))
 
 processed_dir <- here("data", "processed")
 figure_dir <- here("figures", "temperature_models", "regional_BHB")
@@ -70,6 +71,7 @@ BHB_D47_temperature_observations <- bind_rows(
     transmute(
       section_id,
       dataset = paste0(source, " CFB Delta47"),
+      study_status = if_else(source == "U-M", "This study", "Published data"),
       MLA_horizon_id,
       Age_Ma,
       temperature_C = T_C,
@@ -80,6 +82,7 @@ BHB_D47_temperature_observations <- bind_rows(
     transmute(
       section_id,
       dataset,
+      study_status = "Published data",
       MLA_horizon_id,
       Age_Ma,
       temperature_C = T47_C,
@@ -440,23 +443,31 @@ p_BHB_D47_temperature_model <- ggplot() +
       Age_Ma,
       ymin = temperature_C - temperature_se_C,
       ymax = temperature_C + temperature_se_C,
-      color = section_id
+      color = study_status
     ),
     width = 0, linewidth = 0.3, alpha = 0.45
   ) +
   geom_point(
     data = BHB_D47_temperature_observations,
-    aes(Age_Ma, temperature_C, color = section_id),
-    size = 1.8, alpha = 0.78
+    aes(Age_Ma, temperature_C, color = study_status, shape = study_status),
+    size = 2, alpha = 0.82
   ) +
-  scale_color_manual(values = c(CFB = "#B2182B", MCP = "#E66101")) +
+  scale_color_manual(
+    values = c("This study" = "#B2182B", "Published data" = "grey30")
+  ) +
+  scale_shape_manual(
+    values = c("This study" = 21, "Published data" = 22)
+  ) +
   scale_x_reverse() +
   labs(
     x = "Age (Ma)",
     y = expression(Delta[47] * " formation temperature (" * degree * "C)"),
-    color = "Section",
+    color = NULL, shape = NULL,
     title = "BHB soil-carbonate formation temperature",
-    subtitle = "Age-binned CFB and MCP Delta47; no extrapolation beyond observations"
+    subtitle = paste(
+      "U-M measurements from this study versus published CU and Caltech data;",
+      "no extrapolation"
+    )
   ) +
   temperature_theme
 
@@ -487,14 +498,8 @@ p_BHB_integrated_temperature_models <-
     )
   )
 
-ggsave(
-  file.path(figure_dir, "BHB_integrated_temperature_models_GCM.png"),
-  p_BHB_integrated_temperature_models,
-  width = 12, height = 9, dpi = 500
-)
-ggsave(
-  file.path(figure_dir, "BHB_integrated_temperature_models_GCM.pdf"),
-  p_BHB_integrated_temperature_models,
-  width = 12, height = 9, device = grDevices::pdf,
-  useDingbats = FALSE
+save_figure_variants(
+  p_BHB_integrated_temperature_models, figure_dir,
+  "BHB_integrated_temperature_models_GCM", 12, 9,
+  presentation_width = 12
 )

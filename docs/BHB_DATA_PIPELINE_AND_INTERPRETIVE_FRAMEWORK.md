@@ -168,6 +168,7 @@ The production scripts are:
 |     6 | `06_process_reference_datasets.R`      | Clean and export regional/global reference records and insolation          |
 |     7 | `07_build_and_apply_BHB_age_models.R`  | Build section-specific age models and assign `Age_Ma`                      |
 |     8 | `08_model_BHB_temperatures.R`          | Build separate BHB LMA MAT and all-BHB T47 time models                     |
+|    8b | `08b_synthesize_BHB_seasonal_climate.R` | Build cited MAAT, CMMT, WMMT, and MART evidence ensembles and orbital diagnostics |
 |     9 | `09_plot_CFB_strat_domain.R`           | Plot the primary CFB record in native stratigraphic space                  |
 |    10 | `10_plot_BHB_age_domain.R`             | Plot CFB and regional reference data in numerical-age space                |
 
@@ -1048,3 +1049,26 @@ environmental variability as well as analytical or model error. The
 downstream goal is therefore not to force every proxy into one quantity,
 but to compare clearly labeled, age-calibrated records while keeping
 their distinct environmental meanings visible.
+
+## 17. Literature-informed seasonal-climate synthesis
+
+`08b_synthesize_BHB_seasonal_climate.R` adds an auditable synthesis of
+MAAT, CMMT, WMMT, and MART constraints from the Bighorn Basin literature
+and appropriate dry-interior regional analogs. Direct proxy evidence,
+leaf-based estimates from wetter settings, and GCM experiments remain
+separate evidence classes.
+
+The source-specific and integrated Monte Carlo draws are saved under
+`data/processed/`. The integrated product is a relevance-weighted mixture
+of marginal evidence distributions. It is deliberately not described as
+a formal posterior, and the four metrics are not assumed to be jointly
+coupled draws. The raw input table records every reported range,
+structural-error assumption, citation, inclusion decision, and synthesis
+weight so alternative interpretations can be regenerated.
+
+The same script compares the smoothed BHB Delta47 curve with the ZB20a
+47°N summer-solstice insolation series. Lag curves, circular-shift null
+tests, and age-jitter scenarios test whether apparent orbital alignment
+exceeds what can arise from autocorrelated series. These tests are
+exploratory because the section age-model uncertainty and deterioration
+of exact astronomical phase toward older ages are not fully propagated.

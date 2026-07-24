@@ -15,6 +15,7 @@
 library(tidyverse)
 library(here)
 library(readxl)
+source(here("scripts", "helpers", "save_figure_variants.R"))
 
 processed_dir <- here("data", "processed")
 figure_dir <- here("figures", "age_models")
@@ -433,12 +434,9 @@ age_model_diagnostic <- ggplot(
   ) +
   theme_classic()
 
-ggsave(
-  file.path(figure_dir, "BHB_section_age_models.png"),
-  age_model_diagnostic,
-  width = 10,
-  height = 7,
-  dpi = 300
+save_figure_variants(
+  age_model_diagnostic, figure_dir, "BHB_section_age_models",
+  10, 7, presentation_width = 12
 )
 
 print(section_model_status %>% select(section_id, n_age_tiepoints, model_status))

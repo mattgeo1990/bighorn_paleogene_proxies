@@ -6,6 +6,8 @@
 library(tidyverse)
 library(here)
 library(patchwork)
+source(here("scripts", "helpers", "CFB_chronostrat_panels.R"))
+source(here("scripts", "helpers", "save_figure_variants.R"))
 
 strat_figure_dir <- here("figures", "strat_domain", "CFB")
 dir.create(strat_figure_dir, recursive = TRUE, showWarnings = FALSE)
@@ -15,16 +17,22 @@ petm_strat_min_m <- 1500
 petm_strat_max_m <- 1540
 
 source_colors <- c(
-  "IPL" = "#000000",
+  "U-M" = "#000000",
   "CU" = "#0072B2",
-  "Snell" = "#D55E00",
+  "Caltech" = "#D55E00",
   "Koch" = "#009E73",
   "Bowen" = "#CC79A7"
 )
 
 source_shapes <- c(
-  "IPL" = 21, "CU" = 22, "Snell" = 24, "Koch" = 23, "Bowen" = 25
+  "U-M" = 21, "CU" = 22, "Caltech" = 24, "Koch" = 23, "Bowen" = 25
 )
+
+t47_status_colors <- c(
+  "This study" = "#B2182B",
+  "Published data" = "grey25"
+)
+t47_status_shapes <- c("This study" = 21, "Published data" = 22)
 
 add_petm_strat <- function(alpha = 0.14) {
   annotate(
@@ -45,15 +53,16 @@ theme_strat <- theme_classic(base_size = 11) +
     plot.margin = margin(5, 5, 5, 5)
   )
 
-save_plot_pair <- function(plot, stem, width, height) {
-  ggsave(
-    file.path(strat_figure_dir, paste0(stem, ".png")),
-    plot, width = width, height = height, dpi = 500
-  )
-  ggsave(
-    file.path(strat_figure_dir, paste0(stem, ".pdf")),
-    plot, width = width, height = height, device = grDevices::pdf,
-    useDingbats = FALSE
+save_plot_pair <- function(
+    plot, stem, width, height, presentation_width = NULL
+) {
+  save_figure_variants(
+    plot = plot,
+    base_dir = strat_figure_dir,
+    stem = stem,
+    manuscript_width = width,
+    manuscript_height = height,
+    presentation_width = presentation_width
   )
 }
 
@@ -75,6 +84,15 @@ CFB_soilwater <- read_csv(
   show_col_types = FALSE
 )
 
+CFB_temperature_obs <- CFB_temperature_obs %>%
+  mutate(
+    source = recode(source, IPL = "U-M", Snell = "Caltech"),
+    study_status = if_else(source == "U-M", "This study", "Published data"),
+    study_status = factor(
+      study_status, levels = c("This study", "Published data")
+    )
+  )
+
 if (any(CFB_isotopes$section_id != "CFB")) {
   stop("Stratigraphic plotting input contains a non-CFB section.")
 }
@@ -92,10 +110,12 @@ shared_strat_scale <- scale_y_continuous(
   expand = expansion(mult = c(0.01, 0.02))
 )
 
+p_CFB_chronostrat_full <- build_CFB_chronostrat_strat_panel(strat_limits)
+
 #-- 3.) Reshape Source-Specific Carbon-Isotope Observations ----------------
 d13C_observations <- bind_rows(
   CFB_isotopes %>% transmute(
-    MLA_horizon_id, strat_height_m, source = "IPL",
+    MLA_horizon_id, strat_height_m, source = "U-M",
     value = IPL_NuDog_d13Ccarb_VPDB, se = NA_real_
   ),
   CFB_isotopes %>% transmute(
@@ -103,7 +123,7 @@ d13C_observations <- bind_rows(
     value = CU_mean_d13Ccarb_vpdb, se = NA_real_
   ),
   CFB_isotopes %>% transmute(
-    MLA_horizon_id, strat_height_m, source = "Snell",
+    MLA_horizon_id, strat_height_m, source = "Caltech",
     value = Snell_mean_d13Ccarb_vpdb, se = NA_real_
   ),
   CFB_isotopes %>% transmute(
@@ -116,7 +136,13 @@ d13C_observations <- bind_rows(
   )
 ) %>%
   filter(!is.na(value), !is.na(strat_height_m)) %>%
-  mutate(source = factor(source, levels = names(source_colors)))
+  mutate(
+    source = factor(source, levels = names(source_colors)),
+    study_status = if_else(source == "U-M", "U-M / this study", "Published"),
+    study_status = factor(
+      study_status, levels = c("U-M / this study", "Published")
+    )
+  )
 
 #-- 4.) Temperature in Stratigraphic Space ---------------------------------
 p_temperature_strat <- ggplot() +
@@ -138,23 +164,38 @@ p_temperature_strat <- ggplot() +
     data = CFB_temperature_obs,
     aes(
       xmin = T_C - T_se_C, xmax = T_C + T_se_C,
-      y = strat_height_m, color = source
+      y = strat_height_m, color = study_status
     ),
     height = 0, linewidth = 0.35, alpha = 0.55
   ) +
   geom_point(
     data = CFB_temperature_obs,
-    aes(T_C, strat_height_m, color = source, shape = source),
-    size = 2, fill = "white", stroke = 0.7
+    aes(
+      T_C, strat_height_m, color = study_status,
+      fill = study_status, shape = study_status
+    ),
+    size = 2.4, stroke = 0.8
   ) +
-  scale_color_manual(values = source_colors, drop = FALSE) +
-  scale_shape_manual(values = source_shapes, drop = FALSE) +
+  scale_color_manual(
+    values = c("This study" = "#B2182B", "Published data" = "grey55"),
+    drop = FALSE
+  ) +
+  scale_fill_manual(
+    values = c("This study" = "#B2182B", "Published data" = "white"),
+    drop = FALSE
+  ) +
+  scale_shape_manual(values = t47_status_shapes, drop = FALSE) +
   shared_strat_scale +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = "CFB stratigraphic height (m)",
-    color = "Source", shape = "Source",
+    color = NULL, fill = "Dataset", shape = NULL,
     title = "A  Temperature"
+  ) +
+  guides(
+    color = "none",
+    shape = "none",
+    fill = guide_legend(override.aes = list(shape = 21))
   ) +
   theme_strat
 
@@ -169,17 +210,32 @@ p_d13C_strat <- ggplot(d13C_observations) +
     height = 0, linewidth = 0.3, alpha = 0.35, na.rm = TRUE
   ) +
   geom_point(
-    aes(value, strat_height_m, color = source, shape = source),
-    size = 1.7, alpha = 0.78, fill = "white", stroke = 0.55
+    aes(
+      value, strat_height_m, color = study_status,
+      fill = study_status, shape = source
+    ),
+    size = 2.1, alpha = 0.9, stroke = 0.7
   ) +
-  scale_color_manual(values = source_colors, drop = FALSE) +
+  scale_color_manual(
+    values = c("U-M / this study" = "black", "Published" = "grey62"),
+    drop = FALSE
+  ) +
+  scale_fill_manual(
+    values = c("U-M / this study" = "black", "Published" = "white"),
+    drop = FALSE
+  ) +
   scale_shape_manual(values = source_shapes, drop = FALSE) +
   shared_strat_scale +
   labs(
     x = expression(delta^13 * C[carbonate] ~ "(per mil VPDB)"),
     y = "CFB stratigraphic height (m)",
-    color = "Source", shape = "Source",
+    color = NULL, fill = "Dataset", shape = NULL,
     title = expression("B  " * delta^13 * C[carbonate])
+  ) +
+  guides(
+    color = "none",
+    shape = "none",
+    fill = guide_legend(override.aes = list(shape = 21))
   ) +
   theme_strat
 
@@ -241,27 +297,55 @@ remove_repeated_y <- function(plot) {
 }
 
 p_CFB_strat_full <-
+  p_CFB_chronostrat_full +
   (p_temperature_strat + theme(legend.position = "none")) +
   remove_repeated_y(p_d13C_strat) +
   remove_repeated_y(p_d18Owater_strat) +
   remove_repeated_y(p_D17Owater_strat) +
-  plot_layout(widths = c(1.12, 1, 1, 1), guides = "collect") &
+  plot_layout(widths = c(0.88, 1.12, 1, 1, 1), guides = "collect") &
   theme(legend.position = "top")
 
 petm_zoom_limits <- c(1450, 1600)
+p_CFB_chronostrat_petm <- build_CFB_chronostrat_strat_panel(
+  petm_zoom_limits,
+  breaks = seq(1450, 1600, by = 25)
+)
 p_CFB_strat_petm <-
+  p_CFB_chronostrat_petm +
   (p_temperature_strat + coord_cartesian(ylim = petm_zoom_limits) +
      theme(legend.position = "none")) +
   remove_repeated_y(p_d13C_strat + coord_cartesian(ylim = petm_zoom_limits)) +
   remove_repeated_y(p_d18Owater_strat + coord_cartesian(ylim = petm_zoom_limits)) +
   remove_repeated_y(p_D17Owater_strat + coord_cartesian(ylim = petm_zoom_limits)) +
-  plot_layout(widths = c(1.12, 1, 1, 1), guides = "collect") &
+  plot_layout(widths = c(0.88, 1.12, 1, 1, 1), guides = "collect") &
   theme(legend.position = "top")
 
 #-- 8.) Export Figures ------------------------------------------------------
-save_plot_pair(p_temperature_strat, "CFB_temperature_strat", 5.2, 7.5)
-save_plot_pair(p_d13C_strat, "CFB_d13Ccarb_strat", 5.2, 7.5)
-save_plot_pair(p_d18Owater_strat, "CFB_d18Owater_strat", 5.2, 7.5)
-save_plot_pair(p_D17Owater_strat, "CFB_D17Owater_strat", 5.2, 7.5)
-save_plot_pair(p_CFB_strat_full, "CFB_multiproxy_strat_full", 14, 8)
-save_plot_pair(p_CFB_strat_petm, "CFB_multiproxy_strat_PETM_zoom", 14, 6)
+with_chronostrat <- function(plot, framework = p_CFB_chronostrat_full) {
+  framework + plot + plot_layout(widths = c(0.88, 2.1))
+}
+
+save_plot_pair(
+  with_chronostrat(p_temperature_strat),
+  "CFB_temperature_strat", 7.4, 7.5, presentation_width = 6
+)
+save_plot_pair(
+  with_chronostrat(p_d13C_strat),
+  "CFB_d13Ccarb_strat", 7.4, 7.5, presentation_width = 6
+)
+save_plot_pair(
+  with_chronostrat(p_d18Owater_strat),
+  "CFB_d18Owater_strat", 7.4, 7.5, presentation_width = 6
+)
+save_plot_pair(
+  with_chronostrat(p_D17Owater_strat),
+  "CFB_D17Owater_strat", 7.4, 7.5, presentation_width = 6
+)
+save_plot_pair(
+  p_CFB_strat_full, "CFB_multiproxy_strat_full", 16.5, 8,
+  presentation_width = 12
+)
+save_plot_pair(
+  p_CFB_strat_petm, "CFB_multiproxy_strat_PETM_zoom", 16.5, 6,
+  presentation_width = 12
+)

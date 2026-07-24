@@ -8,7 +8,8 @@
 #   2. Kelson et al.: Tornillo Basin carbonate clumped isotopes
 #   3. Fricke et al. (1998): mammal and gar apatite isotope records
 #   4. Wing et al. (2000): leaf-margin MAT estimates
-#   5. GTS2020: updated BHB age-model tie points
+#   5. Barnet et al. (2019): ODP Site 1262 benthic stable isotopes
+#   6. GTS2020: updated BHB age-model tie points
 #
 # Main outputs:
 #   - Harper2024_CO2_SST_processed.csv
@@ -54,6 +55,73 @@ Harper2024_SST_raw <- read_csv(
   here("data", "raw", "HarperEtAl2024_sst_out.csv"),
   show_col_types = FALSE
 )
+
+# - 1b. Barnet et al. (2019): South Atlantic benthic isotopes -----
+#
+# This is the complete, orbitally tuned ODP Site 1262 record archived by
+# Barnet et al. in PANGAEA (dataset DOI: 10.1594/PANGAEA.884585; article DOI:
+# 10.1029/2019PA003556). The original PANGAEA text file is retained verbatim
+# under data/raw so that the repository preserves its citation, metadata,
+# license, source-study labels, and the exact values used here.
+#
+# The PANGAEA file contains a 29-line metadata block followed by a tabular
+# header. Ages are supplied in ka BP and are converted to Ma. `d18O_corrected`
+# is the published value corrected to Cibicidoides; `BWT_C` is the temperature
+# estimate reported by Barnet et al., rather than a temperature recalculated
+# in this project.
+
+Barnet2019_raw <- read_tsv(
+  here("data", "raw", "BarnetEtAl2019_PANGAEA_884585.tab"),
+  skip = 29,
+  name_repair = "minimal",
+  show_col_types = FALSE
+)
+
+if (ncol(Barnet2019_raw) != 11) {
+  stop(
+    "Barnet et al. (2019) source does not have the expected 11 columns; ",
+    "check the archived PANGAEA file before proceeding."
+  )
+}
+
+# Assign portable ASCII names by verified PANGAEA column order. This avoids
+# locale-dependent corruption of the source's delta, per-mil, and degree
+# symbols when the pipeline is run under a C locale.
+names(Barnet2019_raw) <- c(
+  "event", "sample_label", "depth_top_m", "d13C_benthic_vpdb",
+  "d18O_benthic_vpdb", "depth_mbsf", "depth_composite_mcd", "age_ka_bp",
+  "source_record", "d18O_corrected_vpdb", "bottom_water_temperature_C"
+)
+
+Barnet2019_ODP1262 <- Barnet2019_raw %>%
+  transmute(
+    site = "ODP Site 1262",
+    event,
+    sample_label,
+    depth_mbsf,
+    depth_composite_mcd,
+    Age_Ma = age_ka_bp / 1000,
+    d13C_benthic_vpdb,
+    d18O_benthic_vpdb,
+    d18O_corrected_vpdb,
+    bottom_water_temperature_C,
+    source_record,
+    dataset_doi = "10.1594/PANGAEA.884585",
+    article_doi = "10.1029/2019PA003556"
+  ) %>%
+  filter(
+    !is.na(Age_Ma),
+    between(Age_Ma, 52, 68)
+  ) %>%
+  arrange(Age_Ma)
+
+if (
+  nrow(Barnet2019_ODP1262) == 0 ||
+    !all(c(52.3, 67.1) >= range(Barnet2019_ODP1262$Age_Ma) - 0.1) ||
+    !all(c(52.3, 67.1) <= range(Barnet2019_ODP1262$Age_Ma) + 0.1)
+) {
+  stop("Barnet et al. (2019) import failed its expected age-range check.")
+}
 
 # Join the records by age, calculate three-point anchors, and then fit
 # lightly smoothed splines for plotting broad trends.
@@ -768,6 +836,11 @@ write_csv(
 write_csv(
   BHB_regional_soilcarb_reference_summary,
   file.path(processed_dir, "BHB_regional_soilcarb_reference_summary.csv")
+)
+
+write_csv(
+  Barnet2019_ODP1262,
+  file.path(processed_dir, "BarnetEtAl2019_ODP1262_benthic_isotopes.csv")
 )
 
 # Optional confirmation when run interactively.

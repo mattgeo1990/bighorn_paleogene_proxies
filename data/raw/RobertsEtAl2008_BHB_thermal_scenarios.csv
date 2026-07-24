@@ -1,0 +1,9 @@
+location,burial_depth_class,heat_flow_mW_m2,thermal_gradient_F_per_100ft,base_Fort_Union_max_depth_ft,base_Fort_Union_max_temperature_F,source
+Emblem Bench,deep,51,1.35,16110,277,"Roberts et al. (2008), tables 2 and 3"
+Red Point/Husky,deep,47,1.25,16780,264,"Roberts et al. (2008), tables 2 and 3"
+Sellers Draw,deep,44,1.18,17400,254,"Roberts et al. (2008), tables 2 and 3"
+Amoco BN 1,intermediate,51,1.35,13490,243,"Roberts et al. (2008), tables 2 and 3"
+Santa Fe Tatman,intermediate,49,1.30,14950,247,"Roberts et al. (2008), tables 2 and 3"
+McCulloch Peak,intermediate,49,1.29,13150,228,"Roberts et al. (2008), tables 2 and 3"
+Dobie Creek,shallow,55,1.49,11390,220,"Roberts et al. (2008), tables 2 and 3"
+Doctor Ditch,shallow,51,1.37,9880,194,"Roberts et al. (2008), tables 2 and 3"

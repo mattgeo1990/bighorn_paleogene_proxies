@@ -219,7 +219,7 @@ CFB_soilwater_inputs <- CFB_soilcarb_with_temperature %>%
   )
 
 # ---- Choose temperature source ----
-# Prioritize IPL measured T47. Otherwise use modeled/interpolated temperature.
+# Prioritize measured U-M T47. Otherwise use modeled/interpolated temperature.
 
 CFB_soilwater_inputs <- CFB_soilwater_inputs %>%
   mutate(
@@ -235,7 +235,7 @@ CFB_soilwater_inputs <- CFB_soilwater_inputs %>%
     ),
     
     T_recon_source = case_when(
-      !is.na(IPLD47_mean_T47_C) ~ "IPL measured T47",
+      !is.na(IPLD47_mean_T47_C) ~ "U-M measured T47",
       !is.na(T_model_C) ~ "modeled/interpolated T",
       TRUE ~ NA_character_
     )
@@ -393,7 +393,7 @@ ggplot(
   theme_classic(base_size = 14)
 
 d18Ow_measuredT47 <- CFB_d18Ow_reconstruction %>%
-  filter(T_recon_source == "IPL measured T47")
+  filter(T_recon_source == "U-M measured T47")
 
 ggplot(
   d18Ow_measuredT47,

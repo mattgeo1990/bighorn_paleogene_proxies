@@ -6,11 +6,15 @@
 library(tidyverse)
 library(here)
 library(patchwork)
+source(here("scripts", "helpers", "CFB_chronostrat_panels.R"))
+source(here("scripts", "helpers", "save_figure_variants.R"))
 
 cfb_age_figure_dir <- here("figures", "age_domain", "CFB")
 regional_age_figure_dir <- here("figures", "age_domain", "regional_comparison")
+presentation_figure_dir <- here("figures", "presentation")
 dir.create(cfb_age_figure_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(regional_age_figure_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(presentation_figure_dir, recursive = TRUE, showWarnings = FALSE)
 
 petm_age_old_ma <- 55.93
 petm_age_young_ma <- 55.75
@@ -18,12 +22,18 @@ cfb_age_limits <- c(58.9, 54.0)
 regional_age_limits <- c(59.0, 52.5)
 
 source_colors <- c(
-  "IPL" = "#000000", "CU" = "#0072B2", "Snell" = "#D55E00",
+  "U-M" = "#000000", "CU" = "#0072B2", "Caltech" = "#D55E00",
   "Koch" = "#009E73", "Bowen" = "#CC79A7"
 )
 source_shapes <- c(
-  "IPL" = 21, "CU" = 22, "Snell" = 24, "Koch" = 23, "Bowen" = 25
+  "U-M" = 21, "CU" = 22, "Caltech" = 24, "Koch" = 23, "Bowen" = 25
 )
+
+t47_status_colors <- c(
+  "This study" = "#B2182B",
+  "Published data" = "grey25"
+)
+t47_status_shapes <- c("This study" = 21, "Published data" = 22)
 
 add_petm_age <- function(alpha = 0.14) {
   annotate(
@@ -55,15 +65,18 @@ age_scale <- function(limits) {
   )
 }
 
-save_age_plot <- function(plot, directory, stem, width, height) {
-  ggsave(
-    file.path(directory, paste0(stem, ".png")),
-    plot, width = width, height = height, dpi = 500
-  )
-  ggsave(
-    file.path(directory, paste0(stem, ".pdf")),
-    plot, width = width, height = height, device = grDevices::pdf,
-    useDingbats = FALSE
+save_age_plot <- function(
+    plot, directory, stem, width, height, presentation_width = NULL,
+    presentation_plot = NULL
+) {
+  save_figure_variants(
+    plot = plot,
+    base_dir = directory,
+    stem = stem,
+    manuscript_width = width,
+    manuscript_height = height,
+    presentation_width = presentation_width,
+    presentation_plot = presentation_plot
   )
 }
 
@@ -87,11 +100,58 @@ CFB_temperature_obs <- read_csv(
   here("data", "processed", "CFB_temperature_observations.csv"),
   show_col_types = FALSE
 )
+seasonal_synthesis_draws <- read_csv(
+  here(
+    "data", "processed",
+    "BHB_seasonal_temperature_integrated_draws.csv.gz"
+  ),
+  show_col_types = FALSE
+)
+seasonal_synthesis_summary <- read_csv(
+  here(
+    "data", "processed",
+    "BHB_seasonal_temperature_integrated_summary.csv"
+  ),
+  show_col_types = FALSE
+)
+seasonal_constraint_summary <- read_csv(
+  here(
+    "data", "processed",
+    "BHB_seasonal_temperature_constraint_summary.csv"
+  ),
+  show_col_types = FALSE
+)
+Barnet2019_ODP1262 <- read_csv(
+  here(
+    "data", "processed",
+    "BarnetEtAl2019_ODP1262_benthic_isotopes.csv"
+  ),
+  show_col_types = FALSE
+)
+BHB_regional_d13C_reference <- read_csv(
+  here(
+    "data", "processed",
+    "BHB_regional_soilcarb_reference_summary_age_calibrated.csv"
+  ),
+  show_col_types = FALSE
+)
 
 age_lookup <- CFB_isotopes_age %>%
   distinct(section_id, MLA_horizon_id, strat_height_m, Age_Ma)
 
+p_CFB_chronostrat_age <- build_CFB_chronostrat_age_panel(
+  age_lookup = age_lookup,
+  age_limits = cfb_age_limits
+)
+
 CFB_temperature_obs_age <- CFB_temperature_obs %>%
+  mutate(
+    source = recode(source, IPL = "U-M", Snell = "Caltech"),
+    study_status = if_else(source == "U-M", "This study", "Published data"),
+    study_status = factor(
+      study_status, levels = c("This study", "Published data")
+    )
+  ) %>%
   left_join(
     age_lookup,
     by = c("section_id", "MLA_horizon_id", "strat_height_m")
@@ -101,7 +161,7 @@ CFB_temperature_obs_age <- CFB_temperature_obs %>%
 #-- 3.) Reshape CFB Carbon-Isotope Observations ----------------------------
 d13C_age <- bind_rows(
   CFB_isotopes_age %>% transmute(
-    MLA_horizon_id, Age_Ma, source = "IPL",
+    MLA_horizon_id, Age_Ma, source = "U-M",
     value = IPL_NuDog_d13Ccarb_VPDB, se = NA_real_
   ),
   CFB_isotopes_age %>% transmute(
@@ -109,7 +169,7 @@ d13C_age <- bind_rows(
     value = CU_mean_d13Ccarb_vpdb, se = NA_real_
   ),
   CFB_isotopes_age %>% transmute(
-    MLA_horizon_id, Age_Ma, source = "Snell",
+    MLA_horizon_id, Age_Ma, source = "Caltech",
     value = Snell_mean_d13Ccarb_vpdb, se = NA_real_
   ),
   CFB_isotopes_age %>% transmute(
@@ -122,6 +182,49 @@ d13C_age <- bind_rows(
   )
 ) %>%
   filter(!is.na(value), !is.na(Age_Ma)) %>%
+  mutate(
+    source = factor(source, levels = names(source_colors)),
+    study_status = if_else(source == "U-M", "U-M / this study", "Published"),
+    study_status = factor(
+      study_status, levels = c("U-M / this study", "Published")
+    )
+  )
+
+# Published BHB soil-carbonate carbon-isotope observations used for global
+# comparison. U-M/IPL values are deliberately omitted: this panel provides an
+# independent published terrestrial record alongside the marine reference.
+BHB_d13C_published_age <- d13C_age %>%
+  filter(source != "U-M") %>%
+  transmute(
+    section_id = "CFB",
+    MLA_horizon_id,
+    Age_Ma,
+    source = as.character(source),
+    d13Ccarb_vpdb = value,
+    d13Ccarb_se = se
+  ) %>%
+  bind_rows(
+    BHB_regional_d13C_reference %>%
+      filter(!is.na(Age_Ma), !is.na(d13Ccarb_vpdb)) %>%
+      transmute(
+        section_id,
+        MLA_horizon_id,
+        Age_Ma,
+        source = case_when(
+          str_detect(dataset, regex("^Snell", ignore_case = TRUE)) ~
+            "Caltech",
+          str_detect(dataset, regex("^Koch", ignore_case = TRUE)) ~
+            "Koch",
+          TRUE ~ dataset
+        ),
+        d13Ccarb_vpdb,
+        d13Ccarb_se = NA_real_
+      )
+  ) %>%
+  distinct(
+    section_id, MLA_horizon_id, Age_Ma, source, d13Ccarb_vpdb,
+    .keep_all = TRUE
+  ) %>%
   mutate(source = factor(source, levels = names(source_colors)))
 
 #-- 4.) Construct CFB Age-Domain Panels ------------------------------------
@@ -144,22 +247,37 @@ p_temperature_age <- ggplot() +
     data = CFB_temperature_obs_age,
     aes(
       xmin = T_C - T_se_C, xmax = T_C + T_se_C,
-      y = Age_Ma, color = source
+      y = Age_Ma, color = study_status
     ),
     height = 0, linewidth = 0.35, alpha = 0.55
   ) +
   geom_point(
     data = CFB_temperature_obs_age,
-    aes(T_C, Age_Ma, color = source, shape = source),
-    size = 2, fill = "white", stroke = 0.7
+    aes(
+      T_C, Age_Ma, color = study_status,
+      fill = study_status, shape = study_status
+    ),
+    size = 2.5, stroke = 0.8
   ) +
-  scale_color_manual(values = source_colors, drop = FALSE) +
-  scale_shape_manual(values = source_shapes, drop = FALSE) +
+  scale_color_manual(
+    values = c("This study" = "#B2182B", "Published data" = "grey55"),
+    drop = FALSE
+  ) +
+  scale_fill_manual(
+    values = c("This study" = "#B2182B", "Published data" = "white"),
+    drop = FALSE
+  ) +
+  scale_shape_manual(values = t47_status_shapes, drop = FALSE) +
   age_scale(cfb_age_limits) +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
-    y = "Age (Ma)", color = "Source", shape = "Source",
+    y = "Age (Ma)", color = NULL, fill = "Dataset", shape = NULL,
     title = "A  CFB temperature"
+  ) +
+  guides(
+    color = "none",
+    shape = "none",
+    fill = guide_legend(override.aes = list(shape = 21))
   ) +
   theme_age
 
@@ -170,16 +288,31 @@ p_d13C_age <- ggplot(d13C_age) +
     height = 0, linewidth = 0.3, alpha = 0.35, na.rm = TRUE
   ) +
   geom_point(
-    aes(value, Age_Ma, color = source, shape = source),
-    size = 1.7, alpha = 0.78, fill = "white", stroke = 0.55
+    aes(
+      value, Age_Ma, color = study_status,
+      fill = study_status, shape = source
+    ),
+    size = 2.1, alpha = 0.9, stroke = 0.7
   ) +
-  scale_color_manual(values = source_colors, drop = FALSE) +
+  scale_color_manual(
+    values = c("U-M / this study" = "black", "Published" = "grey62"),
+    drop = FALSE
+  ) +
+  scale_fill_manual(
+    values = c("U-M / this study" = "black", "Published" = "white"),
+    drop = FALSE
+  ) +
   scale_shape_manual(values = source_shapes, drop = FALSE) +
   age_scale(cfb_age_limits) +
   labs(
     x = expression(delta^13 * C[carbonate] ~ "(per mil VPDB)"),
-    y = "Age (Ma)", color = "Source", shape = "Source",
+    y = "Age (Ma)", color = NULL, fill = "Dataset", shape = NULL,
     title = expression("B  CFB " * delta^13 * C[carbonate])
+  ) +
+  guides(
+    color = "none",
+    shape = "none",
+    fill = guide_legend(override.aes = list(shape = 21))
   ) +
   theme_age
 
@@ -255,13 +388,274 @@ remove_repeated_age <- function(plot) {
 }
 
 p_CFB_age_multiproxy <-
+  p_CFB_chronostrat_age +
   (p_temperature_age + theme(legend.position = "none")) +
   remove_repeated_age(p_d13C_age) +
   remove_repeated_age(p_d18Owater_age) +
   remove_repeated_age(p_D17Owater_age) +
   remove_repeated_age(p_age_control) +
-  plot_layout(widths = c(1.15, 1, 1, 1, 0.95), guides = "collect") &
+  plot_layout(
+    widths = c(0.92, 1.15, 1, 1, 1, 0.95),
+    guides = "collect"
+  ) &
   theme(legend.position = "top")
+
+#-- 4b.) Global Marine-Terrestrial Carbon-Cycle Context -------------------
+#
+# Unlike the section-oriented panels above, this synthesis uses age on the
+# horizontal axis, running from older at left to younger at right. That
+# orientation makes temporal alignment among independent archives explicit
+# and is preferable for event comparison, lead-lag interpretation, and
+# conference-slide reading. The raw marine observations remain visible; a
+# 50-kyr bin mean emphasizes the long-term trajectory without implying a
+# fitted process model.
+
+global_context_age_limits <- c(59.0, 52.5)
+
+age_scale_horizontal <- scale_x_reverse(
+  limits = global_context_age_limits,
+  breaks = seq(59, 52.5, by = -0.5),
+  minor_breaks = seq(59, 52.5, by = -0.1),
+  expand = expansion(mult = c(0.005, 0.005))
+)
+
+add_petm_horizontal <- function(alpha = 0.11) {
+  annotate(
+    "rect",
+    xmin = petm_age_old_ma,
+    xmax = petm_age_young_ma,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "#E41A1C",
+    alpha = alpha
+  )
+}
+
+Barnet2019_LPEE <- Barnet2019_ODP1262 %>%
+  filter(
+    Age_Ma <= global_context_age_limits[1],
+    Age_Ma >= global_context_age_limits[2]
+  )
+
+Barnet2019_50kyr <- Barnet2019_LPEE %>%
+  mutate(age_bin_ma = floor(Age_Ma / 0.05) * 0.05 + 0.025) %>%
+  group_by(age_bin_ma) %>%
+  summarise(
+    Age_Ma = mean(Age_Ma, na.rm = TRUE),
+    d13C_benthic_vpdb = mean(d13C_benthic_vpdb, na.rm = TRUE),
+    bottom_water_temperature_C =
+      mean(bottom_water_temperature_C, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(Age_Ma)
+
+p_Barnet_BWT_horizontal <- ggplot(Barnet2019_LPEE) +
+  add_petm_horizontal() +
+  geom_line(
+    aes(Age_Ma, bottom_water_temperature_C),
+    color = "grey67", linewidth = 0.22, alpha = 0.65
+  ) +
+  geom_line(
+    data = Barnet2019_50kyr,
+    aes(Age_Ma, bottom_water_temperature_C),
+    color = "#2166AC", linewidth = 0.8
+  ) +
+  age_scale_horizontal +
+  labs(
+    x = NULL,
+    y = expression("Bottom-water " * T ~ "(" * degree * "C)"),
+    title = "A  South Atlantic deep-ocean temperature",
+    subtitle = "ODP Site 1262; grey = observations, blue = 50-kyr means"
+  ) +
+  theme_age +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+p_Barnet_d13C_horizontal <- ggplot(Barnet2019_LPEE) +
+  add_petm_horizontal() +
+  geom_line(
+    aes(Age_Ma, d13C_benthic_vpdb),
+    color = "grey67", linewidth = 0.22, alpha = 0.65
+  ) +
+  geom_line(
+    data = Barnet2019_50kyr,
+    aes(Age_Ma, d13C_benthic_vpdb),
+    color = "#7F3B08", linewidth = 0.8
+  ) +
+  age_scale_horizontal +
+  labs(
+    x = NULL,
+    y = expression(delta^13 * C[benthic] ~ "(per mil VPDB)"),
+    title = "B  South Atlantic marine carbon cycle"
+  ) +
+  theme_age +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+
+p_BHB_d13C_horizontal <- ggplot(BHB_d13C_published_age) +
+  add_petm_horizontal() +
+  geom_errorbar(
+    aes(
+      x = Age_Ma,
+      ymin = d13Ccarb_vpdb - d13Ccarb_se,
+      ymax = d13Ccarb_vpdb + d13Ccarb_se,
+      color = source
+    ),
+    width = 0,
+    linewidth = 0.35,
+    alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    aes(Age_Ma, d13Ccarb_vpdb, color = source, shape = source),
+    size = 1.8,
+    alpha = 0.82,
+    fill = "white",
+    stroke = 0.6
+  ) +
+  age_scale_horizontal +
+  scale_color_manual(values = source_colors, drop = TRUE) +
+  scale_shape_manual(values = source_shapes, drop = TRUE) +
+  labs(
+    x = "Age (Ma; older to younger)",
+    y = expression(delta^13 * C[soil~carbonate] ~ "(per mil VPDB)"),
+    color = "Published source",
+    shape = "Published source",
+    title = expression("C  Bighorn Basin soil-carbonate " * delta^13 * C),
+    subtitle = paste(
+      "Published CFB and regional-reference values from CU, Caltech, Koch,",
+      "and Bowen; U-M/IPL omitted"
+    )
+  ) +
+  theme_age +
+  theme(legend.position = "bottom")
+
+p_global_Barnet_BHB_d13C <-
+  p_Barnet_BWT_horizontal /
+  p_Barnet_d13C_horizontal /
+  p_BHB_d13C_horizontal +
+  plot_layout(heights = c(0.9, 0.9, 1.15), guides = "collect") +
+  plot_annotation(
+    title = "Global marine climate and carbon-cycle context for the Bighorn Basin",
+    subtitle = paste(
+      "Marine record: Barnet et al. (2019), ODP Site 1262;",
+      "terrestrial panel excludes U-M/IPL data"
+    ),
+    caption = paste(
+      "Barnet et al. data: PANGAEA 10.1594/PANGAEA.884585.",
+      "PETM band = 55.93-55.75 Ma."
+    ),
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 14),
+      plot.subtitle = element_text(size = 10),
+      plot.caption = element_text(size = 8, hjust = 0)
+    )
+  ) &
+  theme(legend.position = "bottom")
+
+# Presentation version: this is deliberately composed independently rather
+# than resizing the publication figure. It is designed for a 12 x 6 inch
+# placement on a 16:9 slide. Secondary titles are removed, typography and
+# symbols are scaled for that physical size, and margins are tightened. The
+# analytical content, age limits, PETM interval, and observations are unchanged.
+
+slide_panel_theme <- theme(
+  axis.title = element_text(size = 12),
+  axis.text = element_text(size = 11, color = "black"),
+  plot.title = element_text(face = "bold", size = 13),
+  plot.subtitle = element_text(size = 10),
+  plot.margin = margin(2, 6, 2, 6),
+  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 10)
+)
+
+p_Barnet_BWT_slide <- p_Barnet_BWT_horizontal +
+  labs(
+    title = expression(
+      "A  South Atlantic bottom-water temperature (" * degree * "C)"
+    ),
+    subtitle = NULL,
+    y = NULL
+  ) +
+  slide_panel_theme
+
+p_Barnet_d13C_slide <- p_Barnet_d13C_horizontal +
+  labs(
+    title = expression(
+      "B  South Atlantic benthic " * delta^13 * C ~ "(per mil VPDB)"
+    ),
+    y = NULL
+  ) +
+  slide_panel_theme
+
+p_BHB_d13C_slide <- p_BHB_d13C_horizontal +
+  labs(
+    title = expression(
+      "C  Bighorn Basin soil-carbonate " * delta^13 * C ~ "(per mil VPDB)"
+    ),
+    subtitle = NULL,
+    y = NULL
+  ) +
+  slide_panel_theme +
+  theme(
+    legend.position = "bottom",
+    legend.margin = margin(0, 0, 0, 0),
+    legend.box.margin = margin(-3, 0, 0, 0)
+  )
+
+p_global_Barnet_BHB_d13C_slide <-
+  p_Barnet_BWT_slide /
+  p_Barnet_d13C_slide /
+  p_BHB_d13C_slide +
+  plot_layout(heights = c(0.82, 0.82, 1.08), guides = "collect") +
+  plot_annotation(
+    title = "Global marine context and Bighorn Basin carbon-cycle change",
+    subtitle = paste(
+      "Barnet et al. (2019), ODP Site 1262;",
+      "grey = observations, colored marine curves = 50-kyr means;",
+      "U-M/IPL omitted"
+    ),
+    caption = paste(
+      "Marine data: PANGAEA 10.1594/PANGAEA.884585.",
+      "Pink band: PETM, 55.93-55.75 Ma."
+    ),
+    theme = theme(
+      plot.title = element_text(face = "bold", size = 20),
+      plot.subtitle = element_text(size = 11),
+      plot.caption = element_text(size = 8, hjust = 0),
+      plot.margin = margin(8, 10, 5, 10)
+    )
+  ) &
+  theme(legend.position = "bottom")
+
+# Minimal-title, 12 x 6 inch version for direct placement on a presentation
+# slide. Interpretive framing belongs in the slide title or spoken narrative;
+# the figure itself retains only the panel identities and compact provenance.
+p_global_Barnet_BHB_d13C_slide_12x6 <-
+  p_Barnet_BWT_slide /
+  p_Barnet_d13C_slide /
+  p_BHB_d13C_slide +
+  plot_layout(heights = c(0.82, 0.82, 1.08), guides = "collect") +
+  plot_annotation(
+    caption = paste(
+      "Barnet et al. (2019), ODP Site 1262;",
+      "grey = observations; colored marine curves = 50-kyr means;",
+      "pink = PETM; U-M/IPL omitted.",
+      "Data: PANGAEA 10.1594/PANGAEA.884585."
+    ),
+    theme = theme(
+      plot.caption = element_text(size = 8.5, hjust = 0),
+      plot.margin = margin(4, 8, 3, 8)
+    )
+  ) &
+  theme(legend.position = "bottom")
 
 #-- 5.) Regional and Global Temperature Comparisons ------------------------
 BHB_regional_reference <- read_csv(
@@ -571,22 +965,34 @@ p_BHB_D47_temperature_age <- ggplot() +
       xmin = temperature_C - temperature_se_C,
       xmax = temperature_C + temperature_se_C,
       y = Age_Ma,
-      color = section_id
+      color = study_status
     ),
     height = 0, linewidth = 0.3, alpha = 0.42
   ) +
   geom_point(
     data = BHB_D47_temperature_observations,
-    aes(temperature_C, Age_Ma, color = section_id),
-    size = 1.7, alpha = 0.72
+    aes(
+      temperature_C, Age_Ma,
+      color = study_status, shape = study_status, fill = study_status
+    ),
+    size = 2.2, stroke = 0.75, alpha = 0.9
   ) +
-  scale_color_manual(values = c(CFB = "#B2182B", MCP = "#E66101")) +
+  scale_color_manual(values = t47_status_colors) +
+  scale_shape_manual(values = t47_status_shapes) +
+  scale_fill_manual(
+    values = c("This study" = "#B2182B", "Published data" = "white")
+  ) +
   age_scale(regional_age_limits) +
+  guides(
+    color = "none",
+    shape = "none",
+    fill = guide_legend(title = "Dataset", override.aes = list(shape = 21))
+  ) +
   labs(
     x = expression(Delta[47] * " formation temperature (" * degree * "C)"),
-    y = "Age (Ma)", color = "Section",
+    y = "Age (Ma)", color = NULL, shape = NULL,
     title = "B  Soil-carbonate formation temperature",
-    subtitle = "All age-resolved CFB and MCP data; 80% and 95% intervals"
+    subtitle = "This study versus published data; 80% and 95% intervals"
   ) +
   theme_age
 
@@ -657,6 +1063,291 @@ p_all_BHB_temperature <- ggplot() +
   ) +
   theme_age
 
+#-- 6b.) Seasonal-Climate Context for BHB Delta47 --------------------------
+# These are age-invariant literature-informed marginal distributions, not
+# additional time-series observations. Nested vertical bands show the central
+# 95%, 80%, and 50% ranges; the dark line is the median. CMMT, MAAT, and WMMT
+# are absolute temperatures and can be compared with Delta47. MART is a
+# temperature difference, so it is retained in the companion evidence panel
+# rather than drawn as an absolute-temperature band.
+seasonal_colors <- c(
+  CMMT = "#2166AC",
+  MAAT = "#8856A7",
+  WMMT = "#D73027",
+  MART = "#E08214"
+)
+
+seasonal_absolute_summary <- seasonal_synthesis_summary %>%
+  filter(metric %in% c("CMMT", "MAAT", "WMMT")) %>%
+  mutate(metric = factor(metric, levels = c("CMMT", "MAAT", "WMMT")))
+
+add_seasonal_reference_bands <- function(age_limits) {
+  list(
+    geom_rect(
+      data = seasonal_absolute_summary,
+      aes(
+        xmin = lower95_c, xmax = upper95_c,
+        ymin = min(age_limits), ymax = max(age_limits),
+        fill = metric
+      ),
+      alpha = 0.075, inherit.aes = FALSE
+    ),
+    geom_rect(
+      data = seasonal_absolute_summary,
+      aes(
+        xmin = lower80_c, xmax = upper80_c,
+        ymin = min(age_limits), ymax = max(age_limits),
+        fill = metric
+      ),
+      alpha = 0.10, inherit.aes = FALSE
+    ),
+    geom_rect(
+      data = seasonal_absolute_summary,
+      aes(
+        xmin = lower50_c, xmax = upper50_c,
+        ymin = min(age_limits), ymax = max(age_limits),
+        fill = metric
+      ),
+      alpha = 0.14, inherit.aes = FALSE
+    ),
+    geom_vline(
+      data = seasonal_absolute_summary,
+      aes(xintercept = mean_c, color = metric),
+      linewidth = 0.65, alpha = 0.85, show.legend = FALSE
+    )
+  )
+}
+
+p_BHB_D47_seasonal_context <- ggplot() +
+  add_seasonal_reference_bands(regional_age_limits) +
+  add_petm_age(alpha = 0.10) +
+  geom_ribbon(
+    data = BHB_D47_temperature_model,
+    aes(
+      xmin = temperature_lower95_C,
+      xmax = temperature_upper95_C,
+      y = Age_Ma
+    ),
+    fill = "grey45", alpha = 0.16
+  ) +
+  geom_ribbon(
+    data = BHB_D47_temperature_model,
+    aes(
+      xmin = temperature_lower80_C,
+      xmax = temperature_upper80_C,
+      y = Age_Ma
+    ),
+    fill = "grey35", alpha = 0.18
+  ) +
+  geom_path(
+    data = BHB_D47_temperature_model %>% arrange(desc(Age_Ma)),
+    aes(temperature_median_C, Age_Ma),
+    color = "black", linewidth = 0.95
+  ) +
+  geom_errorbarh(
+    data = BHB_D47_temperature_observations,
+    aes(
+      xmin = temperature_C - temperature_se_C,
+      xmax = temperature_C + temperature_se_C,
+      y = Age_Ma,
+      color = study_status
+    ),
+    height = 0, linewidth = 0.3, alpha = 0.45
+  ) +
+  geom_point(
+    data = BHB_D47_temperature_observations %>%
+      filter(study_status == "Published data"),
+    aes(temperature_C, Age_Ma),
+    shape = 21, color = "grey50", fill = "white",
+    size = 2, stroke = 0.7
+  ) +
+  geom_point(
+    data = BHB_D47_temperature_observations %>%
+      filter(study_status == "This study"),
+    aes(temperature_C, Age_Ma),
+    shape = 21, color = "#B2182B", fill = "#B2182B",
+    size = 2.25, stroke = 0.7
+  ) +
+  scale_fill_manual(values = seasonal_colors, drop = FALSE) +
+  scale_color_manual(
+    values = c(
+      seasonal_colors,
+      t47_status_colors
+    )
+  ) +
+  scale_shape_manual(values = t47_status_shapes) +
+  age_scale(regional_age_limits) +
+  guides(
+    fill = guide_legend(
+      title = "Literature synthesis",
+      override.aes = list(alpha = 0.18)
+    ),
+    color = "none",
+    shape = "none"
+  ) +
+  labs(
+    x = expression(Delta[47] * " formation temperature (" * degree * "C)"),
+    y = "Age (Ma)",
+    title = "BHB soil-carbonate temperatures in seasonal-climate context",
+    subtitle = "Lines = means; nested bands = central 50%, 80%, and 95%."
+  ) +
+  theme_age
+
+# Empirical phase distributions propagate each reported observation SE and
+# give every horizon equal prior weight. They show the sampled T47 population,
+# not an estimate of regional air temperature or a time-weighted climate mean.
+set.seed(47024)
+phase_draws <- BHB_D47_temperature_observations %>%
+  mutate(
+    petm_phase = case_when(
+      Age_Ma > petm_age_old_ma ~ "Pre-PETM",
+      Age_Ma >= petm_age_young_ma ~ "PETM",
+      TRUE ~ "Post-PETM"
+    ),
+    petm_phase = factor(
+      petm_phase,
+      levels = c("Post-PETM", "PETM", "Pre-PETM")
+    )
+  ) %>%
+  select(section_id, MLA_horizon_id, petm_phase, temperature_C,
+         temperature_se_C) %>%
+  mutate(draws = map2(
+    temperature_C,
+    temperature_se_C,
+    ~ rnorm(2000, mean = .x, sd = .y)
+  )) %>%
+  unnest_longer(draws, values_to = "temperature_draw_c")
+
+phase_summary <- phase_draws %>%
+  group_by(petm_phase) %>%
+  summarise(
+    mean_c = mean(temperature_draw_c),
+    median_c = median(temperature_draw_c),
+    lower50_c = quantile(temperature_draw_c, 0.25),
+    upper50_c = quantile(temperature_draw_c, 0.75),
+    lower80_c = quantile(temperature_draw_c, 0.10),
+    upper80_c = quantile(temperature_draw_c, 0.90),
+    lower95_c = quantile(temperature_draw_c, 0.025),
+    upper95_c = quantile(temperature_draw_c, 0.975),
+    n_horizons = n_distinct(paste(section_id, MLA_horizon_id)),
+    .groups = "drop"
+  )
+
+p_T47_petm_phase_context <- ggplot(
+  phase_draws %>% group_by(petm_phase) %>% slice_sample(n = 12000),
+  aes(temperature_draw_c, petm_phase)
+) +
+  geom_rect(
+    data = seasonal_absolute_summary,
+    aes(
+      xmin = lower95_c, xmax = upper95_c,
+      ymin = -Inf, ymax = Inf, fill = metric
+    ),
+    alpha = 0.065, inherit.aes = FALSE
+  ) +
+  geom_rect(
+    data = seasonal_absolute_summary,
+    aes(
+      xmin = lower80_c, xmax = upper80_c,
+      ymin = -Inf, ymax = Inf, fill = metric
+    ),
+    alpha = 0.085, inherit.aes = FALSE
+  ) +
+  geom_rect(
+    data = seasonal_absolute_summary,
+    aes(
+      xmin = lower50_c, xmax = upper50_c,
+      ymin = -Inf, ymax = Inf, fill = metric
+    ),
+    alpha = 0.11, inherit.aes = FALSE
+  ) +
+  geom_vline(
+    data = seasonal_absolute_summary,
+    aes(xintercept = mean_c, color = metric),
+    linewidth = 0.7, show.legend = FALSE
+  ) +
+  geom_violin(
+    fill = "grey70", color = "grey25",
+    alpha = 0.62, scale = "width", trim = FALSE
+  ) +
+  geom_segment(
+    data = phase_summary,
+    aes(
+      x = lower95_c, xend = upper95_c,
+      y = petm_phase, yend = petm_phase
+    ),
+    linewidth = 1.1, color = "grey55", inherit.aes = FALSE
+  ) +
+  geom_segment(
+    data = phase_summary,
+    aes(
+      x = lower80_c, xend = upper80_c,
+      y = petm_phase, yend = petm_phase
+    ),
+    linewidth = 3.0, color = "grey30", inherit.aes = FALSE
+  ) +
+  geom_segment(
+    data = phase_summary,
+    aes(
+      x = lower50_c, xend = upper50_c,
+      y = petm_phase, yend = petm_phase
+    ),
+    linewidth = 6.0, color = "black", inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = phase_summary,
+    aes(mean_c, petm_phase),
+    shape = 21, fill = "white", size = 2.5,
+    inherit.aes = FALSE
+  ) +
+  scale_fill_manual(values = seasonal_colors) +
+  scale_color_manual(values = seasonal_colors) +
+  labs(
+    x = expression(Delta[47] * " formation temperature (" * degree * "C)"),
+    y = NULL,
+    fill = "Seasonal synthesis",
+    title = "BHB T47 before, during, and after the PETM",
+    subtitle = paste(
+      "Violin = propagated T47; white point = mean;",
+      "bars = central 50%, 80%, and 95%."
+    )
+  ) +
+  theme_classic(base_size = 11) +
+  theme(legend.position = "top")
+
+p_seasonal_evidence_forest <- seasonal_constraint_summary %>%
+  mutate(
+    metric = factor(metric, levels = c("MAAT", "CMMT", "WMMT", "MART")),
+    evidence_label = paste(study, scenario, sep = " — ")
+  ) %>%
+  ggplot(
+    aes(
+      median_c,
+      reorder(evidence_label, median_c),
+      color = evidence_class
+    )
+  ) +
+  geom_errorbarh(
+    aes(xmin = lower95_c, xmax = upper95_c),
+    height = 0, linewidth = 0.45
+  ) +
+  geom_point(size = 1.7) +
+  facet_wrap(~metric, scales = "free", ncol = 2) +
+  labs(
+    x = "Temperature or temperature range (degrees C)",
+    y = NULL,
+    color = "Evidence",
+    title = "Published proxy and model constraints",
+    subtitle = "MART is a range; the other metrics are absolute temperatures"
+  ) +
+  theme_classic(base_size = 9) +
+  theme(legend.position = "bottom")
+
+p_T47_petm_phase_with_evidence <-
+  p_T47_petm_phase_context +
+  p_seasonal_evidence_forest +
+  plot_layout(widths = c(1.0, 1.35))
+
 p_insolation_47N <- BHB_insolation_47N %>%
   filter(
     Age_Ma >= regional_age_limits[2],
@@ -711,19 +1402,150 @@ p_regional_climate <-
     theme = theme(plot.title = element_text(face = "bold", size = 14))
   )
 
-#-- 7.) Export Age-Domain Figures ------------------------------------------
-save_age_plot(p_temperature_age, cfb_age_figure_dir,
-              "CFB_temperature_age", 5.2, 7.5)
-save_age_plot(p_d13C_age, cfb_age_figure_dir,
-              "CFB_d13Ccarb_age", 5.2, 7.5)
-save_age_plot(p_d18Owater_age, cfb_age_figure_dir,
-              "CFB_d18Owater_age", 5.2, 7.5)
-save_age_plot(p_D17Owater_age, cfb_age_figure_dir,
-              "CFB_D17Owater_age", 5.2, 7.5)
-save_age_plot(p_age_control, cfb_age_figure_dir,
-              "CFB_chronology_support_age", 5.2, 7.5)
+#-- 7.) Build Horizontal-Age and PETM-Focus Variants ----------------------
+# These variants preserve the same observations, uncertainty, and fitted
+# models as the vertical-age figures. Only the coordinate orientation and
+# displayed age window change. Full-range plots place older ages at left and
+# younger ages at right; PETM-focus plots use the common 56.5--55.5 Ma window.
+horizontal_age_plot <- function(plot, limits = cfb_age_limits) {
+  plot +
+    scale_y_reverse(
+      limits = limits,
+      breaks = seq(ceiling(limits[2] * 2) / 2,
+                   floor(limits[1] * 2) / 2, by = 0.5),
+      minor_breaks = seq(ceiling(limits[2] * 10) / 10,
+                         floor(limits[1] * 10) / 10, by = 0.1),
+      expand = expansion(mult = c(0.01, 0.02))
+    ) +
+    coord_flip() +
+    labs(x = NULL, y = "Age (Ma)") +
+    theme(
+      legend.position = "top",
+      plot.title.position = "plot"
+    )
+}
+
+petm_age_limits <- c(56.5, 55.5)
+
+p_temperature_age_horizontal <- horizontal_age_plot(p_temperature_age)
+p_d13C_age_horizontal <- horizontal_age_plot(p_d13C_age)
+p_d18Owater_age_horizontal <- horizontal_age_plot(p_d18Owater_age)
+p_D17Owater_age_horizontal <- horizontal_age_plot(p_D17Owater_age)
+
+p_temperature_age_PETM_horizontal <-
+  horizontal_age_plot(p_temperature_age, petm_age_limits)
+p_d13C_age_PETM_horizontal <-
+  horizontal_age_plot(p_d13C_age, petm_age_limits)
+p_d18Owater_age_PETM_horizontal <-
+  horizontal_age_plot(p_d18Owater_age, petm_age_limits)
+p_D17Owater_age_PETM_horizontal <-
+  horizontal_age_plot(p_D17Owater_age, petm_age_limits)
+
+# Standalone vertical-age counterpart to the horizontal PETM temperature plot.
+# This retains temperature on x and age on y for direct comparison with the
+# stratigraphic-style age figures used elsewhere in the project.
+p_temperature_age_PETM_vertical <-
+  p_temperature_age +
+  age_scale(petm_age_limits) +
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = "Age (Ma)",
+    title = "CFB temperature across the PETM"
+  )
+
+# Regional single-panel records use the same age-on-x convention so they can
+# be aligned directly with the CFB proxy panels and marine reference records.
+p_insolation_47N_horizontal <-
+  horizontal_age_plot(p_insolation_47N, regional_age_limits)
+p_BHB_LMA_MAT_age_horizontal <-
+  horizontal_age_plot(p_BHB_LMA_MAT_age, regional_age_limits)
+p_BHB_D47_temperature_age_horizontal <-
+  horizontal_age_plot(p_BHB_D47_temperature_age, regional_age_limits)
+p_BHB_D47_seasonal_context_horizontal <-
+  horizontal_age_plot(p_BHB_D47_seasonal_context, regional_age_limits)
+p_BHB_D47_temperature_age_PETM_horizontal <-
+  horizontal_age_plot(p_BHB_D47_temperature_age, petm_age_limits)
+p_BHB_D47_seasonal_context_PETM_horizontal <-
+  horizontal_age_plot(p_BHB_D47_seasonal_context, petm_age_limits)
+
+p_CFB_age_multiproxy_horizontal <- wrap_plots(
+  p_temperature_age_horizontal,
+  p_d13C_age_horizontal,
+  p_d18Owater_age_horizontal,
+  p_D17Owater_age_horizontal,
+  ncol = 2,
+  guides = "collect"
+) &
+  theme(legend.position = "top")
+
+p_CFB_age_multiproxy_PETM_horizontal <- wrap_plots(
+  p_temperature_age_PETM_horizontal,
+  p_d13C_age_PETM_horizontal,
+  p_d18Owater_age_PETM_horizontal,
+  p_D17Owater_age_PETM_horizontal,
+  ncol = 2,
+  guides = "collect"
+) &
+  theme(legend.position = "top")
+
+#-- 8.) Export Age-Domain Figures ------------------------------------------
+with_age_chronostrat <- function(plot) {
+  p_CFB_chronostrat_age + plot +
+    plot_layout(widths = c(0.92, 2.1))
+}
+
+save_age_plot(with_age_chronostrat(p_temperature_age), cfb_age_figure_dir,
+              "CFB_temperature_age", 7.5, 7.5)
+save_age_plot(with_age_chronostrat(p_d13C_age), cfb_age_figure_dir,
+              "CFB_d13Ccarb_age", 7.5, 7.5)
+save_age_plot(with_age_chronostrat(p_d18Owater_age), cfb_age_figure_dir,
+              "CFB_d18Owater_age", 7.5, 7.5)
+save_age_plot(with_age_chronostrat(p_D17Owater_age), cfb_age_figure_dir,
+              "CFB_D17Owater_age", 7.5, 7.5)
+save_age_plot(with_age_chronostrat(p_age_control), cfb_age_figure_dir,
+              "CFB_chronology_support_age", 7.5, 7.5)
 save_age_plot(p_CFB_age_multiproxy, cfb_age_figure_dir,
-              "CFB_multiproxy_age_full", 16, 8)
+              "CFB_multiproxy_age_full", 18, 8)
+save_age_plot(p_temperature_age_horizontal, cfb_age_figure_dir,
+              "CFB_temperature_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_d13C_age_horizontal, cfb_age_figure_dir,
+              "CFB_d13Ccarb_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_d18Owater_age_horizontal, cfb_age_figure_dir,
+              "CFB_d18Owater_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_D17Owater_age_horizontal, cfb_age_figure_dir,
+              "CFB_D17Owater_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_CFB_age_multiproxy_horizontal, cfb_age_figure_dir,
+              "CFB_multiproxy_age_horizontal", 12, 8,
+              presentation_width = 12,
+              presentation_plot =
+                add_presentation_theme(p_CFB_age_multiproxy_horizontal) &
+                theme(legend.position = "none"))
+save_age_plot(p_temperature_age_PETM_horizontal, cfb_age_figure_dir,
+              "CFB_temperature_age_PETM_56.5-55.5Ma", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_temperature_age_PETM_vertical, cfb_age_figure_dir,
+              "CFB_temperature_age_PETM_56.5-55.5Ma_vertical", 6, 7.5,
+              presentation_width = 6)
+save_age_plot(p_d13C_age_PETM_horizontal, cfb_age_figure_dir,
+              "CFB_d13Ccarb_age_PETM_56.5-55.5Ma", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_d18Owater_age_PETM_horizontal, cfb_age_figure_dir,
+              "CFB_d18Owater_age_PETM_56.5-55.5Ma", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_D17Owater_age_PETM_horizontal, cfb_age_figure_dir,
+              "CFB_D17Owater_age_PETM_56.5-55.5Ma", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_CFB_age_multiproxy_PETM_horizontal, cfb_age_figure_dir,
+              "CFB_multiproxy_age_PETM_56.5-55.5Ma", 12, 8,
+              presentation_width = 12,
+              presentation_plot =
+                add_presentation_theme(
+                  p_CFB_age_multiproxy_PETM_horizontal
+                ) & theme(legend.position = "none"))
 save_age_plot(p_regional_temperature, regional_age_figure_dir,
               "BHB_regional_temperature_age", 6.2, 8)
 save_age_plot(p_regional_climate, regional_age_figure_dir,
@@ -734,12 +1556,60 @@ save_age_plot(p_BHB_LMA_MAT_age, regional_age_figure_dir,
               "BHB_LMA_MAT_model_age", 5.5, 8)
 save_age_plot(p_BHB_D47_temperature_age, regional_age_figure_dir,
               "BHB_D47_formation_temperature_model_age", 6.2, 8)
+save_age_plot(p_BHB_D47_seasonal_context, regional_age_figure_dir,
+              "BHB_D47_seasonal_synthesis_context_age", 7.4, 8.5)
+save_age_plot(p_insolation_47N_horizontal, regional_age_figure_dir,
+              "BHB_ZB20a_summer_insolation_47N_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_BHB_LMA_MAT_age_horizontal, regional_age_figure_dir,
+              "BHB_LMA_MAT_model_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(p_BHB_D47_temperature_age_horizontal, regional_age_figure_dir,
+              "BHB_D47_formation_temperature_model_age_horizontal", 7.5, 5.5,
+              presentation_width = 6)
+save_age_plot(
+  p_BHB_D47_seasonal_context_horizontal, regional_age_figure_dir,
+  "BHB_D47_seasonal_synthesis_context_age_horizontal", 8.5, 6,
+  presentation_width = 6
+)
+save_age_plot(
+  p_BHB_D47_temperature_age_PETM_horizontal, regional_age_figure_dir,
+  "BHB_D47_formation_temperature_PETM_56.5-55.5Ma", 7.5, 5.5,
+  presentation_width = 6
+)
+save_age_plot(
+  p_BHB_D47_seasonal_context_PETM_horizontal, regional_age_figure_dir,
+  "BHB_D47_seasonal_synthesis_PETM_56.5-55.5Ma", 8.5, 6,
+  presentation_width = 6
+)
+save_age_plot(p_T47_petm_phase_context, regional_age_figure_dir,
+              "BHB_D47_pre_during_post_PETM_seasonal_context", 9.5, 5.8)
+save_age_plot(p_T47_petm_phase_with_evidence, regional_age_figure_dir,
+              "BHB_D47_PETM_phases_with_seasonal_evidence", 16, 7.5)
 save_age_plot(p_BHB_temperature_insolation, regional_age_figure_dir,
               "BHB_temperature_models_ZB20a_insolation_47N_age", 15.5, 8.5)
+save_figure_variants(
+  plot = p_global_Barnet_BHB_d13C,
+  presentation_plot = p_global_Barnet_BHB_d13C_slide_12x6,
+  base_dir = regional_age_figure_dir,
+  stem = "Barnet2019_marine_BHB_d13C_age",
+  manuscript_width = 11,
+  manuscript_height = 9.5,
+  presentation_width = 12,
+  presentation_height = 6
+)
 
 # Supporting table used in the combined figure. This makes explicit which
 # observations, age ranges, proxy meanings, and uncertainty values were drawn.
 write_csv(
   BHB_temperature_proxy_data,
   here("data", "processed", "BHB_temperature_proxy_plot_data.csv")
+)
+write_csv(
+  phase_summary,
+  here("data", "processed", "BHB_D47_PETM_phase_distribution_summary.csv")
+)
+write_csv(
+  BHB_d13C_published_age,
+  here("data", "processed", "BHB_d13C_published_plot_data.csv")
 )

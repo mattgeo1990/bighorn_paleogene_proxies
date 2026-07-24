@@ -11,12 +11,12 @@ d <- read.csv(file, na.strings = c("NA", ""))
 # Put the two sets of sample means into long format
 plot_data <- rbind(
   data.frame(
-    dataset = "IPL",
+    dataset = "U-M",
     sample_id = d$MLA_horizon_id,
     T47_C = d$IPLD47_mean_T47_C
   ),
   data.frame(
-    dataset = "Snell",
+    dataset = "Caltech",
     sample_id = d$Snell_sample_id,
     T47_C = d$Snell_mean_T47_C
   )
@@ -25,7 +25,7 @@ plot_data <- rbind(
 plot_data <- subset(plot_data, is.finite(T47_C))
 plot_data$dataset <- factor(
   plot_data$dataset,
-  levels = c("IPL", "Snell")
+  levels = c("U-M", "Caltech")
 )
 
 # Equal-weight mean of sample means and t-based 95% CI
@@ -94,11 +94,11 @@ ggplot(plot_data, aes(x = dataset, y = T47_C, color = dataset)) +
     fill = "white",
     color = "black"
   ) +
-  scale_color_manual(values = c(IPL = "#0072B2", Snell = "#D55E00")) +
+  scale_color_manual(values = c(`U-M` = "#0072B2", Caltech = "#D55E00")) +
   labs(
     x = NULL,
     y = expression(T[47]~degree*C),
-    title = expression("Comparison of IPL and Snell "*T[47]),
+    title = expression("Comparison of U-M and Caltech "*T[47]),
     subtitle = "Points are sample means; open circles and bars are group means ± 95% CI"
   ) +
   theme_classic(base_size = 13) +

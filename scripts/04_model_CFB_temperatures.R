@@ -7,6 +7,7 @@
 library(tidyverse)
 library(here)
 library(zoo)
+source(here("scripts", "helpers", "save_figure_variants.R"))
 
 dir.create(here("figures", "temperature_models"), recursive = TRUE,
            showWarnings = FALSE)
@@ -97,14 +98,14 @@ make_temperature_observations <- function(data, screen_column) {
     mutate(
       source = recode(
         source,
-        IPLD47_mean_T47_C = "IPL",
+        IPLD47_mean_T47_C = "U-M",
         CU_mean_T47_C = "CU",
-        Snell_mean_T47_C = "Snell"
+        Snell_mean_T47_C = "Caltech"
       ),
       T_se_C = case_when(
-        source == "IPL" ~ IPLD47_se_T47_C,
+        source == "U-M" ~ IPLD47_se_T47_C,
         source == "CU" ~ CU_2se_T47_C / 2,
-        source == "Snell" ~ Snell_se_T47_C
+        source == "Caltech" ~ Snell_se_T47_C
       )
     ) %>%
     select(section_id, MLA_horizon_id, strat_height_m, source, T_C, T_se_C) %>%
@@ -131,7 +132,7 @@ fit_temperature_scenario <- function(scenario_id, scenario_label,
   )
 
   # Combine co-located temperature estimates using an inverse-variance-
-  # weighted mean. This is appropriate when IPL, CU, and Snell observations
+  # weighted mean. This is appropriate when U-M, CU, and Caltech observations
   # from the same horizon are treated as independent estimates of one shared
   # horizon temperature and their reported analytical SEs adequately describe
   # their relative precision. Weighting by 1 / SE^2 allows more precise
@@ -334,10 +335,10 @@ p_temperature_scenarios <- ggplot(
   theme_classic(base_size = 12) +
   theme(legend.position = "top", legend.box = "vertical")
 
-ggsave(
-  here("figures", "temperature_models",
-       "CFB_temperature_screening_scenarios.png"),
-  p_temperature_scenarios, width = 8, height = 8, dpi = 400
+save_figure_variants(
+  p_temperature_scenarios, here("figures", "temperature_models"),
+  "CFB_temperature_screening_scenarios", 8, 8,
+  presentation_width = 6
 )
 
 # A faceted version avoids overlap and makes the uncertainty of each scenario
@@ -347,10 +348,10 @@ p_temperature_scenarios_faceted <- p_temperature_scenarios +
   guides(color = "none", fill = "none") +
   theme(legend.position = "none")
 
-ggsave(
-  here("figures", "temperature_models",
-       "CFB_temperature_screening_scenarios_faceted.png"),
-  p_temperature_scenarios_faceted, width = 10, height = 9, dpi = 400
+save_figure_variants(
+  p_temperature_scenarios_faceted, here("figures", "temperature_models"),
+  "CFB_temperature_screening_scenarios_faceted", 10, 9,
+  presentation_width = 6
 )
 
 #-- 7.) Export Temperature Products ----------------------------------------

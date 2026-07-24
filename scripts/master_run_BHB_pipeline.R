@@ -23,11 +23,13 @@ scripts <- c(
   "01_build_CFB_soilcarb_dataset.R",
   "02_analyze_CFB_carbonate_agreement.R",
   "03_screen_CFB_clumped_diagenesis.R",
+  "03b_plot_BHB_burial_thermal_context.R",
   "04_model_CFB_temperatures.R",
   "05_reconstruct_CFB_soilwater.R",
   "06_process_reference_datasets.R",
   "07_build_and_apply_BHB_age_models.R",
   "08_model_BHB_temperatures.R",
+  "08b_synthesize_BHB_seasonal_climate.R",
   "09_plot_CFB_strat_domain.R",
   "10_plot_BHB_age_domain.R"
 )
