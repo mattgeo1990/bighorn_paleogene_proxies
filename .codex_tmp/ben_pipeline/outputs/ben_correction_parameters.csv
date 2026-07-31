@@ -1,0 +1,10 @@
+parameter,value
+linearity_slope,0.0011572976696246704
+transfer_slope,1.097784986741269
+transfer_intercept,0.944047954776194
+carbonate_offset,-0.007368890274194578
+standard_outlier_MAD_threshold,4
+estimated_linearity_slope,0.0012980902770342445
+estimated_transfer_slope,1.0956605472948258
+estimated_transfer_intercept,0.9488997605070646
+estimated_carbonate_offset,-0.010537668925916007

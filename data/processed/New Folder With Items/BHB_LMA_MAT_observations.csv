@@ -1,0 +1,9 @@
+sample,sections_with_samples,Age_Ma,age_duration_ma,age_younger_ma,age_older_ma,MAT_C,MAT_se_C,age_basis
+LMA-8,ECS,52.842,0.01,52.836999999999996,52.847,22.2,2,Wing et al. aggregate sample interval; published age model 2
+LMA-7,ECS,53.411,0.11,53.356,53.466,15.8,2.2,Wing et al. aggregate sample interval; published age model 2
+LMA-6,ECS,53.808,0.17,53.723,53.893,10.8,3.3,Wing et al. aggregate sample interval; published age model 2
+LMA-5,ECS,54.568,0.37,54.382999999999996,54.753,16.4,2.7,Wing et al. aggregate sample interval; published age model 2
+LMA-4,ECS,54.987,0.4,54.787,55.187000000000005,18.2,2.3,Wing et al. aggregate sample interval; published age model 2
+LMA-3,HCS; WES; MPS,55.393,0.25,55.268,55.518,15.7,2.4,Wing et al. aggregate sample interval; published age model 2
+LMA-2,CFB; WES,55.763,0.33,55.598,55.928,15.8,2.2,Wing et al. aggregate sample interval; published age model 2
+LMA-1,CFB; Bear Creek,56.347,0.62,56.037,56.657000000000004,12.9,2.4,Wing et al. aggregate sample interval; published age model 2

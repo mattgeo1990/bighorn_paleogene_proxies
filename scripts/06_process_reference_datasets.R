@@ -191,17 +191,14 @@ Harper2024_CO2_SST <- Harper2024_CO2_SST %>%
 # --- 2. Kelson Tornillo / Big Bend carbonate D47 dataset ----
 
 
-# Samples excluded only from stratigraphic and age-domain plots.
-# They remain in the complete processed dataset.
-Kelson_exclude_strat_age <- c(
-  "BB-TF3-14-003",
-  "BB-TF2-14-036",
-  "PS3-Bk",
-  "BB-TF2-14-002",
-  "BB12-077",
-  "BB-TF3-14-012nod2",
-  "BB-TF2-14-030"
-)
+# Samples excluded from the published paleoclimate reconstruction and/or the
+# project's Paleocene-Eocene age-domain comparison remain in the complete
+# inventory. The reasons are assigned explicitly below. Kelson et al. (2018)
+# identify two intrusion-reset nodules, PS3 mixed material, and the radial
+# black-paleosol nodule as problematic. The two Cretaceous samples are outside
+# this project's target interval. BB-TF3-14-012nod2 was already excluded in the
+# legacy project code; it is a paired nodule at the same age/horizon, but the
+# original project rationale was not documented, so it is not called altered.
 
 Kelson_Tornillo_raw <- read_csv(
   here("data", "raw", "kelson_tornillo_D47.csv"),
@@ -253,17 +250,53 @@ Kelson_Tornillo_D47 <- Kelson_Tornillo_raw %>%
       str_detect(str_to_lower(petro_type), "spar") ~ "Spar",
       str_detect(str_to_lower(petro_type), "radial") ~ "Radial",
       TRUE ~ petro_type
+    ),
+    kelson_exclusion_reason = case_when(
+      sample_id %in% c("BB-TF3-14-003", "BB-TF2-14-036") ~
+        paste(
+          "Thermally reset near local igneous intrusion;",
+          "excluded from paleoclimate reconstruction by Kelson et al. (2018)"
+        ),
+      sample_id == "PS3-Bk" ~
+        paste(
+          "Bulk nodule with probable micrite-spar mixing and T47 > 55 C;",
+          "excluded by Kelson et al. (2018)"
+        ),
+      sample_id == "BB-TF2-14-030" ~
+        paste(
+          "Radial carbonate from black paleosol;",
+          "excluded from paleoclimate reconstruction by Kelson et al. (2018)"
+        ),
+      sample_id %in% c("BB-TF2-14-002", "BB12-077") ~
+        "Cretaceous; outside project Paleocene-Eocene age-domain target",
+      sample_id == "BB-TF3-14-012nod2" ~
+        paste(
+          "Legacy project exclusion of paired nodule at the same 53.9 Ma",
+          "horizon; original rationale not documented"
+        ),
+      petro_class != "Micrite" ~
+        "Non-micrite material; excluded from primary temperature model",
+      TRUE ~ NA_character_
+    ),
+    used_in_tornillo_temperature_model =
+      petro_class == "Micrite" & is.na(kelson_exclusion_reason),
+    kelson_screening_basis = if_else(
+      used_in_tornillo_temperature_model,
+      paste(
+        "Primary micrite retained after Kelson et al. (2018) and legacy",
+        "project sample exclusions"
+      ),
+      kelson_exclusion_reason
     )
   ) %>%
   filter(!is.na(Age_Ma)) %>%
   arrange(desc(Age_Ma))
 
 Kelson_Tornillo_D47_strat_age <- Kelson_Tornillo_D47 %>%
-  filter(!sample_id %in% Kelson_exclude_strat_age)
+  filter(used_in_tornillo_temperature_model)
 
 Kelson_Tornillo_micrite_strat_age <- Kelson_Tornillo_D47_strat_age %>%
   filter(
-    petro_class == "Micrite",
     !is.na(T47_C),
     !is.na(Age_Ma)
   )

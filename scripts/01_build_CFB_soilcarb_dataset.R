@@ -190,7 +190,10 @@ Snell2013_summary <- Snell2013 %>%
     
     Snell_mean_d18Ow_vsmow   = Average_d18Ow_permil_SMOW,
     Snell_mean_d18Ocarb_vsmow = Average_d18Oc_permil_SMOW,
-    Snell_mean_d13Ccarb_vpdb  = Average_d13Cc_permil_PDB,
+    # Preserve the reported value separately so the cleaning decision remains
+    # auditable after the analysis value is omitted below.
+    Snell_reported_d13Ccarb_vpdb = Average_d13Cc_permil_PDB,
+    Snell_mean_d13Ccarb_vpdb = Average_d13Cc_permil_PDB,
     
     Snell_mean_D47 = Average_D47_permil,
     Snell_se_D47   = D47_1se,
@@ -198,6 +201,30 @@ Snell2013_summary <- Snell2013 %>%
     Snell_mean_T47_C = Average_Temp_C,
     Snell_se_T47_C   = Temp_1se,
     Comments = Comments
+  ) %>%
+  mutate(
+    # PB-00-02-32 and its replicate both report -14.1 per mil d13Ccarb,
+    # creating one overlapping, isolated excursion at an indirectly estimated
+    # 1120 m position. Omit these two d13C values from the compiled CFB/BHB
+    # carbon-isotope record while retaining their reported values above and
+    # retaining all paired d18O, D47, and T47 measurements.
+    Snell_d13C_omitted_from_compilation = Snell_sample_id %in% c(
+      "PB-00-02-32", "PB-00-02-32-2"
+    ),
+    Snell_d13C_omission_reason = if_else(
+      Snell_d13C_omitted_from_compilation,
+      paste(
+        "Replicated -14.1 per mil d13Ccarb value is isolated in the",
+        "compiled record and its 1120 m CFB position was estimated",
+        "indirectly from published age/stratigraphic information."
+      ),
+      NA_character_
+    ),
+    Snell_mean_d13Ccarb_vpdb = if_else(
+      Snell_d13C_omitted_from_compilation,
+      NA_real_,
+      Snell_mean_d13Ccarb_vpdb
+    )
   )
 
 

@@ -145,6 +145,7 @@ p_CFB_chronostrat_age <- build_CFB_chronostrat_age_panel(
 )
 
 CFB_temperature_obs_age <- CFB_temperature_obs %>%
+  filter(used_in_primary_temperature_model) %>%
   mutate(
     source = recode(source, IPL = "U-M", Snell = "Caltech"),
     study_status = if_else(source == "U-M", "This study", "Published data"),
@@ -255,7 +256,7 @@ p_temperature_age <- ggplot() +
     data = CFB_temperature_obs_age,
     aes(
       T_C, Age_Ma, color = study_status,
-      fill = study_status, shape = study_status
+      fill = p_altered_preservation, shape = study_status
     ),
     size = 2.5, stroke = 0.8
   ) +
@@ -263,23 +264,37 @@ p_temperature_age <- ggplot() +
     values = c("This study" = "#B2182B", "Published data" = "grey55"),
     drop = FALSE
   ) +
-  scale_fill_manual(
-    values = c("This study" = "#B2182B", "Published data" = "white"),
-    drop = FALSE
+  scale_fill_gradientn(
+    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
+    limits = c(0, 1), breaks = c(0, 0.5, 1),
+    labels = scales::label_percent(accuracy = 1),
+    name = "d18O trajectory\nP(altered)"
   ) +
   scale_shape_manual(values = t47_status_shapes, drop = FALSE) +
   age_scale(cfb_age_limits) +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
-    y = "Age (Ma)", color = NULL, fill = "Dataset", shape = NULL,
+    y = "Age (Ma)", color = NULL, shape = "Dataset",
     title = "A  CFB temperature"
   ) +
   guides(
     color = "none",
-    shape = "none",
-    fill = guide_legend(override.aes = list(shape = 21))
+    shape = guide_legend(
+      order = 1, override.aes = list(fill = "white", color = "black")
+    ),
+    fill = guide_colorbar(
+      order = 2,
+      barwidth = grid::unit(2.0, "cm"),
+      barheight = grid::unit(0.35, "cm"),
+      title.position = "top"
+    )
   ) +
-  theme_age
+  theme_age +
+  theme(
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.justification = "left"
+  )
 
 p_d13C_age <- ggplot(d13C_age) +
   add_petm_age() +
@@ -700,7 +715,8 @@ BHB_D47_temperature_model <- read_csv(
 BHB_D47_temperature_observations <- read_csv(
   here("data", "processed", "BHB_D47_temperature_observations.csv"),
   show_col_types = FALSE
-)
+) %>%
+  filter(used_in_temperature_model)
 
 # Standardize every BHB temperature estimate that can be placed on a numerical
 # age axis. These records measure different aspects of climate: carbonate D47
@@ -1193,6 +1209,138 @@ p_BHB_D47_seasonal_context <- ggplot() +
   ) +
   theme_age
 
+# Single-panel synthesis of all BHB temperature proxy observations. The
+# soil-carbonate Delta47 model is retained, but published and new Delta47
+# observations share one symbol because their study provenance is not the
+# comparison of interest here. Leaf-margin and Fricke-Wing estimates are shown
+# as observations only; no LMA MAT model is drawn.
+p_BHB_all_temperature_seasonal_context <- ggplot() +
+  add_seasonal_reference_bands(regional_age_limits) +
+  add_petm_age(alpha = 0.10) +
+  geom_ribbon(
+    data = BHB_D47_temperature_model,
+    aes(
+      xmin = temperature_lower95_C,
+      xmax = temperature_upper95_C,
+      y = Age_Ma
+    ),
+    fill = "grey45", alpha = 0.16
+  ) +
+  geom_ribbon(
+    data = BHB_D47_temperature_model,
+    aes(
+      xmin = temperature_lower80_C,
+      xmax = temperature_upper80_C,
+      y = Age_Ma
+    ),
+    fill = "grey35", alpha = 0.18
+  ) +
+  geom_path(
+    data = BHB_D47_temperature_model %>% arrange(desc(Age_Ma)),
+    aes(temperature_median_C, Age_Ma),
+    color = "black", linewidth = 0.95
+  ) +
+  geom_errorbarh(
+    data = BHB_D47_temperature_observations,
+    aes(
+      xmin = temperature_C - temperature_se_C,
+      xmax = temperature_C + temperature_se_C,
+      y = Age_Ma
+    ),
+    height = 0, linewidth = 0.32, color = "#B2182B",
+    alpha = 0.48
+  ) +
+  geom_point(
+    data = BHB_D47_temperature_observations,
+    aes(temperature_C, Age_Ma, shape = "Soil-carbonate D47"),
+    color = "#B2182B", fill = "#B2182B",
+    size = 2.35, stroke = 0.7
+  ) +
+  geom_errorbarh(
+    data = BHB_LMA_MAT_observations,
+    aes(
+      xmin = MAT_C - MAT_se_C,
+      xmax = MAT_C + MAT_se_C,
+      y = Age_Ma
+    ),
+    height = 0, linewidth = 0.32, color = "#1B7837",
+    alpha = 0.55
+  ) +
+  geom_errorbar(
+    data = BHB_LMA_MAT_observations,
+    aes(x = MAT_C, ymin = age_younger_ma, ymax = age_older_ma),
+    width = 0, linewidth = 0.38, color = "#1B7837",
+    alpha = 0.55
+  ) +
+  geom_point(
+    data = BHB_LMA_MAT_observations,
+    aes(MAT_C, Age_Ma, shape = "Wing leaf-margin MAT"),
+    color = "#1B7837", fill = "white",
+    size = 2.35, stroke = 0.75
+  ) +
+  geom_errorbar(
+    data = FrickeWing2004_BHB_MAAT,
+    aes(
+      x = temperature_C,
+      ymin = age_younger_ma,
+      ymax = age_older_ma
+    ),
+    width = 0, linewidth = 0.38, color = "#762A83",
+    alpha = 0.55
+  ) +
+  geom_point(
+    data = FrickeWing2004_BHB_MAAT,
+    aes(
+      temperature_C, Age_Ma,
+      shape = "Fricke-Wing phosphate/LMA MAAT"
+    ),
+    color = "#762A83", fill = "white",
+    size = 2.35, stroke = 0.75
+  ) +
+  scale_fill_manual(values = seasonal_colors, drop = FALSE) +
+  scale_color_manual(values = seasonal_colors) +
+  scale_shape_manual(
+    values = c(
+      "Soil-carbonate D47" = 21,
+      "Wing leaf-margin MAT" = 22,
+      "Fricke-Wing phosphate/LMA MAAT" = 23
+    ),
+    breaks = c(
+      "Soil-carbonate D47",
+      "Wing leaf-margin MAT",
+      "Fricke-Wing phosphate/LMA MAAT"
+    )
+  ) +
+  age_scale(regional_age_limits) +
+  guides(
+    fill = guide_legend(
+      title = "Literature seasonal synthesis",
+      override.aes = list(alpha = 0.18),
+      order = 2
+    ),
+    color = "none",
+    shape = guide_legend(
+      title = "Temperature proxy", order = 1,
+      nrow = 1, byrow = TRUE
+    )
+  ) +
+  labs(
+    x = expression("Temperature (" * degree * "C)"),
+    y = "Age (Ma)",
+    title = "Bighorn Basin temperature proxies and seasonal context",
+    subtitle = paste(
+      "Black curve and grey bands: soil-carbonate D47 model;",
+      "LMA observations are not modeled"
+    )
+  ) +
+  theme_age +
+  theme(
+    legend.position = "top",
+    legend.box = "vertical",
+    legend.justification = "left",
+    plot.margin = margin(9, 7, 5, 7)
+  )
+
 # Empirical phase distributions propagate each reported observation SE and
 # give every horizon equal prior weight. They show the sampled T47 population,
 # not an estimate of regional air temperature or a time-weighted climate mean.
@@ -1558,6 +1706,13 @@ save_age_plot(p_BHB_D47_temperature_age, regional_age_figure_dir,
               "BHB_D47_formation_temperature_model_age", 6.2, 8)
 save_age_plot(p_BHB_D47_seasonal_context, regional_age_figure_dir,
               "BHB_D47_seasonal_synthesis_context_age", 7.4, 8.5)
+save_age_plot(
+  p_BHB_all_temperature_seasonal_context,
+  regional_age_figure_dir,
+  "BHB_all_temperature_proxies_seasonal_context_age",
+  8.2, 8.5,
+  presentation_width = 12
+)
 save_age_plot(p_insolation_47N_horizontal, regional_age_figure_dir,
               "BHB_ZB20a_summer_insolation_47N_age_horizontal", 7.5, 5.5,
               presentation_width = 6)

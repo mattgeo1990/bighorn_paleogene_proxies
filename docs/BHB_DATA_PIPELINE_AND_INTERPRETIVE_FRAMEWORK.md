@@ -250,6 +250,53 @@ It retains paired Δ47--Δ48 information and supporting isotope-space
 plots. Screening flags are data products; the screening script does not
 itself decide which scenario becomes the production temperature model.
 
+#### Continuous probability of substantial alteration
+
+Script 03 also exports a continuous,
+`p_altered_preservation`, for every observation with paired T47 and
+δ18Ocarbonate. This is a transparent δ18O trajectory index, not a
+trained classifier, calibrated posterior probability, or correction
+applied to T47.
+
+The reference mean is calculated from all available BHB
+pedogenic-micrite observations with paired T47 and δ18Ocarbonate,
+including IPL, CU, Caltech/CFB, and Snell/MCP data. The mapping assigns:
+
+-   `P(altered) = 0.05` at the pooled BHB mean δ18Ocarbonate;
+-   `P(altered) = 0.95` at 20 per mil VSMOW;
+-   linear interpolation between those anchors;
+-   linear extrapolation below 20 per mil, capped at 1; and
+-   a 0.05 floor for values above the pooled mean.
+
+``` text
+P altered =
+  0.05 + 0.90 *
+  (pooled BHB mean d18Ocarb - observed d18Ocarb) /
+  (pooled BHB mean d18Ocarb - 20)
+```
+
+Qualitative alteration classes, petrographic/expert priors,
+Δ47--Δ48 residuals, and temperature or WMMT plausibility are
+intentionally excluded. Carbonate-material classes remain available as
+plot symbols but do not determine point fill. The Kim and O'Neil
+equilibrium trajectories provide the physical interpretation of the
+low-δ18O direction; the numeric probability scale itself is the
+specified linear index.
+
+The principal outputs are:
+
+-   `CFB_temperature_screening_flags.csv`;
+-   `CFB_d18O_T47_screening_observations.csv`;
+-   `CFB_alteration_probability_parameters.csv`; and
+-   `BHB_d18O_alteration_probability_parameters.csv`.
+
+Point color may communicate the probability in plots where preservation
+is central to interpretation. Plots designed primarily to distinguish
+U--M from published observations retain stronger provenance encoding;
+shape or outline can preserve provenance while fill shows alteration
+probability. Probability weighting is a sensitivity analysis and must
+not be described as correcting an altered temperature.
+
 ### 4.4 Script 04: CFB temperature modeling
 
 The temperature script fits a separate model for every screening

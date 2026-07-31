@@ -1,0 +1,9 @@
+bin_older_ma,bin_younger_ma,age_ma,source_interval,source_younger_ma,source_older_ma,overlap_ma,weight
+53,52,52.5,Ypresian,48.07,55.7,1,1
+54,53,53.5,Ypresian,48.07,55.7,1,1
+55,54,54.5,Ypresian,48.07,55.7,1,1
+56,55,55.5,PETM,55.7,56,0.29999999999999716,0.29999999999999716
+56,55,55.5,Ypresian,48.07,55.7,0.7000000000000028,0.7000000000000028
+57,56,56.5,Thanetian,56,59.24,1,1
+58,57,57.5,Thanetian,56,59.24,1,1
+59,58,58.5,Thanetian,56,59.24,1,1

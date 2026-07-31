@@ -85,6 +85,7 @@ CFB_soilwater <- read_csv(
 )
 
 CFB_temperature_obs <- CFB_temperature_obs %>%
+  filter(used_in_primary_temperature_model) %>%
   mutate(
     source = recode(source, IPL = "U-M", Snell = "Caltech"),
     study_status = if_else(source == "U-M", "This study", "Published data"),
@@ -172,7 +173,7 @@ p_temperature_strat <- ggplot() +
     data = CFB_temperature_obs,
     aes(
       T_C, strat_height_m, color = study_status,
-      fill = study_status, shape = study_status
+      fill = p_altered_preservation, shape = study_status
     ),
     size = 2.4, stroke = 0.8
   ) +
@@ -180,24 +181,38 @@ p_temperature_strat <- ggplot() +
     values = c("This study" = "#B2182B", "Published data" = "grey55"),
     drop = FALSE
   ) +
-  scale_fill_manual(
-    values = c("This study" = "#B2182B", "Published data" = "white"),
-    drop = FALSE
+  scale_fill_gradientn(
+    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
+    limits = c(0, 1), breaks = c(0, 0.5, 1),
+    labels = scales::label_percent(accuracy = 1),
+    name = "d18O trajectory\nP(altered)"
   ) +
   scale_shape_manual(values = t47_status_shapes, drop = FALSE) +
   shared_strat_scale +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = "CFB stratigraphic height (m)",
-    color = NULL, fill = "Dataset", shape = NULL,
+    color = NULL, shape = "Dataset",
     title = "A  Temperature"
   ) +
   guides(
     color = "none",
-    shape = "none",
-    fill = guide_legend(override.aes = list(shape = 21))
+    shape = guide_legend(
+      order = 1, override.aes = list(fill = "white", color = "black")
+    ),
+    fill = guide_colorbar(
+      order = 2,
+      barwidth = grid::unit(2.0, "cm"),
+      barheight = grid::unit(0.35, "cm"),
+      title.position = "top"
+    )
   ) +
-  theme_strat
+  theme_strat +
+  theme(
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.justification = "left"
+  )
 
 #-- 5.) Carbon Isotopes in Stratigraphic Space -----------------------------
 p_d13C_strat <- ggplot(d13C_observations) +

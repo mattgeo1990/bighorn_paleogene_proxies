@@ -30,6 +30,7 @@
 library(tidyverse)
 library(here)
 library(patchwork)
+library(cowplot)
 source(here("scripts", "helpers", "save_figure_variants.R"))
 
 figure_dir <- here("figures", "diagenesis_screening", "burial_thermal_context")
@@ -75,6 +76,28 @@ depth_profiles <- thermal_scenarios %>%
     temperature_C =
       inferred_max_burial_surface_temperature_C +
       thermal_gradient_C_per_km * depth_km
+  )
+
+# Common-depth envelope showing the full range spanned by the Roberts et al.
+# BHB gradients and calibrated intercepts. This is a scenario range, not a
+# confidence interval.
+depth_envelope <- crossing(
+  thermal_scenarios,
+  depth_km = seq(
+    0, max(thermal_scenarios$base_Fort_Union_max_depth_km),
+    by = 0.01
+  )
+) %>%
+  mutate(
+    temperature_C =
+      inferred_max_burial_surface_temperature_C +
+      thermal_gradient_C_per_km * depth_km
+  ) %>%
+  group_by(depth_km) %>%
+  summarise(
+    minimum_C = min(temperature_C),
+    maximum_C = max(temperature_C),
+    .groups = "drop"
   )
 
 CFB_strat_columns <- read_csv(
@@ -164,37 +187,29 @@ scenario_colors <- c(
   "Other Roberts et al. locations" = "grey62"
 )
 
-p_basin_geotherms <- ggplot(
-  depth_profiles,
-  aes(
-    temperature_C, depth_km,
-    group = location, color = display_group
-  )
-) +
-  geom_path(linewidth = 0.85, alpha = 0.82) +
-  geom_point(
-    data = thermal_scenarios,
+p_basin_geotherms <- ggplot() +
+  geom_ribbon(
+    data = depth_envelope,
     aes(
-      base_Fort_Union_max_temperature_C,
-      base_Fort_Union_max_depth_km,
-      color = display_group
+      xmin = minimum_C, xmax = maximum_C,
+      y = depth_km
     ),
-    inherit.aes = FALSE, size = 2.2
+    fill = "grey65", alpha = 0.28
+  ) +
+  geom_path(
+    data = depth_profiles %>% filter(location == "McCulloch Peak"),
+    aes(temperature_C, depth_km),
+    color = "#D95F02", linewidth = 1.15
   ) +
   scale_y_reverse(expand = expansion(mult = c(0.02, 0.02))) +
-  scale_color_manual(values = scenario_colors) +
   labs(
     x = expression("Estimated maximum-burial temperature (" * degree * "C)"),
     y = "Burial depth (km)",
-    color = NULL,
     title = "A  Roberts et al. (2008) burial-temperature scenarios",
-    subtitle = paste(
-      "Eight calibrated basin models;",
-      "points mark the modeled base of the Fort Union"
-    )
+    subtitle = "Orange = McCulloch Peak; grey = full BHB model range"
   ) +
   theme_classic(base_size = 11) +
-  theme(legend.position = "top")
+  theme(legend.position = "none")
 
 #-- 5.) Project Scenarios Through the CFB Composite ------------------------
 p_CFB_max_burial_temperature <- ggplot() +
@@ -215,23 +230,10 @@ p_CFB_max_burial_temperature <- ggplot() +
     ),
     fill = "grey70", alpha = 0.22
   ) +
-  geom_ribbon(
-    data = CFB_thermal_envelope,
-    aes(
-      xmin = lower_quartile_C, xmax = upper_quartile_C,
-      y = strat_height_m
-    ),
-    fill = "grey45", alpha = 0.25
-  ) +
   geom_path(
     data = CFB_thermal_profiles %>% filter(location == "McCulloch Peak"),
     aes(estimated_max_burial_temperature_C, strat_height_m),
     color = "#D95F02", linewidth = 1.1
-  ) +
-  geom_path(
-    data = CFB_thermal_envelope,
-    aes(median_C, strat_height_m),
-    color = "black", linewidth = 0.9, linetype = 2
   ) +
   scale_fill_manual(
     values = c("Fort Union" = "#4575B4", "Willwood" = "#D73027")
@@ -246,7 +248,7 @@ p_CFB_max_burial_temperature <- ggplot() +
     y = "CFB stratigraphic height above K-Pg (m)",
     fill = "Formation",
     title = "B  Thermal projection through the CFB composite",
-    subtitle = "Orange = McCulloch Peak; dashed = median; bands = scenario ranges"
+    subtitle = "Orange = McCulloch Peak; grey = full Roberts et al. BHB range"
   ) +
   theme_classic(base_size = 11) +
   theme(legend.position = "top")
@@ -261,7 +263,338 @@ p_BHB_burial_thermal_context <-
     )
   )
 
-#-- 6.) Export Data and Figures --------------------------------------------
+#-- 6.) Compare CFB T47 with the Roberts Thermal Scenarios ----------------
+# Delta47 temperatures estimate soil-carbonate formation temperature, whereas
+# the Roberts projections estimate maximum burial temperature. Overlaying them
+# in temperature-height space is therefore a preservation-screening comparison,
+# not evidence that the two quantities should coincide. The separation between
+# a sample's T47 and the thermal scenarios indicates the magnitude of later
+# heating potentially experienced after carbonate formation.
+# Use the complete screening inventory rather than the primary-micrite
+# temperature-model input. This retains altered carbonate and spar. Two Snell
+# spar rows lack height in the source summary; their positions are recovered
+# from matching identifiers in the authoritative CFB horizon roster.
+CFB_horizon_lookup <- read_csv(
+  here("data", "processed", "CFB_soilcarb_isotope_summary.csv"),
+  show_col_types = FALSE
+) %>%
+  transmute(
+    lookup_key = MLA_horizon_id %>%
+      str_remove("^SNELL-") %>%
+      str_remove("^PK95-"),
+    roster_strat_height_m = strat_height_m
+  ) %>%
+  filter(is.finite(roster_strat_height_m)) %>%
+  group_by(lookup_key) %>%
+  summarise(
+    roster_strat_height_m = median(roster_strat_height_m),
+    .groups = "drop"
+  )
+
+CFB_T47_observations <- read_csv(
+  here(
+    "data", "processed",
+    "CFB_d18O_T47_screening_observations.csv"
+  ),
+  show_col_types = FALSE
+) %>%
+  mutate(
+    lookup_key = MLA_horizon_id %>%
+      str_remove("^SNELL-") %>%
+      str_remove("^PK95-")
+  ) %>%
+  left_join(CFB_horizon_lookup, by = "lookup_key") %>%
+  mutate(
+    original_strat_height_m = strat_height_m,
+    strat_height_m = coalesce(strat_height_m, roster_strat_height_m),
+    strat_position_source = case_when(
+      is.finite(original_strat_height_m) ~ "screening inventory",
+      is.finite(roster_strat_height_m) ~ "matched CFB horizon roster",
+      TRUE ~ "unresolved"
+    ),
+    dataset_status = if_else(
+      str_detect(source, regex("U-M|IPL", ignore_case = TRUE)),
+      "This study", "Published"
+    ),
+    plot_group = case_when(
+      carbonate_type == "Spar" ~ "Spar",
+      carbonate_type == "Altered carbonate" ~ "Altered carbonate",
+      dataset_status == "This study" ~ "U-M micrite",
+      TRUE ~ "Published micrite"
+    ),
+    plot_group = factor(
+      plot_group,
+      levels = c(
+        "U-M micrite",
+        "Published micrite",
+        "Altered carbonate",
+        "Spar"
+      )
+    ),
+    p_altered_preservation = if_else(
+      is.finite(p_altered_preservation),
+      p_altered_preservation,
+      NA_real_
+    )
+  ) %>%
+  filter(
+    is.finite(T47_C),
+    is.finite(strat_height_m),
+    between(
+      strat_height_m,
+      CFB_strat_limits[1],
+      CFB_strat_limits[2]
+    )
+  )
+
+# The burial/diagenesis panel retains the full observation inventory, but the
+# overlaid temperature trend is fit only to observations that pass the
+# deterministic production-model screen.
+CFB_T47_screened_for_linear_fit <- read_csv(
+  here("data", "processed", "CFB_temperature_observations.csv"),
+  show_col_types = FALSE
+) %>%
+  filter(
+    used_in_primary_temperature_model,
+    is.finite(T_C),
+    is.finite(T_se_C),
+    is.finite(strat_height_m)
+  ) %>%
+  mutate(fit_weight = 1 / pmax(T_se_C, 0.5)^2)
+
+CFB_T47_strat_linear_fit <- lm(
+  T_C ~ strat_height_m,
+  data = CFB_T47_screened_for_linear_fit,
+  weights = fit_weight
+)
+
+CFB_T47_strat_linear_grid <- tibble(
+  strat_height_m = seq(
+    min(CFB_T47_screened_for_linear_fit$strat_height_m),
+    max(CFB_T47_screened_for_linear_fit$strat_height_m),
+    length.out = 300
+  )
+)
+
+CFB_T47_strat_linear_prediction <- predict(
+  CFB_T47_strat_linear_fit,
+  newdata = CFB_T47_strat_linear_grid,
+  se.fit = TRUE
+)
+
+CFB_T47_strat_linear_grid <- CFB_T47_strat_linear_grid %>%
+  mutate(
+    T_linear_C = as.numeric(CFB_T47_strat_linear_prediction$fit),
+    T_linear_se_C = as.numeric(CFB_T47_strat_linear_prediction$se.fit),
+    T_linear_lower95_C = T_linear_C - 1.96 * T_linear_se_C,
+    T_linear_upper95_C = T_linear_C + 1.96 * T_linear_se_C
+  )
+
+CFB_T47_plot_audit <- CFB_T47_observations %>%
+  count(
+    carbonate_type, dataset_status, strat_position_source,
+    name = "n_plotted"
+  )
+
+p_CFB_T47_burial_comparison <- ggplot() +
+  geom_rect(
+    data = CFB_formation_intervals %>%
+      filter(formation == "Fort Union"),
+    aes(
+      xmin = -Inf, xmax = Inf,
+      ymin = base_m, ymax = top_m
+    ),
+    fill = "#4575B4", alpha = 0.045
+  ) +
+  geom_rect(
+    data = CFB_formation_intervals %>%
+      filter(formation == "Willwood"),
+    aes(
+      xmin = -Inf, xmax = Inf,
+      ymin = base_m, ymax = top_m
+    ),
+    fill = "#D73027", alpha = 0.035
+  ) +
+  geom_hline(
+    yintercept = 1480,
+    color = "grey45", linewidth = 0.45, linetype = "dashed"
+  ) +
+  geom_ribbon(
+    data = CFB_thermal_envelope,
+    aes(
+      xmin = minimum_C, xmax = maximum_C,
+      y = strat_height_m
+    ),
+    fill = "grey65", alpha = 0.18
+  ) +
+  geom_path(
+    data = CFB_thermal_profiles %>% filter(location == "McCulloch Peak"),
+    aes(estimated_max_burial_temperature_C, strat_height_m),
+    color = "#D95F02", linewidth = 1.05
+  ) +
+  geom_ribbon(
+    data = CFB_T47_strat_linear_grid,
+    aes(
+      xmin = T_linear_lower95_C, xmax = T_linear_upper95_C,
+      y = strat_height_m
+    ),
+    fill = "#2166AC", alpha = 0.14
+  ) +
+  geom_path(
+    data = CFB_T47_strat_linear_grid,
+    aes(T_linear_C, strat_height_m),
+    color = "#2166AC", linewidth = 1.0
+  ) +
+  geom_errorbarh(
+    data = CFB_T47_observations,
+    aes(
+      xmin = T47_C - T47_se_C, xmax = T47_C + T47_se_C,
+      y = strat_height_m, color = dataset_status
+    ),
+    height = 0, linewidth = 0.30, alpha = 0.52,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = CFB_T47_observations,
+    aes(
+      T47_C, strat_height_m,
+      color = dataset_status, fill = p_altered_preservation,
+      shape = plot_group
+    ),
+    size = 2.65, stroke = 0.85
+  ) +
+  geom_text(
+    data = CFB_formation_intervals,
+    aes(
+      x = 141,
+      y = (base_m + top_m) / 2,
+      label = paste0(formation, " Fm")
+    ),
+    angle = 90, fontface = "bold", size = 3.2,
+    color = "grey30"
+  ) +
+  scale_fill_gradientn(
+    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
+    limits = c(0, 1),
+    breaks = c(0, 0.25, 0.5, 0.75, 1),
+    labels = scales::label_percent(accuracy = 1),
+    name = "d18O trajectory\nP(altered)"
+  ) +
+  scale_color_manual(
+    values = c(
+      "This study" = "black",
+      "Published" = "grey42"
+    ),
+    name = "Data provenance"
+  ) +
+  scale_shape_manual(
+    values = c(
+      "U-M micrite" = 21,
+      "Published micrite" = 22,
+      "Altered carbonate" = 23,
+      "Spar" = 24
+    )
+  ) +
+  scale_y_continuous(
+    limits = CFB_strat_limits,
+    breaks = seq(CFB_strat_limits[1], CFB_strat_limits[2], by = 250),
+    expand = expansion(mult = c(0.01, 0.01))
+  ) +
+  scale_x_continuous(
+    limits = c(0, 145),
+    breaks = c(0, 30, 60, 90, 120, 140),
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  labs(
+    x = expression("Temperature (" * degree * "C)"),
+    y = "CFB stratigraphic height above K-Pg (m)",
+    shape = "CFB clumped material",
+    title = "B  CFB T47 and maximum-burial temperature",
+    subtitle = paste(
+      "Points = carbonate formation T; orange = McCulloch Peak;",
+      "grey = Roberts BHB range; blue = screened linear T47 fit;",
+      "fill = d18O-only alteration index"
+    )
+  ) +
+  guides(
+    color = guide_legend(order = 1),
+    shape = guide_legend(
+      order = 2, nrow = 2, byrow = TRUE,
+      override.aes = list(fill = "white", color = "black")
+    ),
+    fill = guide_colorbar(order = 3, barwidth = grid::unit(4.2, "cm"))
+  ) +
+  theme_classic(base_size = 11) +
+  theme(
+    legend.position = "top",
+    legend.box = "vertical",
+    legend.justification = "left"
+  )
+
+p_CFB_T47_burial_panel <- p_CFB_T47_burial_comparison +
+  labs(
+    title = NULL,
+    subtitle = NULL
+  ) +
+  theme(
+    legend.position = "none",
+    aspect.ratio = 1,
+    plot.margin = margin(5, 5, 5, 28)
+  )
+
+CFB_T47_burial_legend <- cowplot::get_legend(
+  p_CFB_T47_burial_comparison +
+    guides(
+      color = guide_legend(order = 1, nrow = 1),
+      shape = guide_legend(
+        order = 2, nrow = 2, byrow = TRUE,
+        override.aes = list(fill = "white", color = "black")
+      ),
+      fill = guide_colorbar(
+        order = 3,
+        barwidth = grid::unit(4.2, "cm"),
+        title.position = "top"
+      )
+    ) +
+    theme(
+      legend.position = "right",
+      legend.justification = c(0, 0),
+      legend.box = "vertical"
+    )
+)
+
+p_CFB_T47_burial_legend_title <- patchwork::wrap_elements(
+  full = grid::textGrob(
+    "CFB T47 and maximum-burial temperature",
+    x = grid::unit(0.02, "npc"), just = "left", hjust = 0,
+    gp = grid::gpar(fontsize = 13, fontface = "bold")
+  )
+)
+
+p_CFB_T47_burial_legend_subtitle <- patchwork::wrap_elements(
+  full = grid::textGrob(
+    "Orange burial model; grey range; blue T47 fit",
+    x = grid::unit(0.02, "npc"), just = "left", hjust = 0,
+    gp = grid::gpar(fontsize = 10)
+  )
+)
+
+p_CFB_T47_burial_legend_block <-
+  patchwork::wrap_elements(full = CFB_T47_burial_legend)
+
+p_CFB_T47_burial_right <-
+  plot_spacer() /
+  p_CFB_T47_burial_legend_title /
+  p_CFB_T47_burial_legend_subtitle /
+  p_CFB_T47_burial_legend_block +
+  plot_layout(heights = c(0.34, 0.07, 0.06, 0.53))
+
+p_CFB_T47_Roberts_geothermal_comparison <-
+  (p_CFB_T47_burial_panel |
+     p_CFB_T47_burial_right) +
+  plot_layout(widths = c(1, 1))
+
+#-- 7.) Export Data and Figures --------------------------------------------
 write_csv(
   thermal_scenarios,
   here("data", "processed", "RobertsEtAl2008_BHB_thermal_scenarios_converted.csv")
@@ -281,11 +614,41 @@ write_csv(
     "CFB_maximum_burial_temperature_reference_horizons.csv"
   )
 )
+write_csv(
+  CFB_T47_plot_audit,
+  here(
+    "data", "processed",
+    "CFB_T47_Roberts_geothermal_plot_audit.csv"
+  )
+)
+write_csv(
+  CFB_T47_strat_linear_grid,
+  here(
+    "data", "processed",
+    "CFB_T47_strat_height_linear_predictions.csv"
+  )
+)
+write_csv(
+  broom::tidy(CFB_T47_strat_linear_fit, conf.int = TRUE),
+  here(
+    "data", "processed",
+    "CFB_T47_strat_height_linear_summary.csv"
+  )
+)
 
 save_figure_variants(
   p_BHB_burial_thermal_context, figure_dir,
   "BHB_Roberts2008_burial_temperature_context", 13, 7.5,
   presentation_width = 12
+)
+
+save_figure_variants(
+  p_CFB_T47_Roberts_geothermal_comparison, figure_dir,
+  "CFB_T47_vs_Roberts2008_geothermal_gradients",
+  manuscript_width = 11,
+  manuscript_height = 6.5,
+  presentation_width = 12,
+  presentation_height = 6
 )
 
 print(thermal_scenarios)

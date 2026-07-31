@@ -376,10 +376,10 @@ trajectory_params <- tibble(
   
   # plausible primary / early soil carbonate starting conditions
   initial_T_C = runif(n_paths, 15, 40),
-  initial_d18Ow_vsmow = runif(n_paths, -8, -2),
+  initial_d18Ow_vsmow = runif(n_paths, -7, -5),
   
   # maximum burial / recrystallization temperature
-  max_T_C = runif(n_paths, 60, 120),
+  max_T_C = runif(n_paths, 60, 110),
   
   # total enrichment in fluid d18O caused by water-rock interaction
   # 0 = open meteoric; larger values = stronger rock buffering / evolved fluids

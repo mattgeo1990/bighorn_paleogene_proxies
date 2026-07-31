@@ -3,3 +3,4 @@ exclude_any_alteration_indication,Exclude any indication,10,41,820,2210,160,5,21
 exclude_high_likelihood,Exclude high likelihood,4,47,520,2210,165,0,21.93892009786868,42.8200010895545
 exclude_moderate_or_higher,Exclude moderate or higher,7,44,700,2210,162,3,21.92891680046463,37.79543192558681
 none,All data,0,51,520,2210,165,0,22.959645680876275,49.78461803917672
+talk_geochemical_screen,Talk screen: d18Ocarb >= 20 per mil and T <= 50 C,2,49,520,2210,165,0,21.921280986221376,50.51398220519752

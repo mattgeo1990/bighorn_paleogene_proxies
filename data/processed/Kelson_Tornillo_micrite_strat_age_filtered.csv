@@ -1,29 +1,29 @@
-sample_id,Age_Ma,epoch,section,petro_type,d13Ccarb_vpdb,d13Ccarb_sd,d13Ccarb_se,d18Ocarb_vpdb,d18Ocarb_vsmow,d18Ocarb_sd,d18Ocarb_se,D47,D47_sd,D47_se,n_replicates,T47_C,T47_se_C,T47_95CI_C,d18Ow_vsmow,d18Ow_error,petro_class
-BB12-098,65,Paleocene,TF,Micrite,-11.5,0.05,0.03,-6,24.72454,0,0,0.5972,0.045,0.023,4,29,7,19,-2.9,-1.5,Micrite
-BB12-102,64.7,Paleocene,TF,Micrite,-11.8,0.05,0.03,-5.8,24.930722,0.1,0.1,0.6305,0.044,0.022,4,18,6,17,-4.8,-1.5,Micrite
-BB-TF2-14-064,64.1,Paleocene,TF,Micrite,-10.8,0.04,0.02,-5.1,25.652359,0.1,0.1,0.6178,0.034,0.017,4,22,5,14,-3.3,-1.2,Micrite
-BB12-047,63.6,Paleocene,TF,Micrite,-10.6,0.04,0.02,-6,24.72454,0.1,0.1,0.6022,0.045,0.023,4,27,7,19,-3.2,-1.5,Micrite
-BB12-056,62.5,Paleocene,TF,Micrite,-10.3,0.08,0.05,-4.6,26.167814,0.2,0.1,0.6073,0.023,0.012,4,25,4,10,-2.2,-0.8,Micrite
-BB12-062,61.7,Paleocene,TF,Micrite,-11.8,0.05,0.03,-5.3,25.446177,0.1,0.1,0.6054,0.028,0.014,4,26,4,12,-2.7,-1,Micrite
-BB12-071,60.6,Paleocene,TF,Micrite,-10.3,0.03,0.02,-4.3,26.477087,0.1,0.1,0.6044,0.038,0.019,4,26,6,16,-1.7,-1.3,Micrite
-BB12-041,59.7,Paleocene,TF,Micrite,-9.6,0.1,0.06,-4.3,26.477087,0.2,0.1,0.625,0.021,0.011,4,20,3,9,-3,-0.7,Micrite
-BB12-013,58.4,Paleocene,TF,Micrite,-9.7,0.03,0.02,-3.6,27.198724,0,0,0.5899,0.021,0.012,3,31,4,13,0,-0.9,Micrite
-BB10-001,57.6,Paleocene,TF,Micrite,-9.2,0.08,0.04,-3.6,27.198724,0.2,0.1,0.6083,0.035,0.016,5,25,5,12,-1.2,-1,Micrite
-BB10-011,56.9,Paleocene,TF,Micrite,-9.2,0.02,0.01,-4.1,26.683269,0.1,0.1,0.6121,0.028,0.014,4,24,4,12,-2,-1,Micrite
-BB10-019,56.4,Paleocene,TF,Micrite,-9.5,0.1,0.06,-4.2,26.580178,0.2,0.1,0.593,0.04,0.02,4,30,6,17,-0.8,-1.4,Micrite
-PS2-Bk,55.9,Eocene,GH,Micrite,-9.4,0.18,0.09,-4.7,26.064723,0.1,0.1,0.5712,0.028,0.013,5,37,4,11,0.1,-0.9,Micrite
-BB-TF1-14-004B,55.8,Eocene,TF,Micrite,-9.2,0.03,0.01,-4.4,26.373995999999998,0.3,0.1,0.5994,0.056,0.023,6,28,7,17,-1.5,-1.5,Micrite
-BB-TF1-14-004Bnod2,55.8,Eocene,TF,Micrite,-9.3,0.02,0.01,-4.2,26.580178,0.1,0,0.5689,0.021,0.011,4,38,4,10,0.7,-0.8,Micrite
-PS4-Bk,55.8,Eocene,GH,Micrite,-9.8,0.12,0.05,-4.9,25.858541,0.1,0,0.5979,0.033,0.012,8,28,4,8,-1.9,-0.8,Micrite
-PS5-Bk,55.7,Eocene,GH,Micrite,-9.1,0.25,0.1,-4.6,26.167814,0.2,0.1,0.588,0.032,0.012,7,32,4,9,-0.9,-0.8,Micrite
-BB10-032,55.4,Eocene,TF,Micrite,-9,0.08,0.05,-4.7,26.064723,0.2,0.1,0.6028,0.021,0.011,4,27,3,9,-2,-0.7,Micrite
-PS7-Bk1,55.4,Eocene,GH,Micrite,-9.2,0.13,0.06,-4.6,26.167814,0.2,0.1,0.5864,0.021,0.009,6,32,3,7,-0.8,-0.6,Micrite
-PS7-Bk2,55.4,Eocene,GH,Micrite,-9.2,0.16,0.07,-4.4,26.373995999999998,0.2,0.1,0.587,0.028,0.011,6,32,4,9,-0.6,-0.8,Micrite
-BB10-035,55,Eocene,TF,Micrite,-9.6,0.01,0.01,-4.8,25.961632,0.1,0.1,0.617,0.025,0.014,3,22,4,14,-3,-1.1,Micrite
-PS12-Bk,55,Eocene,GH,Micrite,-9,0.1,0.04,-3.9,26.889451,0.1,0,0.5877,0.021,0.009,6,32,3,7,-0.2,-0.6,Micrite
-PS12-Bknod2,55,Eocene,GH,Micrite,-8.9,0.01,0.01,-4,26.786360000000002,0.2,0.1,0.5676,0.021,0.012,3,39,4,14,1,-1,Micrite
-PS22-Bk,54.6,Eocene,GH,Micrite,-11.4,0.05,0.03,-6,24.72454,0.2,0.1,0.5744,0.021,0.011,4,36,4,10,-1.4,-0.8,Micrite
-GH14-002,54.4,Eocene,GH,Micrite,-11,0,0,-4.7,26.064723,0,0,0.5938,0.021,0.015,2,30,5,21,-1.4,-1.3,Micrite
-GH14-002nod2,54.4,Eocene,GH,Micrite,-10.9,0.02,0.01,-4.8,25.961632,0.1,0.1,0.5759,0.023,0.013,3,36,5,14,-0.3,-1,Micrite
-BB-TF3-14-012,53.9,Eocene,TF,Micrite,-11,0.03,0.02,-5,25.75545,0.1,0.1,0.5939,0.039,0.02,4,30,6,17,-1.7,-1.4,Micrite
-BB-TF3-14-027,52.7,Eocene,TF,Micrite,-10.2,0.03,0.02,-4.6,26.167814,0.1,0.1,0.6005,0.029,0.015,4,27,5,13,-1.7,-1,Micrite
+sample_id,Age_Ma,epoch,section,petro_type,d13Ccarb_vpdb,d13Ccarb_sd,d13Ccarb_se,d18Ocarb_vpdb,d18Ocarb_vsmow,d18Ocarb_sd,d18Ocarb_se,D47,D47_sd,D47_se,n_replicates,T47_C,T47_se_C,T47_95CI_C,d18Ow_vsmow,d18Ow_error,petro_class,kelson_exclusion_reason,used_in_tornillo_temperature_model,kelson_screening_basis
+BB12-098,65,Paleocene,TF,Micrite,-11.5,0.05,0.03,-6,24.72454,0,0,0.5972,0.045,0.023,4,29,7,19,-2.9,-1.5,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-102,64.7,Paleocene,TF,Micrite,-11.8,0.05,0.03,-5.8,24.930722,0.1,0.1,0.6305,0.044,0.022,4,18,6,17,-4.8,-1.5,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB-TF2-14-064,64.1,Paleocene,TF,Micrite,-10.8,0.04,0.02,-5.1,25.652359,0.1,0.1,0.6178,0.034,0.017,4,22,5,14,-3.3,-1.2,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-047,63.6,Paleocene,TF,Micrite,-10.6,0.04,0.02,-6,24.72454,0.1,0.1,0.6022,0.045,0.023,4,27,7,19,-3.2,-1.5,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-056,62.5,Paleocene,TF,Micrite,-10.3,0.08,0.05,-4.6,26.167814,0.2,0.1,0.6073,0.023,0.012,4,25,4,10,-2.2,-0.8,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-062,61.7,Paleocene,TF,Micrite,-11.8,0.05,0.03,-5.3,25.446177,0.1,0.1,0.6054,0.028,0.014,4,26,4,12,-2.7,-1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-071,60.6,Paleocene,TF,Micrite,-10.3,0.03,0.02,-4.3,26.477087,0.1,0.1,0.6044,0.038,0.019,4,26,6,16,-1.7,-1.3,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-041,59.7,Paleocene,TF,Micrite,-9.6,0.1,0.06,-4.3,26.477087,0.2,0.1,0.625,0.021,0.011,4,20,3,9,-3,-0.7,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB12-013,58.4,Paleocene,TF,Micrite,-9.7,0.03,0.02,-3.6,27.198724,0,0,0.5899,0.021,0.012,3,31,4,13,0,-0.9,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB10-001,57.6,Paleocene,TF,Micrite,-9.2,0.08,0.04,-3.6,27.198724,0.2,0.1,0.6083,0.035,0.016,5,25,5,12,-1.2,-1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB10-011,56.9,Paleocene,TF,Micrite,-9.2,0.02,0.01,-4.1,26.683269,0.1,0.1,0.6121,0.028,0.014,4,24,4,12,-2,-1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB10-019,56.4,Paleocene,TF,Micrite,-9.5,0.1,0.06,-4.2,26.580178,0.2,0.1,0.593,0.04,0.02,4,30,6,17,-0.8,-1.4,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS2-Bk,55.9,Eocene,GH,Micrite,-9.4,0.18,0.09,-4.7,26.064723,0.1,0.1,0.5712,0.028,0.013,5,37,4,11,0.1,-0.9,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB-TF1-14-004B,55.8,Eocene,TF,Micrite,-9.2,0.03,0.01,-4.4,26.373995999999998,0.3,0.1,0.5994,0.056,0.023,6,28,7,17,-1.5,-1.5,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB-TF1-14-004Bnod2,55.8,Eocene,TF,Micrite,-9.3,0.02,0.01,-4.2,26.580178,0.1,0,0.5689,0.021,0.011,4,38,4,10,0.7,-0.8,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS4-Bk,55.8,Eocene,GH,Micrite,-9.8,0.12,0.05,-4.9,25.858541,0.1,0,0.5979,0.033,0.012,8,28,4,8,-1.9,-0.8,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS5-Bk,55.7,Eocene,GH,Micrite,-9.1,0.25,0.1,-4.6,26.167814,0.2,0.1,0.588,0.032,0.012,7,32,4,9,-0.9,-0.8,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB10-032,55.4,Eocene,TF,Micrite,-9,0.08,0.05,-4.7,26.064723,0.2,0.1,0.6028,0.021,0.011,4,27,3,9,-2,-0.7,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS7-Bk1,55.4,Eocene,GH,Micrite,-9.2,0.13,0.06,-4.6,26.167814,0.2,0.1,0.5864,0.021,0.009,6,32,3,7,-0.8,-0.6,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS7-Bk2,55.4,Eocene,GH,Micrite,-9.2,0.16,0.07,-4.4,26.373995999999998,0.2,0.1,0.587,0.028,0.011,6,32,4,9,-0.6,-0.8,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB10-035,55,Eocene,TF,Micrite,-9.6,0.01,0.01,-4.8,25.961632,0.1,0.1,0.617,0.025,0.014,3,22,4,14,-3,-1.1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS12-Bk,55,Eocene,GH,Micrite,-9,0.1,0.04,-3.9,26.889451,0.1,0,0.5877,0.021,0.009,6,32,3,7,-0.2,-0.6,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS12-Bknod2,55,Eocene,GH,Micrite,-8.9,0.01,0.01,-4,26.786360000000002,0.2,0.1,0.5676,0.021,0.012,3,39,4,14,1,-1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+PS22-Bk,54.6,Eocene,GH,Micrite,-11.4,0.05,0.03,-6,24.72454,0.2,0.1,0.5744,0.021,0.011,4,36,4,10,-1.4,-0.8,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+GH14-002,54.4,Eocene,GH,Micrite,-11,0,0,-4.7,26.064723,0,0,0.5938,0.021,0.015,2,30,5,21,-1.4,-1.3,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+GH14-002nod2,54.4,Eocene,GH,Micrite,-10.9,0.02,0.01,-4.8,25.961632,0.1,0.1,0.5759,0.023,0.013,3,36,5,14,-0.3,-1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB-TF3-14-012,53.9,Eocene,TF,Micrite,-11,0.03,0.02,-5,25.75545,0.1,0.1,0.5939,0.039,0.02,4,30,6,17,-1.7,-1.4,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions
+BB-TF3-14-027,52.7,Eocene,TF,Micrite,-10.2,0.03,0.02,-4.6,26.167814,0.1,0.1,0.6005,0.029,0.015,4,27,5,13,-1.7,-1,Micrite,NA,TRUE,Primary micrite retained after Kelson et al. (2018) and legacy project sample exclusions

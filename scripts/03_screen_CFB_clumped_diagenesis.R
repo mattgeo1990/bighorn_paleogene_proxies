@@ -10,6 +10,12 @@
 library(tidyverse)
 library(here)
 source(here("scripts", "helpers", "save_figure_variants.R"))
+source(
+  here(
+    "scripts", "helpers",
+    "BHB_d18O_alteration_probability.R"
+  )
+)
 
 dir.create(here("figures", "diagenetic_screening"), recursive = TRUE,
            showWarnings = FALSE)
@@ -238,11 +244,13 @@ CFB_d18Owater_equilibrium_contours <- expand_grid(
     d18Ocarb_vsmow = calc_d18Ocarb_from_water_KO97(
       T47_C, d18Owater_vsmow
     ),
-    contour_label = paste0(d18Owater_vsmow, " per mil")
+    contour_label = paste0(
+      "starting d18Ow = ", d18Owater_vsmow, " per mil"
+    )
   )
 
 contour_labels <- CFB_d18Owater_equilibrium_contours %>%
-  filter(T47_C == max(T47_C))
+  filter(T47_C == 110)
 
 carbonate_shapes <- c(
   "Pedogenic micrite" = 21,
@@ -736,4 +744,465 @@ p_D47_D48 <- ggplot() +
 save_figure_variants(
   p_D47_D48, here("figures", "diagenetic_screening"),
   "CFB_D47_D48_screening_scenarios", 8, 7, presentation_width = 6
+)
+
+#-- 9.) Estimate a d18O-Only Alteration-Trajectory Index -------------------
+# The continuous value below is a transparent screening index, not a trained
+# classifier or calibrated posterior probability. It is based only on the
+# position of each point along the low-d18Ocarb direction relative to the
+# pooled BHB pedogenic-micrite distribution. Qualitative petrographic classes,
+# D47-D48 residuals, and temperature plausibility are not inputs.
+
+calc_d18Owater_from_carb_KO97 <- function(T_C, d18Ocarb_vsmow) {
+  alpha_calcite_water <- exp(
+    (18.03 * (1000 / (T_C + 273.15)) - 32.42) / 1000
+  )
+  ((d18Ocarb_vsmow + 1000) / alpha_calcite_water) - 1000
+}
+
+set.seed(20260723)
+
+# Propagate T47 and carbonate-d18O analytical uncertainty into inferred
+# parent-water d18O. Missing SE values receive explicit conservative defaults.
+CFB_isotopic_thermal_consistency <- CFB_d18O_T47_observations %>%
+  filter(carbonate_type == "Pedogenic micrite") %>%
+  mutate(
+    T47_se_for_mc = if_else(
+      is.finite(T47_se_C) & T47_se_C > 0, T47_se_C, 3
+    ),
+    d18Ocarb_se_for_mc = if_else(
+      is.finite(d18Ocarb_se_vsmow) & d18Ocarb_se_vsmow > 0,
+      d18Ocarb_se_vsmow, 0.15
+    ),
+    mc = pmap(
+      list(T47_C, T47_se_for_mc, d18Ocarb_vsmow, d18Ocarb_se_for_mc),
+      function(T47_C, T47_se_C, d18Ocarb_vsmow, d18Ocarb_se_vsmow) {
+        T_draw <- pmax(rnorm(5000, T47_C, T47_se_C), 0.1)
+        d18Ocarb_draw <- rnorm(
+          5000, d18Ocarb_vsmow, d18Ocarb_se_vsmow
+        )
+        calc_d18Owater_from_carb_KO97(T_draw, d18Ocarb_draw)
+      }
+    ),
+    inferred_d18Owater_median = map_dbl(mc, median, na.rm = TRUE),
+    inferred_d18Owater_sd = map_dbl(mc, sd, na.rm = TRUE)
+  ) %>%
+  select(
+    MLA_horizon_id, source,
+    inferred_d18Owater_median, inferred_d18Owater_sd
+  )
+
+# Combine laboratories at horizon level. Between-laboratory spread is retained
+# in the total uncertainty instead of treating several laboratories as wholly
+# independent measurements of preservation.
+CFB_isotopic_thermal_horizon <- CFB_isotopic_thermal_consistency %>%
+  group_by(MLA_horizon_id) %>%
+  summarise(
+    n_isotopic_thermal_sources = n(),
+    inferred_d18Owater_between_source_sd = if_else(
+      n() > 1, sd(inferred_d18Owater_median, na.rm = TRUE), 0
+    ),
+    inferred_d18Owater_measurement_sd = sqrt(mean(
+      inferred_d18Owater_sd^2, na.rm = TRUE
+    )),
+    inferred_d18Owater_median = median(
+      inferred_d18Owater_median, na.rm = TRUE
+    ),
+    inferred_d18Owater_total_sd = sqrt(
+      inferred_d18Owater_measurement_sd^2 +
+        inferred_d18Owater_between_source_sd^2
+    ),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    # The broad soil-water prior is N(-5, 3.5 per mil). Measurement uncertainty
+    # is added in quadrature before expressing inconsistency as a z score.
+    isotopic_thermal_z = (
+      inferred_d18Owater_median - (-5)
+    ) / sqrt(3.5^2 + inferred_d18Owater_total_sd^2),
+    isotopic_thermal_z_lower_sensitivity = (
+      inferred_d18Owater_median - (-5)
+    ) / sqrt(4.5^2 + inferred_d18Owater_total_sd^2),
+    isotopic_thermal_z_upper_sensitivity = (
+      inferred_d18Owater_median - (-5)
+    ) / sqrt(2.5^2 + inferred_d18Owater_total_sd^2)
+  )
+
+# Fit an iterative errors-in-variables approximation to the horizon means.
+# Each iteration includes propagated x uncertainty through the current slope.
+# The standardized residual includes D47 and D48 analytical uncertainty plus
+# robust residual scatter. It is a consistency diagnostic, not proof that an
+# observation following the line is primary.
+fit_D47_D48_consistency <- function(data, n_iter = 8) {
+  initial_fit <- lm(D48_mean ~ D47_mean, data = data)
+  slope <- unname(coef(initial_fit)[["D47_mean"]])
+
+  for (iteration in seq_len(n_iter)) {
+    variance_i <- data$D48_se^2 + slope^2 * data$D47_se^2
+    fit <- lm(
+      D48_mean ~ D47_mean,
+      data = data,
+      weights = 1 / pmax(variance_i, .Machine$double.eps)
+    )
+    slope <- unname(coef(fit)[["D47_mean"]])
+  }
+
+  residual_raw <- residuals(fit)
+  robust_scatter <- 1.4826 * median(
+    abs(residual_raw - median(residual_raw)), na.rm = TRUE
+  )
+  if (!is.finite(robust_scatter) || robust_scatter == 0) {
+    robust_scatter <- sqrt(mean(residual_raw^2, na.rm = TRUE))
+  }
+
+  data %>%
+    mutate(
+      D48_fitted = predict(fit, newdata = data),
+      D47_D48_residual = D48_mean - D48_fitted,
+      D47_D48_residual_sd = sqrt(
+        D48_se^2 + slope^2 * D47_se^2 + robust_scatter^2
+      ),
+      D47_D48_std_residual =
+        D47_D48_residual / D47_D48_residual_sd
+    )
+}
+
+CFB_D47_D48_consistency <- fit_D47_D48_consistency(
+  CFB_D47_D48_screening_summary
+) %>%
+  select(
+    MLA_horizon_id, D47_mean, D47_se, D48_mean, D48_se,
+    D48_fitted, D47_D48_residual, D47_D48_residual_sd,
+    D47_D48_std_residual
+  )
+
+# Define the reference distribution from all available BHB pedogenic-micrite
+# T47 observations, not only the new IPL measurements. CFB laboratory
+# observations remain separate points; the MCP values extend the geographic
+# coverage without duplicating CFB horizons.
+BHB_regional_T47_reference <- read_csv(
+  here(
+    "data", "processed",
+    "BHB_regional_soilcarb_reference_summary.csv"
+  ),
+  show_col_types = FALSE
+) %>%
+  filter(
+    section_id == "MCP",
+    is.finite(T47_C),
+    is.finite(d18Ocarb_vsmow)
+  ) %>%
+  transmute(
+    section_id,
+    MLA_horizon_id,
+    source = dataset,
+    carbonate_type = "Pedogenic micrite",
+    T47_C,
+    T47_se_C,
+    d18Ocarb_vsmow,
+    d18Ocarb_se_vsmow = NA_real_
+  )
+
+BHB_d18O_probability_reference <- bind_rows(
+  CFB_d18O_T47_observations %>%
+    filter(
+      carbonate_type == "Pedogenic micrite",
+      is.finite(T47_C),
+      is.finite(d18Ocarb_vsmow)
+    ) %>%
+    select(
+      section_id, MLA_horizon_id, source, carbonate_type,
+      T47_C, T47_se_C, d18Ocarb_vsmow, d18Ocarb_se_vsmow
+    ),
+  BHB_regional_T47_reference
+)
+
+BHB_d18Ocarb_reference_mean_vsmow <- mean(
+  BHB_d18O_probability_reference$d18Ocarb_vsmow,
+  na.rm = TRUE
+)
+
+BHB_d18O_probability_parameters <- tibble(
+  probability_model_version = "BHB_d18O_trajectory_index_v2",
+  n_reference_observations = nrow(BHB_d18O_probability_reference),
+  reference_mean_d18Ocarb_vsmow = BHB_d18Ocarb_reference_mean_vsmow,
+  altered_anchor_d18Ocarb_vsmow = 20,
+  probability_at_reference_mean = 0.05,
+  probability_at_altered_anchor = 0.95,
+  reference_population = paste(
+    "All BHB pedogenic-micrite observations with paired T47 and",
+    "d18Ocarb: IPL, CU, Caltech/CFB, and Snell/MCP"
+  )
+)
+
+CFB_d18O_horizon_probability <- CFB_d18O_T47_observations %>%
+  filter(
+    carbonate_type == "Pedogenic micrite",
+    is.finite(d18Ocarb_vsmow)
+  ) %>%
+  group_by(MLA_horizon_id) %>%
+  summarise(
+    alteration_reference_d18Ocarb_vsmow =
+      mean(d18Ocarb_vsmow, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    p_altered_preservation = calc_d18O_alteration_probability(
+      alteration_reference_d18Ocarb_vsmow,
+      BHB_d18Ocarb_reference_mean_vsmow
+    )
+  )
+
+CFB_temperature_screening_flags <- CFB_temperature_screening_flags %>%
+  left_join(CFB_isotopic_thermal_horizon, by = "MLA_horizon_id") %>%
+  left_join(CFB_D47_D48_consistency, by = "MLA_horizon_id") %>%
+  left_join(CFB_d18O_horizon_probability, by = "MLA_horizon_id") %>%
+  mutate(
+    petrographic_prior_basis = NA_character_,
+    p_altered_preservation_lower_sensitivity = p_altered_preservation,
+    p_altered_preservation_upper_sensitivity = p_altered_preservation,
+    alteration_evidence_class = case_when(
+      p_altered_preservation < 0.20 ~ "low",
+      p_altered_preservation < 0.50 ~ "limited",
+      p_altered_preservation < 0.80 ~ "substantial",
+      TRUE ~ "strong"
+    ),
+    p_climate_inconsistent = NA_real_,
+    probability_model_version = "BHB_d18O_trajectory_index_v2",
+    screening_basis = paste(
+      screening_basis,
+      "Alteration probability is a d18Ocarb-only trajectory index:",
+      "5% at the pooled BHB pedogenic-micrite mean and 95% at",
+      "20 per mil VSMOW. Qualitative petrographic classes, D47-D48,",
+      "and temperature plausibility are excluded from this probability."
+    )
+  ) %>%
+  arrange(strat_height_m)
+
+# Assign every plotted point directly from its own d18Ocarb value. Carbonate
+# material labels remain available as plot shapes, but they do not contribute
+# to the probability estimate.
+CFB_d18O_T47_observations <- CFB_d18O_T47_observations %>%
+  select(-any_of(c(
+    "p_altered_preservation",
+    "p_altered_preservation_lower_sensitivity",
+    "p_altered_preservation_upper_sensitivity",
+    "alteration_evidence_class",
+    "probability_model_version"
+  ))) %>%
+  mutate(
+    probability_basis = paste(
+      "Point-level d18Ocarb trajectory index relative to pooled BHB",
+      "pedogenic-micrite mean"
+    ),
+    p_altered_preservation = calc_d18O_alteration_probability(
+      d18Ocarb_vsmow,
+      BHB_d18Ocarb_reference_mean_vsmow
+    ),
+    p_altered_preservation_lower_sensitivity = p_altered_preservation,
+    p_altered_preservation_upper_sensitivity = p_altered_preservation,
+    probability_model_version = "BHB_d18O_trajectory_index_v2",
+    alteration_evidence_class = case_when(
+      p_altered_preservation < 0.20 ~ "low",
+      p_altered_preservation < 0.50 ~ "limited",
+      p_altered_preservation < 0.80 ~ "substantial",
+      TRUE ~ "strong"
+    )
+  )
+
+write_csv(
+  BHB_d18O_probability_parameters,
+  here("data", "processed", "CFB_alteration_probability_parameters.csv")
+)
+write_csv(
+  BHB_d18O_probability_parameters,
+  here("data", "processed", "BHB_d18O_alteration_probability_parameters.csv")
+)
+write_csv(
+  CFB_temperature_screening_flags,
+  here("data", "processed", "CFB_temperature_screening_flags.csv")
+)
+write_csv(
+  CFB_d18O_T47_observations,
+  here("data", "processed", "CFB_d18O_T47_screening_observations.csv")
+)
+
+alteration_probability_colors <- c(
+  "#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"
+)
+
+p_CFB_alteration_probability_T_d18O <- ggplot() +
+  geom_hline(
+    yintercept = BHB_d18Ocarb_reference_mean_vsmow,
+    color = "#2166AC", linewidth = 0.7, linetype = "dashed"
+  ) +
+  geom_hline(
+    yintercept = 20,
+    color = "#B2182B", linewidth = 0.7, linetype = "dashed"
+  ) +
+  geom_line(
+    data = CFB_d18Owater_equilibrium_contours,
+    aes(T47_C, d18Ocarb_vsmow, group = d18Owater_vsmow),
+    color = "grey72", linewidth = 0.5
+  ) +
+  geom_label(
+    data = contour_labels,
+    aes(T47_C, d18Ocarb_vsmow, label = contour_label),
+    hjust = -0.04, size = 2.5, color = "grey35",
+    fill = scales::alpha("white", 0.78),
+    label.size = 0, label.padding = unit(0.06, "lines")
+  ) +
+  geom_errorbarh(
+    data = CFB_d18O_T47_observations,
+    aes(
+      xmin = T47_C - T47_se_C, xmax = T47_C + T47_se_C,
+      y = d18Ocarb_vsmow
+    ),
+    height = 0, color = "grey45", linewidth = 0.3, alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = CFB_d18O_T47_observations,
+    aes(
+      T47_C, d18Ocarb_vsmow, shape = carbonate_type,
+      fill = p_altered_preservation
+    ),
+    color = "black", size = 3, stroke = 0.65
+  ) +
+  scale_shape_manual(values = carbonate_shapes, drop = FALSE) +
+  scale_fill_gradientn(
+    colors = alteration_probability_colors,
+    limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1),
+    labels = scales::label_percent(accuracy = 1),
+    name = "Modeled probability\nof alteration"
+  ) +
+  scale_x_continuous(
+    limits = c(10, 130), breaks = seq(20, 120, by = 20),
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = expression(delta^18 * O[carbonate] ~ "(per mil VSMOW)"),
+    shape = "Carbonate material",
+    title = expression(
+      "CFB alteration probability in " * T[47] * "-" *
+        delta^18 * O * " space"
+    ),
+    subtitle = paste0(
+      "Point fill is based only on d18Ocarb: 5% at the pooled BHB mean (",
+      round(BHB_d18Ocarb_reference_mean_vsmow, 2),
+      " per mil) and 95% at 20 per mil"
+    ),
+    caption = paste(
+      "Dashed blue line = pooled BHB micrite mean; dashed red line =",
+      "95% alteration-probability anchor. This is a trajectory index,",
+      "not a calibrated posterior probability."
+    )
+  ) +
+  theme_classic(base_size = 12) +
+  theme(legend.position = "top", legend.box = "vertical")
+
+save_figure_variants(
+  p_CFB_alteration_probability_T_d18O,
+  here("figures", "diagenetic_screening"),
+  "CFB_alteration_probability_T47_d18O",
+  9, 7.5, presentation_width = 6
+)
+
+BHB_d18O_T47_probability_observations <- bind_rows(
+  CFB_d18O_T47_observations %>%
+    mutate(plot_dataset = if_else(
+      str_detect(source, regex("U-M|IPL", ignore_case = TRUE)),
+      "This study", "Published CFB"
+    )),
+  BHB_regional_T47_reference %>%
+    mutate(
+      p_altered_preservation = calc_d18O_alteration_probability(
+        d18Ocarb_vsmow,
+        BHB_d18Ocarb_reference_mean_vsmow
+      ),
+      plot_dataset = "Published MCP"
+    )
+)
+
+p_BHB_alteration_probability_T_d18O <- ggplot() +
+  annotate(
+    "rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 20,
+    fill = "#B2182B", alpha = 0.045
+  ) +
+  geom_hline(
+    yintercept = BHB_d18Ocarb_reference_mean_vsmow,
+    color = "#2166AC", linewidth = 0.8, linetype = "dashed"
+  ) +
+  geom_hline(
+    yintercept = 20,
+    color = "#B2182B", linewidth = 0.8, linetype = "dashed"
+  ) +
+  geom_line(
+    data = CFB_d18Owater_equilibrium_contours,
+    aes(T47_C, d18Ocarb_vsmow, group = d18Owater_vsmow),
+    color = "grey78", linewidth = 0.45
+  ) +
+  geom_label(
+    data = contour_labels,
+    aes(T47_C, d18Ocarb_vsmow, label = contour_label),
+    hjust = -0.04, size = 2.5, color = "grey35",
+    fill = scales::alpha("white", 0.78),
+    label.size = 0, label.padding = unit(0.06, "lines")
+  ) +
+  geom_errorbarh(
+    data = BHB_d18O_T47_probability_observations,
+    aes(
+      xmin = T47_C - T47_se_C, xmax = T47_C + T47_se_C,
+      y = d18Ocarb_vsmow
+    ),
+    height = 0, color = "grey45", linewidth = 0.3, alpha = 0.45,
+    na.rm = TRUE
+  ) +
+  geom_point(
+    data = BHB_d18O_T47_probability_observations,
+    aes(
+      T47_C, d18Ocarb_vsmow,
+      shape = carbonate_type,
+      fill = p_altered_preservation
+    ),
+    color = "black", size = 3, stroke = 0.65
+  ) +
+  scale_shape_manual(values = carbonate_shapes, drop = FALSE) +
+  scale_fill_gradientn(
+    colors = alteration_probability_colors,
+    limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1),
+    labels = scales::label_percent(accuracy = 1),
+    name = "d18O trajectory\nP(altered)"
+  ) +
+  scale_x_continuous(
+    limits = c(10, 130), breaks = seq(20, 120, by = 20),
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  labs(
+    x = expression(Delta[47] * " temperature (" * degree * "C)"),
+    y = expression(delta^18 * O[carbonate] ~ "(per mil VSMOW)"),
+    shape = "Carbonate material",
+    title = expression(
+      "BHB " * T[47] * "-" * delta^18 * O[carbonate] *
+        " alteration-trajectory index"
+    ),
+    subtitle = paste0(
+      "5% at pooled BHB micrite mean (",
+      round(BHB_d18Ocarb_reference_mean_vsmow, 2),
+      " per mil); 95% at 20 per mil; lower values extrapolate to 100%"
+    ),
+    caption = paste(
+      "The index uses d18Ocarb only. Qualitative petrographic classes,",
+      "D47-D48 residuals, and temperature plausibility are not included."
+    )
+  ) +
+  theme_classic(base_size = 12) +
+  theme(legend.position = "right", legend.box = "vertical")
+
+save_figure_variants(
+  p_BHB_alteration_probability_T_d18O,
+  here("figures", "diagenetic_screening"),
+  "BHB_alteration_probability_T47_d18O",
+  9, 7.5, presentation_width = 12
 )

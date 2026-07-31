@@ -22,16 +22,21 @@ if (!interactive()) {
 scripts <- c(
   "01_build_CFB_soilcarb_dataset.R",
   "02_analyze_CFB_carbonate_agreement.R",
+  "06_process_reference_datasets.R",
   "03_screen_CFB_clumped_diagenesis.R",
   "03b_plot_BHB_burial_thermal_context.R",
   "04_model_CFB_temperatures.R",
   "05_reconstruct_CFB_soilwater.R",
-  "06_process_reference_datasets.R",
   "07_build_and_apply_BHB_age_models.R",
   "08_model_BHB_temperatures.R",
   "08b_synthesize_BHB_seasonal_climate.R",
   "09_plot_CFB_strat_domain.R",
-  "10_plot_BHB_age_domain.R"
+  "10_plot_BHB_age_domain.R",
+  "11_plot_CFB_published_context_slide.R",
+  "12_plot_CFB_longterm_temperature_global_context.R",
+  "13_plot_BHB_all_temperature_age_slide.R",
+  "15_plot_BHB_Tornillo_PhanDA_latitudinal_gradient.R",
+  "16_plot_Harper_Tornillo_BHB_temperature_synthesis.R"
 )
 
 for (script in scripts) {

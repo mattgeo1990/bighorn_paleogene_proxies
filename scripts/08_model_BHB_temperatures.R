@@ -15,6 +15,12 @@ library(tidyverse)
 library(here)
 library(patchwork)
 source(here("scripts", "helpers", "save_figure_variants.R"))
+source(
+  here(
+    "scripts", "helpers",
+    "BHB_d18O_alteration_probability.R"
+  )
+)
 
 processed_dir <- here("data", "processed")
 figure_dir <- here("figures", "temperature_models", "regional_BHB")
@@ -23,10 +29,12 @@ dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
 
 set.seed(47013)
 n_simulations <- 2000L
-t47_age_bin_width_ma <- 0.10
-t47_spline_spar <- 0.45
+t47_age_bin_width_ma <- 0.05
+t47_spline_spar <- 0.25
 lma_spline_spar <- 0.65
 minimum_simulation_support <- 0.80
+talk_d18Ocarb_min_vsmow <- 20
+talk_temperature_max_C <- 50
 
 quantile_safe <- function(x, probability) {
   if (all(is.na(x))) return(NA_real_)
@@ -61,6 +69,15 @@ BHB_regional_soilcarb <- read_csv(
   ),
   show_col_types = FALSE
 )
+BHB_d18O_probability_parameters <- read_csv(
+  here(
+    "data", "processed",
+    "BHB_d18O_alteration_probability_parameters.csv"
+  ),
+  show_col_types = FALSE
+)
+BHB_d18Ocarb_reference_mean_vsmow <-
+  BHB_d18O_probability_parameters$reference_mean_d18Ocarb_vsmow[[1]]
 
 BHB_D47_temperature_observations <- bind_rows(
   CFB_temperature_observations %>%
@@ -76,6 +93,8 @@ BHB_D47_temperature_observations <- bind_rows(
       Age_Ma,
       temperature_C = T_C,
       temperature_se_C = T_se_C,
+      d18Ocarb_vsmow,
+      p_altered_preservation,
       age_uncertainty_status = "not propagated"
     ),
   BHB_regional_soilcarb %>%
@@ -87,6 +106,8 @@ BHB_D47_temperature_observations <- bind_rows(
       Age_Ma,
       temperature_C = T47_C,
       temperature_se_C = T47_se_C,
+      d18Ocarb_vsmow,
+      p_altered_preservation = NA_real_,
       age_uncertainty_status = "not propagated"
     )
 ) %>%
@@ -102,10 +123,33 @@ fallback_t47_se <- median(valid_t47_se)
 
 BHB_D47_temperature_observations <- BHB_D47_temperature_observations %>%
   mutate(
+    p_altered_preservation = calc_d18O_alteration_probability(
+      d18Ocarb_vsmow,
+      BHB_d18Ocarb_reference_mean_vsmow
+    ),
+    probability_model_version = "BHB_d18O_trajectory_index_v2",
     temperature_se_imputed =
       !is.finite(temperature_se_C) | temperature_se_C <= 0,
     temperature_se_C = if_else(
       temperature_se_imputed, fallback_t47_se, temperature_se_C
+    ),
+    passes_d18Ocarb_screen =
+      is.finite(d18Ocarb_vsmow) &
+      d18Ocarb_vsmow >= talk_d18Ocarb_min_vsmow,
+    passes_temperature_screen =
+      is.finite(temperature_C) &
+      temperature_C <= talk_temperature_max_C,
+    used_in_temperature_model =
+      passes_d18Ocarb_screen & passes_temperature_screen,
+    temperature_model_exclusion_reason = case_when(
+      !is.finite(d18Ocarb_vsmow) ~ "Missing d18Ocarb VSMOW",
+      d18Ocarb_vsmow < talk_d18Ocarb_min_vsmow &
+        temperature_C > talk_temperature_max_C ~
+          "d18Ocarb < 20 per mil VSMOW and T > 50 C",
+      d18Ocarb_vsmow < talk_d18Ocarb_min_vsmow ~
+        "d18Ocarb < 20 per mil VSMOW",
+      temperature_C > talk_temperature_max_C ~ "T > 50 C",
+      TRUE ~ NA_character_
     ),
     inverse_variance_weight = 1 / temperature_se_C^2,
     age_bin_ma = round(Age_Ma / t47_age_bin_width_ma) *
@@ -119,6 +163,7 @@ BHB_D47_temperature_observations <- BHB_D47_temperature_observations %>%
 # mean conditional on reported analytical errors; it does not absorb age-model
 # uncertainty, interlaboratory systematics, or ecological/seasonal differences.
 BHB_D47_temperature_age_bins <- BHB_D47_temperature_observations %>%
+  filter(used_in_temperature_model) %>%
   group_by(age_bin_ma) %>%
   summarise(
     Age_Ma = weighted.mean(
@@ -155,6 +200,7 @@ t47_central_fit <- smooth.spline(
   w = 1 / BHB_D47_temperature_age_bins$temperature_se_C^2,
   spar = t47_spline_spar
 )
+t47_selected_spar <- t47_spline_spar
 
 t47_simulations <- map_dfr(seq_len(n_simulations), function(simulation_id) {
   simulated_temperature <- rnorm(
@@ -166,7 +212,7 @@ t47_simulations <- map_dfr(seq_len(n_simulations), function(simulation_id) {
     x = BHB_D47_temperature_age_bins$Age_Ma,
     y = simulated_temperature,
     w = 1 / BHB_D47_temperature_age_bins$temperature_se_C^2,
-    spar = t47_spline_spar
+    spar = t47_selected_spar
   )
   tibble(
     simulation_id,
@@ -210,6 +256,14 @@ BHB_D47_temperature_model <- t47_age_grid %>%
     uncertainty_scope = paste(
       "Monte Carlo propagation of reported temperature SE at fixed ages;",
       "age-model and proxy-season uncertainties not propagated"
+    ),
+    screening_rule = paste(
+      "Retain d18Ocarb >= 20 per mil VSMOW and T <= 50 C;",
+      "all observations remain in the exported observation inventory"
+    ),
+    spline_selection = paste(
+      "Fixed responsive spline spar selected for PETM-scale structure:",
+      signif(t47_selected_spar, 4)
     ),
     extrapolated = FALSE
   )
@@ -438,7 +492,8 @@ p_BHB_D47_temperature_model <- ggplot() +
     color = "#B2182B", linewidth = 0.9
   ) +
   geom_errorbar(
-    data = BHB_D47_temperature_observations,
+    data = BHB_D47_temperature_observations %>%
+      filter(used_in_temperature_model),
     aes(
       Age_Ma,
       ymin = temperature_C - temperature_se_C,
@@ -448,7 +503,8 @@ p_BHB_D47_temperature_model <- ggplot() +
     width = 0, linewidth = 0.3, alpha = 0.45
   ) +
   geom_point(
-    data = BHB_D47_temperature_observations,
+    data = BHB_D47_temperature_observations %>%
+      filter(used_in_temperature_model),
     aes(Age_Ma, temperature_C, color = study_status, shape = study_status),
     size = 2, alpha = 0.82
   ) +
