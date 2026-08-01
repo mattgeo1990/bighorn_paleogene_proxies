@@ -109,9 +109,11 @@
 <polyline points='57.09,325.05 57.09,322.31 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='111.30,325.05 111.30,322.31 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='165.50,325.05 165.50,322.31 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
+<polyline points='219.71,325.05 219.71,322.31 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <text x='57.09' y='333.34' text-anchor='middle' style='font-size: 8.50px; font-family: "Arial";' textLength='9.46px' lengthAdjust='spacingAndGlyphs'>30</text>
 <text x='111.30' y='333.34' text-anchor='middle' style='font-size: 8.50px; font-family: "Arial";' textLength='9.46px' lengthAdjust='spacingAndGlyphs'>35</text>
 <text x='165.50' y='333.34' text-anchor='middle' style='font-size: 8.50px; font-family: "Arial";' textLength='9.46px' lengthAdjust='spacingAndGlyphs'>40</text>
+<text x='219.71' y='333.34' text-anchor='middle' style='font-size: 8.50px; font-family: "Arial";' textLength='9.46px' lengthAdjust='spacingAndGlyphs'>45</text>
 <text x='118.15' y='345.70' style='font-size: 10.50px; font-family: "Arial";' textLength='26.84px' lengthAdjust='spacingAndGlyphs'>SST (</text>
 <text x='144.99' y='345.70' style='font-size: 10.50px; font-family: "Symbol";' textLength='4.20px' lengthAdjust='spacingAndGlyphs'>°</text>
 <text x='149.19' y='345.70' style='font-size: 10.50px; font-family: "Arial";' textLength='11.08px' lengthAdjust='spacingAndGlyphs'>C)</text>

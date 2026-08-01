@@ -323,13 +323,60 @@ p_Harper <- ggplot(Harper_SST) +
   ) +
   shared_age_scale +
   scale_x_continuous(
-    limits = c(30, 45), breaks = seq(20, 40, 5),
+    limits = c(30, 45), breaks = seq(30, 45, 5),
     expand = expansion(mult = c(0.02, 0.03))
   ) +
   labs(
     tag = "A", title = "Pacific marine SST",
     subtitle = "Harper et al.; mean and 95% interval",
     x = expression("SST (" * degree * "C)"), y = "Age (Ma)"
+  ) +
+  theme_panel
+
+# Horizontal version for the standalone Harper export. The vertical version
+# above remains in the three-panel regional synthesis so all three panels
+# retain the same age-axis orientation.
+p_Harper_horizontal <- ggplot(Harper_SST) +
+  annotate(
+    "rect",
+    xmin = petm_young_ma,
+    xmax = petm_old_ma,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "#D73027",
+    alpha = 0.08
+  ) +
+  geom_ribbon(
+    aes(
+      x = Age_Ma,
+      ymin = Harper2024_SST_lower95_C,
+      ymax = Harper2024_SST_upper95_C
+    ),
+    fill = "#FDAE61",
+    alpha = 0.30
+  ) +
+  geom_path(
+    aes(Age_Ma, Harper2024_mean_SST_C),
+    color = "#D73027",
+    linewidth = 0.95
+  ) +
+  scale_x_reverse(
+    limits = age_limits,
+    breaks = seq(59, 52.5, by = -0.5),
+    minor_breaks = seq(59, 52.5, by = -0.1),
+    expand = expansion(mult = c(0.008, 0.012))
+  ) +
+  scale_y_continuous(
+    limits = c(30, 45),
+    breaks = seq(30, 45, by = 5),
+    expand = expansion(mult = c(0.02, 0.03))
+  ) +
+  labs(
+    tag = "A",
+    title = "Pacific marine SST",
+    subtitle = "Harper et al.; mean and 95% interval",
+    x = "Age (Ma)",
+    y = expression("SST (" * degree * "C)")
   ) +
   theme_panel
 
@@ -543,8 +590,8 @@ save_figure_variants(
 )
 
 save_figure_variants(
-  plot = p_Harper,
-  presentation_plot = p_Harper,
+  plot = p_Harper_horizontal,
+  presentation_plot = p_Harper_horizontal,
   base_dir = figure_dir,
   stem = "Harper_SST",
   manuscript_width = 10,

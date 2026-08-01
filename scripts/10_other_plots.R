@@ -1,5 +1,6 @@
 library(tidyverse)
 library(here)
+library(readxl)
 
 # ---- Settings ----
 BHB_paleolat <- 48
@@ -477,6 +478,235 @@ reconstruction_color <- "#2166AC"
       height = 4.5,
       dpi = 600
     )
+
+
+# ---- Standalone reconstructed soil-water isotope-space plots -------------
+#
+# These plots use the final CFB soil-water reconstruction rather than the
+# older multiproxy plotting table above. Horizontal and vertical error bars
+# are the reconstruction's 95% intervals. Kelson et al. (2026) soil waters
+# and every water reported in Aron et al. (2021) Supplement 1 are combined
+# into a single grey reference layer, as requested.
+
+CFB_soilwater_isotope_space <- read_csv(
+  here(
+    "data", "processed",
+    "CFB_soilwater_reconstruction_summary.csv"
+  ),
+  show_col_types = FALSE
+) %>%
+  filter(
+    !is.na(d18Ow_mean_vsmow),
+    !is.na(D17Orsw_mean_permeg)
+  ) %>%
+  mutate(
+    dp18Ow_mean = 1000 * log1p(d18Ow_mean_vsmow / 1000),
+    dp18Ow_lower95 = 1000 * log1p(d18Ow_lower95_vsmow / 1000),
+    dp18Ow_upper95 = 1000 * log1p(d18Ow_upper95_vsmow / 1000)
+  )
+
+CFB_soilwater_direct_D47 <- CFB_soilwater_isotope_space %>%
+  filter(has_measured_T47 %in% TRUE)
+
+# Kelson et al. (2026): published soil-water observations and uncertainties.
+kelson_reference_waters <- kelson_soilwater %>%
+  transmute(
+    dp18O,
+    dp18O_lower = dp18O - 1.96 * dp18O_se,
+    dp18O_upper = dp18O + 1.96 * dp18O_se,
+    Dp17O_permeg = D17O_pmg,
+    Dp17O_lower = D17O_pmg - D17O_err,
+    Dp17O_upper = D17O_pmg + D17O_err
+  )
+
+# Aron et al. (2021), Supplement 1. The workbook contains analytical rows
+# followed by one set of sample-average values per Sample ID. Column positions
+# are fixed by the publisher's two-line header and checked before use.
+aron2021_raw <- read_excel(
+  here(
+    "data", "raw",
+    "AronEtAl2021_triple_oxygen_water_database.xlsx"
+  ),
+  skip = 4,
+  col_names = FALSE
+)
+
+if (ncol(aron2021_raw) != 27) {
+  stop(
+    "Aron et al. (2021) Supplement 1 does not have the expected 27 columns."
+  )
+}
+
+names(aron2021_raw) <- c(
+  "analytical_date", "analytical_id", "sample_id", "reactor_id",
+  "raw_d17O", "raw_d18O", "normalized_d17O", "normalized_d18O",
+  "normalized_Dp17O", "n_irms", "mean_d17O", "mean_d18O",
+  "mean_Dp17O", "sd_d17O", "sd_d18O", "sd_Dp17O", "mean_d2H",
+  "mean_picarro_d18O", "d_excess", "latitude", "longitude",
+  "water_type", "collection_date", "elevation_km", "MAP_cm", "MAT_C",
+  "MARH_percent"
+)
+
+aron_reference_waters <- aron2021_raw %>%
+  transmute(
+    sample_id,
+    mean_d18O = as.numeric(mean_d18O),
+    sd_d18O = as.numeric(sd_d18O),
+    Dp17O_permeg = as.numeric(mean_Dp17O),
+    sd_Dp17O = as.numeric(sd_Dp17O)
+  ) %>%
+  filter(!is.na(mean_d18O), !is.na(Dp17O_permeg)) %>%
+  distinct(sample_id, .keep_all = TRUE) %>%
+  mutate(
+    dp18O = 1000 * log1p(mean_d18O / 1000),
+    dp18O_lower = 1000 * log1p((mean_d18O - sd_d18O) / 1000),
+    dp18O_upper = 1000 * log1p((mean_d18O + sd_d18O) / 1000),
+    Dp17O_lower = Dp17O_permeg - sd_Dp17O,
+    Dp17O_upper = Dp17O_permeg + sd_Dp17O
+  ) %>%
+  select(
+    dp18O, dp18O_lower, dp18O_upper,
+    Dp17O_permeg, Dp17O_lower, Dp17O_upper
+  )
+
+published_reference_waters <- bind_rows(
+  kelson_reference_waters,
+  aron_reference_waters
+)
+
+soilwater_isotope_space_plot <- function(data, plot_title) {
+  ggplot() +
+    geom_errorbarh(
+      data = published_reference_waters,
+      aes(
+        y = Dp17O_permeg,
+        xmin = dp18O_lower,
+        xmax = dp18O_upper
+      ),
+      height = 0,
+      linewidth = 0.25,
+      color = "grey70",
+      alpha = 0.45,
+      na.rm = TRUE
+    ) +
+    geom_errorbar(
+      data = published_reference_waters,
+      aes(
+        x = dp18O,
+        ymin = Dp17O_lower,
+        ymax = Dp17O_upper
+      ),
+      width = 0,
+      linewidth = 0.25,
+      color = "grey70",
+      alpha = 0.45,
+      na.rm = TRUE
+    ) +
+    geom_point(
+      data = published_reference_waters,
+      aes(dp18O, Dp17O_permeg),
+      size = 1.7,
+      color = "grey65",
+      alpha = 0.55
+    ) +
+    geom_errorbarh(
+      data = data,
+      aes(
+        y = D17Orsw_mean_permeg,
+        xmin = dp18Ow_lower95,
+        xmax = dp18Ow_upper95
+      ),
+      height = 0,
+      linewidth = 0.55,
+      color = "#2166AC",
+      alpha = 0.8
+    ) +
+    geom_errorbar(
+      data = data,
+      aes(
+        x = dp18Ow_mean,
+        ymin = D17Orsw_lower95_permeg,
+        ymax = D17Orsw_upper95_permeg
+      ),
+      width = 0,
+      linewidth = 0.55,
+      color = "#2166AC",
+      alpha = 0.8
+    ) +
+    geom_point(
+      data = data,
+      aes(dp18Ow_mean, D17Orsw_mean_permeg),
+      shape = 21,
+      size = 3.2,
+      stroke = 0.75,
+      color = "#053061",
+      fill = "#4393C3"
+    ) +
+    labs(
+      title = plot_title,
+      x = expression(delta * minute^18 * O[soil~water] ~ "(per mil VSMOW)"),
+      y = expression(Delta * minute^17 * O[soil~water] ~ "(per meg)")
+    ) +
+    scale_x_continuous(expand = expansion(mult = c(0.04, 0.04))) +
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.05))) +
+    theme_classic(base_size = 14) +
+    theme(
+      plot.title = element_text(face = "bold", size = 16),
+      axis.title = element_text(face = "bold"),
+      plot.margin = margin(10, 12, 8, 10)
+    )
+}
+
+p_soilwater_isotope_space_direct_D47 <- soilwater_isotope_space_plot(
+  CFB_soilwater_direct_D47,
+  paste0("Direct clumped-isotope samples (n = ",
+         nrow(CFB_soilwater_direct_D47), ")")
+)
+
+p_soilwater_isotope_space_all_D17O <- soilwater_isotope_space_plot(
+  CFB_soilwater_isotope_space,
+  paste0("All triple-oxygen samples (n = ",
+         nrow(CFB_soilwater_isotope_space), ")")
+)
+
+soilwater_presentation_dir <- here(
+  "figures", "other_plots", "presentation"
+)
+dir.create(
+  soilwater_presentation_dir,
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+for (extension in c("png", "pdf", "svg")) {
+  ggsave(
+    filename = file.path(
+      soilwater_presentation_dir,
+      paste0(
+        "BHB_soilwater_Dp17O_dp18O_direct_D47_6x6.", extension
+      )
+    ),
+    plot = p_soilwater_isotope_space_direct_D47,
+    width = 6,
+    height = 6,
+    dpi = 600
+  )
+  ggsave(
+    filename = file.path(
+      soilwater_presentation_dir,
+      paste0(
+        "BHB_soilwater_Dp17O_dp18O_all_D17O_6x6.", extension
+      )
+    ),
+    plot = p_soilwater_isotope_space_all_D17O,
+    width = 6,
+    height = 6,
+    dpi = 600
+  )
+}
+
+print(p_soilwater_isotope_space_direct_D47)
+print(p_soilwater_isotope_space_all_D17O)
     
     
     

@@ -103,6 +103,13 @@ prepare_CFB_chronostrat_age <- function(age_lookup, age_limits) {
 }
 
 build_chronostrat_panel <- function(intervals, y_scale, title = NULL) {
+  column_levels <- levels(intervals$column)
+  column_labels <- recode(
+    column_levels,
+    "Biozone" = "Mammal\nbiozone",
+    .default = column_levels
+  )
+
   ggplot(intervals) +
     geom_rect(
       aes(
@@ -122,8 +129,8 @@ build_chronostrat_panel <- function(intervals, y_scale, title = NULL) {
     scale_fill_identity() +
     scale_color_identity() +
     scale_x_continuous(
-      breaks = 1:4,
-      labels = c("Epoch", "Formation", "Chron", "Mammal\nbiozone"),
+      breaks = seq_along(column_levels),
+      labels = column_labels,
       position = "top",
       expand = c(0, 0)
     ) +

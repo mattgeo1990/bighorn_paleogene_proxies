@@ -1,6 +1,7 @@
 # 15_plot_BHB_Tornillo_PhanDA_latitudinal_gradient.R
 # Purpose: Compare screened Bighorn Basin and Tornillo clumped-isotope
-#          formation temperatures with PhanDA stage-level latitudinal surface-
+#          formation temperatures and published North American continental
+#          temperature estimates with PhanDA stage-level latitudinal surface-
 #          temperature gradients.
 #
 # Important:
@@ -15,6 +16,10 @@
 #   - PhanDA curves describe stage-level surface air temperature, whereas the
 #     clumped-isotope points are soil-carbonate formation temperatures. Their
 #     juxtaposition is a proxy/model context comparison, not an equivalence.
+#   - Published continental estimates are plotted only when their reported age
+#     can be assigned to one stage. West et al. high-latitude records reported
+#     only as "late Paleocene to early Eocene" remain in the audit table but are
+#     intentionally excluded from both stage-specific panels.
 
 #-- 1.) Setup ---------------------------------------------------------------
 library(tidyverse)
@@ -134,9 +139,90 @@ write_csv(
   na = ""
 )
 
-#-- 4.) Plot ---------------------------------------------------------------
+#-- 4.) Prepare Published North American Continental Constraints -----------
+published_continental_source <- read_csv(
+  here(
+    "data", "raw",
+    "published_North_America_Paleocene_Eocene_continental_temperature.csv"
+  ),
+  show_col_types = FALSE
+)
+
+Wing_LMA_points <- read_csv(
+  here("data", "processed", "WingEtAl2000_LMA_MAT_processed.csv"),
+  show_col_types = FALSE
+) %>%
+  transmute(
+    study = "Wing et al. (2000)",
+    locality = "Bighorn Basin",
+    interval_reported = sample,
+    stage_assignment = stage_from_age(published_age_model_2_Ma),
+    include_stage_plot = !is.na(stage_assignment),
+    latitude_type = "paleolatitude",
+    latitude_deg_n = BHB_paleolat_deg_n,
+    temperature_target = "MAT",
+    temperature_C = MAT_C,
+    temperature_lower_C = MAT_C - MAT_error_C,
+    temperature_upper_C = MAT_C + MAT_error_C,
+    proxy_group = "Paleobotanical MAT",
+    topographic_context = "basin",
+    notes = paste0(
+      "Leaf-margin MAT; published aggregate age model 2; ",
+      "temperature interval is published +/- error"
+    )
+  )
+
+published_continental_audit <- bind_rows(
+  published_continental_source,
+  Wing_LMA_points
+) %>%
+  mutate(
+    stage_group = factor(stage_assignment, levels = stage_levels),
+    plot_record = case_when(
+      study == "Wing et al. (2000)" ~ "Wing et al. (2000) LMA",
+      study == "West et al. (2020)" ~ "West et al. (2020) ensemble MAT",
+      study == "Fricke and Wing (2004)" &
+        proxy_group == "Vertebrate phosphate" ~
+        "Fricke & Wing (2004) phosphate MAT",
+      TRUE ~ "Fricke & Wing (2004) paleobotanical MAT"
+    )
+  )
+
+published_continental_points <- published_continental_audit %>%
+  filter(include_stage_plot, !is.na(stage_group)) %>%
+  group_by(stage_group, plot_record, latitude_deg_n) %>%
+  mutate(
+    display_latitude_deg_n = latitude_deg_n +
+      seq(-0.42, 0.42, length.out = n())
+  ) %>%
+  ungroup()
+
+write_csv(
+  published_continental_audit,
+  here(
+    "data", "processed",
+    "published_North_America_stage_temperature_plot_audit.csv"
+  ),
+  na = ""
+)
+
+#-- 5.) Plot ---------------------------------------------------------------
 BHB_plot_points <- comparison_points %>% filter(region == "Bighorn Basin")
 Tornillo_plot_points <- comparison_points %>% filter(region == "Tornillo Basin")
+
+published_record_shapes <- c(
+  "Wing et al. (2000) LMA" = 0,
+  "Fricke & Wing (2004) phosphate MAT" = 5,
+  "Fricke & Wing (2004) paleobotanical MAT" = 1,
+  "West et al. (2020) ensemble MAT" = 2
+)
+
+published_record_colors <- c(
+  "Wing et al. (2000) LMA" = "#1B7837",
+  "Fricke & Wing (2004) phosphate MAT" = "#762A83",
+  "Fricke & Wing (2004) paleobotanical MAT" = "#A6611A",
+  "West et al. (2020) ensemble MAT" = "#008C95"
+)
 
 p_PhanDA_clumped_comparison <- ggplot() +
   geom_ribbon(
@@ -157,6 +243,26 @@ p_PhanDA_clumped_comparison <- ggplot() +
   geom_vline(
     xintercept = c(Tornillo_paleolat_deg_n, BHB_paleolat_deg_n),
     color = "grey55", linewidth = 0.35, linetype = "dotted"
+  ) +
+  geom_errorbar(
+    data = published_continental_points,
+    aes(
+      x = display_latitude_deg_n,
+      ymin = temperature_lower_C,
+      ymax = temperature_upper_C,
+      color = plot_record
+    ),
+    width = 0, linewidth = 0.3, alpha = 0.42, na.rm = TRUE
+  ) +
+  geom_point(
+    data = published_continental_points,
+    aes(
+      x = display_latitude_deg_n,
+      y = temperature_C,
+      color = plot_record,
+      shape = plot_record
+    ),
+    size = 2.45, stroke = 0.72, fill = "white"
   ) +
   geom_errorbar(
     data = BHB_plot_points,
@@ -210,20 +316,30 @@ p_PhanDA_clumped_comparison <- ggplot() +
     labels = scales::label_percent(accuracy = 1),
     name = "Modeled BHB\nalteration probability"
   ) +
+  scale_color_manual(
+    values = published_record_colors,
+    breaks = names(published_record_colors),
+    name = "Published North American continental estimates"
+  ) +
+  scale_shape_manual(
+    values = published_record_shapes,
+    breaks = names(published_record_shapes),
+    name = "Published North American continental estimates"
+  ) +
   scale_x_continuous(
-    breaks = seq(20, 70, by = 10),
+    breaks = seq(20, 80, by = 10),
     expand = expansion(mult = c(0.01, 0.01))
   ) +
   scale_y_continuous(
     breaks = seq(0, 50, by = 10),
     expand = expansion(mult = c(0.01, 0.055))
   ) +
-  coord_cartesian(xlim = c(20, 70), ylim = c(-5, 55)) +
+  coord_cartesian(xlim = c(20, 82), ylim = c(-5, 55)) +
   labs(
-    title = "BHB and Tornillo clumped temperatures in PhanDA context",
+    title = "North American continental temperatures in PhanDA context",
     subtitle = paste(
-      "Only BHB observations passing the current d18Ocarb >= 20 per mil",
-      "and T47 <= 50 deg C screen are shown"
+      "Stage-resolved published constraints are sparse in the Thanetian and",
+      "substantially more numerous in the Ypresian"
     ),
     x = "Paleolatitude (\u00b0N)",
     y = "Temperature (\u00b0C)",
@@ -231,16 +347,21 @@ p_PhanDA_clumped_comparison <- ggplot() +
       paste0(
         "PhanDA stage-level surface-air temperature: median line, ",
         "16\u201384% dark ribbon, 5\u201395% light ribbon. ",
-        "Circles: BHB soil-carbonate T47; triangles: Kelson et al. Tornillo ",
-        "micrite T47. Error bars are \u00b11 SE. Formation temperatures and ",
-        "surface-air temperatures need not represent the same season or reservoir."
+        "Filled circles: screened BHB soil-carbonate T47; filled triangles: ",
+        "Kelson et al. Tornillo micrite T47; open symbols: published continental ",
+        "MAT estimates. Error definitions differ by source and are retained in ",
+        "the audit table. West et al. high-latitude sites reported only as late ",
+        "Paleocene to early Eocene are not assigned to either stage. West ",
+        "latitudes are modern geographic coordinates; other points use published ",
+        "paleolatitudes. Formation temperature and MAT are not equivalent targets."
       ),
       width = 155
     )
   ) +
   theme_classic(base_size = 11) +
   theme(
-    legend.position = "right",
+    legend.position = "bottom",
+    legend.box = "vertical",
     strip.background = element_blank(),
     strip.text = element_text(face = "bold", size = 11),
     plot.title = element_text(face = "bold", size = 13),
@@ -248,7 +369,14 @@ p_PhanDA_clumped_comparison <- ggplot() +
     plot.caption = element_text(size = 7.5, hjust = 0),
     panel.spacing.x = unit(1.1, "lines"),
     axis.title = element_text(size = 11),
-    axis.text = element_text(size = 9)
+    axis.text = element_text(size = 9),
+    legend.title = element_text(size = 8.5),
+    legend.text = element_text(size = 8)
+  ) +
+  guides(
+    color = guide_legend(order = 1, nrow = 2, byrow = TRUE),
+    shape = guide_legend(order = 1, nrow = 2, byrow = TRUE),
+    fill = guide_colorbar(order = 2, direction = "horizontal", barwidth = 8)
   )
 
 save_figure_variants(
@@ -256,13 +384,15 @@ save_figure_variants(
   base_dir = figure_dir,
   stem = "BHB_Tornillo_D47_PhanDA_latitudinal_gradient",
   manuscript_width = 8.2,
-  manuscript_height = 4.8,
+  manuscript_height = 5.8,
   presentation_width = 12,
-  presentation_height = 6
+  presentation_height = 6.8
 )
 
 message(
   "Saved PhanDA latitudinal-gradient comparison with ",
   nrow(BHB_points), " screened BHB and ",
-  nrow(Tornillo_points), " Tornillo observations."
+  nrow(Tornillo_points), " Tornillo observations, plus ",
+  nrow(published_continental_points),
+  " stage-resolved published continental estimates."
 )

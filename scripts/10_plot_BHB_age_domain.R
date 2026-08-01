@@ -128,6 +128,13 @@ Barnet2019_ODP1262 <- read_csv(
   ),
   show_col_types = FALSE
 )
+Westerhold2018_ODP1209 <- read_csv(
+  here(
+    "data", "processed",
+    "WesterholdEtAl2018_ODP1209_benthic_isotopes.csv"
+  ),
+  show_col_types = FALSE
+)
 BHB_regional_d13C_reference <- read_csv(
   here(
     "data", "processed",
@@ -514,7 +521,189 @@ p_Barnet_d13C_horizontal <- ggplot(Barnet2019_LPEE) +
     axis.ticks.x = element_blank()
   )
 
-p_BHB_d13C_horizontal <- ggplot(BHB_d13C_published_age) +
+# Standalone Atlantic-Pacific isotope comparison for a 6 x 3 inch slide.
+# Site 1262 is the South Atlantic record presented by Barnet et al. (2019);
+# Site 1209 is the Pacific comparison record used in that paper.
+barnet_full_age_limits <- c(67.1, 52.35)
+
+barnet_atlantic_pacific <- bind_rows(
+  Barnet2019_ODP1262 %>%
+    transmute(
+      Age_Ma,
+      basin = "Atlantic",
+      d13C_benthic_vpdb,
+      d18O_benthic_vpdb = d18O_corrected_vpdb
+    ),
+  Westerhold2018_ODP1209 %>%
+    transmute(Age_Ma, basin, d13C_benthic_vpdb, d18O_benthic_vpdb)
+) %>%
+  mutate(basin = factor(basin, levels = c("Atlantic", "Pacific"))) %>%
+  arrange(basin, Age_Ma)
+
+barnet_full_age_scale <- scale_x_reverse(
+  limits = barnet_full_age_limits,
+  breaks = seq(68, 52, by = -2),
+  minor_breaks = seq(68, 52, by = -0.5),
+  expand = expansion(mult = c(0.005, 0.005))
+)
+
+barnet_basin_linetypes <- c("Atlantic" = "solid", "Pacific" = "22")
+barnet_d13C_colors <- c("Atlantic" = "#F03B20", "Pacific" = "#A50056")
+barnet_d18O_colors <- c("Atlantic" = "#29A9E0", "Pacific" = "#173F90")
+
+barnet_full_panel_theme <- theme_classic(base_size = 9) +
+  theme(
+    axis.title = element_text(size = 9.5),
+    axis.text = element_text(size = 8, color = "black"),
+    plot.title = element_text(size = 9.5, face = "bold"),
+    plot.margin = margin(1, 4, 1, 4),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 6.5),
+    legend.key.width = unit(0.35, "cm"),
+    legend.spacing.x = unit(0.08, "cm"),
+    legend.background = element_rect(
+      fill = scales::alpha("white", 0.86), color = "grey55", linewidth = 0.25
+    )
+  )
+
+p_Barnet_d13C_full_horizontal <-
+  ggplot(
+    barnet_atlantic_pacific,
+    aes(Age_Ma, d13C_benthic_vpdb, color = basin, linetype = basin)
+  ) +
+  geom_line(linewidth = 0.38, alpha = 0.9, na.rm = TRUE) +
+  barnet_full_age_scale +
+  scale_color_manual(values = barnet_d13C_colors) +
+  scale_linetype_manual(values = barnet_basin_linetypes) +
+  labs(
+    x = NULL,
+    y = expression(delta^13 * C[benthic])
+  ) +
+  barnet_full_panel_theme +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "inside",
+    legend.position.inside = c(0.87, 0.78),
+    legend.direction = "vertical"
+  )
+
+p_Barnet_d18O_full_horizontal <-
+  ggplot(
+    barnet_atlantic_pacific,
+    aes(Age_Ma, d18O_benthic_vpdb, color = basin, linetype = basin)
+  ) +
+  geom_line(linewidth = 0.38, alpha = 0.9, na.rm = TRUE) +
+  barnet_full_age_scale +
+  scale_y_reverse() +
+  scale_color_manual(values = barnet_d18O_colors) +
+  scale_linetype_manual(values = barnet_basin_linetypes) +
+  labs(
+    x = NULL,
+    y = expression(delta^18 * O[benthic])
+  ) +
+  barnet_full_panel_theme +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+  )
+
+barnet_epochs <- tribble(
+  ~unit,          ~older_ma, ~younger_ma, ~fill,
+  "Late Cret.",      67.10,       66.00,  "#B8DE8A",
+  "Paleocene",       66.00,       56.00,  "#F6E8A6",
+  "Eocene",          56.00,       52.35,  "#F7B267"
+)
+
+barnet_stages <- tribble(
+  ~unit,       ~older_ma, ~younger_ma, ~fill,
+  "Maast.",         67.10,       66.00,  "#D8E7A8",
+  "Danian",         66.00,       61.66,  "#B8DE8A",
+  "Selandian",      61.66,       59.24,  "#8FD080",
+  "Thanetian",      59.24,       56.00,  "#63C178",
+  "Ypresian",       56.00,       52.35,  "#F4C96B"
+)
+
+p_Barnet_chronostrat_full_horizontal <-
+  ggplot() +
+  geom_rect(
+    data = barnet_epochs,
+    aes(
+      xmin = older_ma,
+      xmax = younger_ma,
+      ymin = 1,
+      ymax = 2,
+      fill = fill
+    ),
+    color = "grey25",
+    linewidth = 0.35
+  ) +
+  geom_rect(
+    data = barnet_stages,
+    aes(
+      xmin = older_ma,
+      xmax = younger_ma,
+      ymin = 0,
+      ymax = 1,
+      fill = fill
+    ),
+    color = "grey25",
+    linewidth = 0.35
+  ) +
+  geom_text(
+    data = barnet_epochs,
+    aes(
+      x = (older_ma + younger_ma) / 2,
+      y = 1.5,
+      label = unit
+    ),
+    size = 2.55
+  ) +
+  geom_text(
+    data = barnet_stages,
+    aes(
+      x = (older_ma + younger_ma) / 2,
+      y = 0.5,
+      label = unit
+    ),
+    size = 2.35
+  ) +
+  barnet_full_age_scale +
+  scale_fill_identity() +
+  scale_y_continuous(
+    limits = c(0, 2),
+    expand = c(0, 0)
+  ) +
+  labs(
+    x = "Age (Ma)",
+    y = NULL
+  ) +
+  theme_classic(base_size = 9) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.y = element_blank(),
+    axis.title.x = element_text(
+      size = 10,
+      margin = margin(t = 2)
+    ),
+    axis.text.x = element_text(
+      size = 8.5,
+      color = "black"
+    ),
+    plot.margin = margin(0, 4, 1, 4)
+  )
+
+p_Barnet_stable_isotopes_full_horizontal_6x3 <-
+  p_Barnet_d13C_full_horizontal /
+  p_Barnet_d18O_full_horizontal /
+  p_Barnet_chronostrat_full_horizontal +
+  plot_layout(
+    heights = c(1, 1, 0.60)
+  )
+
+B_d13C_horizontal <- ggplot(BHB_d13C_published_age) +
   add_petm_horizontal() +
   geom_errorbar(
     aes(
@@ -1752,6 +1941,16 @@ save_figure_variants(
   manuscript_height = 9.5,
   presentation_width = 12,
   presentation_height = 6
+)
+save_figure_variants(
+  plot = p_Barnet_stable_isotopes_full_horizontal_6x3,
+  presentation_plot = p_Barnet_stable_isotopes_full_horizontal_6x3,
+  base_dir = regional_age_figure_dir,
+  stem = "Barnet2019_Atlantic_Pacific_d13C_d18O_horizontal_6x3",
+  manuscript_width = 6,
+  manuscript_height = 3,
+  presentation_width = 6,
+  presentation_height = 3
 )
 
 # Supporting table used in the combined figure. This makes explicit which

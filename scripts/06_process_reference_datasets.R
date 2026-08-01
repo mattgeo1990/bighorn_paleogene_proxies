@@ -123,6 +123,65 @@ if (
   stop("Barnet et al. (2019) import failed its expected age-range check.")
 }
 
+# Pacific comparison used by Barnet et al. (2019): the orbitally tuned
+# ODP Site 1209 benthic-isotope series assembled by Westerhold et al.
+# (PANGAEA 10.1594/PANGAEA.883334). The archive combines the Paleocene
+# record of Westerhold et al. (2011) with its early-Eocene extension.
+Westerhold2018_raw <- read_tsv(
+  here(
+    "data", "raw",
+    "WesterholdEtAl2018_ODP1209_benthic_isotopes.tab"
+  ),
+  skip = 23,
+  name_repair = "minimal",
+  show_col_types = FALSE
+)
+
+if (ncol(Westerhold2018_raw) != 12) {
+  stop(
+    "Westerhold et al. Site 1209 source does not have the expected 12 ",
+    "columns; check the archived PANGAEA file before proceeding."
+  )
+}
+
+names(Westerhold2018_raw) <- c(
+  "sample_label", "depth_mbsf", "depth_composite_rmcd", "age_ka_bp",
+  "n_truempyi_d13C_vpdb", "n_truempyi_d18O_vpdb",
+  "o_umbonatus_d13C_vpdb", "o_umbonatus_d18O_vpdb",
+  "analytical_method", "analytical_comment", "laboratory", "source_record"
+)
+
+Westerhold2018_ODP1209 <- Westerhold2018_raw %>%
+  transmute(
+    site = "ODP Site 1209",
+    basin = "Pacific",
+    sample_label,
+    depth_mbsf,
+    depth_composite_rmcd,
+    Age_Ma = age_ka_bp / 1000,
+    d13C_benthic_vpdb = coalesce(
+      n_truempyi_d13C_vpdb,
+      o_umbonatus_d13C_vpdb
+    ),
+    d18O_benthic_vpdb = coalesce(
+      n_truempyi_d18O_vpdb,
+      o_umbonatus_d18O_vpdb
+    ),
+    source_record,
+    dataset_doi = "10.1594/PANGAEA.883334",
+    article_doi = "10.1029/2017PA003306"
+  ) %>%
+  filter(!is.na(Age_Ma), between(Age_Ma, 52, 68)) %>%
+  arrange(Age_Ma)
+
+if (
+  nrow(Westerhold2018_ODP1209) == 0 ||
+    min(Westerhold2018_ODP1209$Age_Ma) > 52.1 ||
+    max(Westerhold2018_ODP1209$Age_Ma) < 66.5
+) {
+  stop("Westerhold et al. Site 1209 import failed its age-range check.")
+}
+
 # Join the records by age, calculate three-point anchors, and then fit
 # lightly smoothed splines for plotting broad trends.
 Harper2024_CO2_SST <- Harper2024_CO2_raw %>%
@@ -874,6 +933,11 @@ write_csv(
 write_csv(
   Barnet2019_ODP1262,
   file.path(processed_dir, "BarnetEtAl2019_ODP1262_benthic_isotopes.csv")
+)
+
+write_csv(
+  Westerhold2018_ODP1209,
+  file.path(processed_dir, "WesterholdEtAl2018_ODP1209_benthic_isotopes.csv")
 )
 
 # Optional confirmation when run interactively.

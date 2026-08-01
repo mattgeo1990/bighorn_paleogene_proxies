@@ -73,7 +73,14 @@ CFB_T47 <- read_csv(
   here("data", "processed", "CFB_temperature_observations.csv"),
   show_col_types = FALSE
 ) %>%
-  mutate(source = recode(source, IPL = "U-M", Snell = "Caltech")) %>%
+  mutate(
+    source = case_when(
+      source %in% c("IPL", "U-M") ~ "U-M",
+      source %in% c("Snell", "Caltech") ~ "Snell et al. (2013)",
+      source == "CU" ~ "Havranek et al. (2024)",
+      TRUE ~ source
+    )
+  ) %>%
   filter(source != "U-M")
 
 Wing_LMA <- read_csv(
@@ -180,6 +187,8 @@ write_csv(
 
 #-- 4.) Published Carbon-Isotope Data --------------------------------------
 published_d13C <- bind_rows(
+  # Deliberately omit IPL_NuDog_d13Ccarb_VPDB: Slide 3 shows only the
+  # independently published CU/Caltech/Koch/Bowen carbonate records.
   CFB_isotopes %>% transmute(
     strat_height_m, source = "CU",
     value = CU_mean_d13Ccarb_vpdb, se = NA_real_
@@ -202,10 +211,29 @@ published_d13C <- bind_rows(
     between(strat_height_m, strat_limits[1], strat_limits[2])
   ) %>%
   mutate(
+    source = recode(
+      source,
+      "Koch" = "Koch et al. (2003)",
+      "Bowen" = "Bowen et al. (2001)",
+      "CU" = "Havranek (2024)",
+      "Caltech (Snell)" = "Snell et al. (2013)"
+    ),
     source = factor(
-      source, levels = c("Koch", "Bowen", "CU", "Caltech (Snell)")
+      source, levels = c(
+        "Snell et al. (2013)", "Havranek (2024)",
+        "Bowen et al. (2001)", "Koch et al. (2003)", "Wing et al. (2000)"
+      )
     )
   )
+
+published_source_shapes <- c(
+  "Snell et al. (2013)" = 21,
+  "Havranek (2024)" = 24,
+  "Bowen et al. (2001)" = 22,
+  "Koch et al. (2003)" = 23,
+  "Wing et al. (2000)" = 25,
+  "Fricke & Wing (2004)" = 18
+)
 
 d13C_height_bins <- published_d13C %>%
   mutate(height_bin_m = round(strat_height_m / 50) * 50) %>%
@@ -256,7 +284,10 @@ p_d13C_published <- ggplot(published_d13C) +
     aes(value, strat_height_m),
     color = "black", linewidth = 0.85
   ) +
-  scale_shape_manual(values = c(21, 22, 24, 23), drop = FALSE) +
+  scale_shape_manual(
+    values = published_source_shapes,
+    limits = names(published_source_shapes), drop = FALSE
+  ) +
   scale_x_continuous(
     limits = c(-17, -4),
     breaks = c(-16, -12, -8, -4),
@@ -267,7 +298,7 @@ p_d13C_published <- ggplot(published_d13C) +
     x = expression(delta^13 * C[carbonate] ~ "(per mil VPDB)"),
     y = "CFB stratigraphic height (m)",
     title = expression("Published " * delta^13 * C[carbonate]),
-    shape = NULL
+    shape = "Published datasets"
   ) +
   theme_slide_panel +
   theme(
@@ -276,14 +307,10 @@ p_d13C_published <- ggplot(published_d13C) +
 
 #-- 5.) Published Temperature Data and Seasonal Context -------------------
 temperature_colors <- c(
-  "Published T47" = "grey35",
-  "Wing LMA" = "#1B7837",
-  "Fricke-Wing MAAT" = "#762A83"
-)
-temperature_shapes <- c(
-  "Published T47" = 21,
-  "Wing LMA" = 22,
-  "Fricke-Wing MAAT" = 23
+  "Snell et al. (2013)" = "#4D4D4D",
+  "Havranek (2024)" = "#0072B2",
+  "Wing et al. (2000)" = "#1B7837",
+  "Fricke & Wing (2004)" = "#762A83"
 )
 seasonal_colors <- c(
   "CMMT" = "#2166AC",
@@ -293,12 +320,15 @@ seasonal_colors <- c(
 
 published_T47_plot <- CFB_T47 %>%
   transmute(
-    record = "Published T47",
+    record = source,
     temperature_C = T_C,
     temperature_se_C = T_se_C,
     strat_height_m,
     strat_min_m = strat_height_m,
     strat_max_m = strat_height_m
+  ) %>%
+  mutate(
+    record = recode(record, "Havranek et al. (2024)" = "Havranek (2024)")
   )
 
 temperature_observations <- bind_rows(
@@ -307,8 +337,8 @@ temperature_observations <- bind_rows(
     mutate(
       record = recode(
         record,
-        "Wing leaf-margin MAT" = "Wing LMA",
-        "Fricke–Wing phosphate MAAT" = "Fricke-Wing MAAT"
+        "Wing leaf-margin MAT" = "Wing et al. (2000)",
+        "Fricke–Wing phosphate MAAT" = "Fricke & Wing (2004)"
       )
     )
 ) %>%
@@ -385,7 +415,10 @@ p_temperature_context <- ggplot() +
     values = c(seasonal_colors, temperature_colors),
     drop = FALSE
   ) +
-  scale_shape_manual(values = temperature_shapes, drop = FALSE) +
+  scale_shape_manual(
+    values = published_source_shapes,
+    limits = names(published_source_shapes), drop = FALSE
+  ) +
   scale_x_continuous(
     limits = c(-2, 55),
     breaks = seq(0, 50, by = 10),
@@ -396,7 +429,7 @@ p_temperature_context <- ggplot() +
     x = expression("Temperature (" * degree * "C)"),
     y = NULL,
     title = "Published temperature records",
-    shape = NULL,
+    shape = "Published datasets",
     color = NULL,
     fill = "Seasonal synthesis"
   ) +
@@ -405,26 +438,89 @@ p_temperature_context <- ggplot() +
       order = 2,
       override.aes = list(alpha = 0.13)
     ),
-    shape = guide_legend(order = 1, nrow = 1, byrow = TRUE),
+    shape = guide_legend(
+      order = 1, nrow = 2, byrow = TRUE,
+      title.position = "top", title.hjust = 0,
+      override.aes = list(color = "black", fill = "white")
+    ),
     color = "none"
   ) +
   theme_slide_panel +
   theme(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    legend.position = "top",
+    legend.position = "bottom",
     legend.box = "vertical",
     legend.margin = margin(0, 0, 1, 0)
   )
 
 #-- 6.) Assemble the 9 x 6 Inch Introduction Slide Figure -----------------
-p_chronostrat <- build_CFB_chronostrat_strat_panel(
-  strat_limits,
-  breaks = seq(500, 2300, by = 200)
+# The Thanetian/Ypresian and Paleocene/Eocene boundaries are identical. Derive
+# the stage boundary from the same local stratigraphic definition used for the
+# epoch column so the two panels cannot drift apart through age-model rounding.
+stage_boundary_m <- read_CFB_chronostrat_columns() %>%
+  filter(column == "Epoch", label == "Eocene") %>%
+  pull(base_m)
+if (length(stage_boundary_m) != 1 || !is.finite(stage_boundary_m)) {
+  stop("Could not identify a unique Paleocene/Eocene boundary in CFB stratigraphy.")
+}
+
+chronostrat_intervals <- bind_rows(
+  prepare_CFB_chronostrat_strat(strat_limits) %>%
+    mutate(column = as.character(column)),
+  tibble(
+    base_m = c(strat_limits[1], stage_boundary_m),
+    top_m = c(stage_boundary_m, strat_limits[2]),
+    label = c("Thanetian", "Ypresian"),
+    column = "Stage",
+    ymin = c(strat_limits[1], stage_boundary_m),
+    ymax = c(stage_boundary_m, strat_limits[2]),
+    ymid = c(
+      mean(c(strat_limits[1], stage_boundary_m)),
+      mean(c(stage_boundary_m, strat_limits[2]))
+    ),
+    fill_value = c("#63C178", "#F4C96B"),
+    text_color = "black",
+    x = NA_real_
+  )
+) %>%
+  mutate(
+    column = factor(
+      column,
+      levels = c("Epoch", "Stage", "Formation", "Chron", "Biozone")
+    ),
+    x = as.numeric(column)
+  )
+
+p_chronostrat <- build_chronostrat_panel(
+  chronostrat_intervals,
+  scale_y_continuous(
+    limits = strat_limits,
+    breaks = seq(500, 2300, by = 200),
+    expand = expansion(mult = c(0.01, 0.02))
+  )
 ) +
   theme(
-    axis.text.x.top = element_text(size = 6.8, face = "bold"),
+    axis.text.x.top = element_text(size = 9, face = "bold"),
     plot.margin = margin(4, 1, 4, 2)
+  )
+
+# Main stratigraphic labels are 14 point; the mammal zones remain smaller so
+# their short intervals stay legible and contained within their boxes.
+p_chronostrat$layers[[2]]$data <- chronostrat_intervals[0, ]
+p_chronostrat <- p_chronostrat +
+  geom_text(
+    data = chronostrat_intervals %>% filter(column != "Biozone"),
+    aes(
+      x = x, y = ymid, label = label, color = text_color,
+      angle = if_else(column %in% c("Epoch", "Stage", "Formation"), 90, 0)
+    ),
+    size = 14 / ggplot2::.pt, lineheight = 0.88
+  ) +
+  geom_text(
+    data = chronostrat_intervals %>% filter(column == "Biozone"),
+    aes(x = x, y = ymid, label = label, color = text_color),
+    size = 2.25, lineheight = 0.88
   )
 
 provenance_note <- paste(
@@ -436,14 +532,73 @@ provenance_note <- paste(
   "(50/80/95%); not fitted posteriors."
 )
 
+seasonal_source_note <- ggplot() +
+  annotate(
+    "text", x = 0, y = 1, hjust = 0, vjust = 1,
+    label = paste(
+      "SEASONAL TEMPERATURE RIBBONS",
+      "CMMT, MAAT, and WMMT are",
+      "literature-informed, relevance-weighted",
+      "syntheses based on:",
+      "- Snell et al. (2013), summarized by",
+      "  Kiehl et al. (2018)",
+      "- Kiehl et al. (2018) BHB simulations",
+      "- Hyland et al. (2018) dry-interior simulations",
+      sep = "\n"
+    ),
+    size = 3.2, lineheight = 1.12
+  ) +
+  xlim(0, 1) + ylim(0, 1) + theme_void() +
+  theme(plot.margin = margin(8, 8, 8, 8))
+
+main_figure <-
+  p_chronostrat + p_d13C_published + p_temperature_context +
+  plot_layout(widths = c(1.65, 1.45, 2.45))
+
+legend_sources <- tibble(
+  source = factor(
+    names(published_source_shapes), levels = names(published_source_shapes)
+  ),
+  y = rev(seq_along(published_source_shapes))
+)
+published_source_legend <- ggplot(legend_sources) +
+  annotate(
+    "text", x = 0, y = 7.1, label = "PUBLISHED DATASETS",
+    hjust = 0, fontface = "bold", size = 3.5
+  ) +
+  geom_point(
+    aes(0.03, y, shape = source), size = 3.1, stroke = 0.8,
+    color = "black", fill = "white"
+  ) +
+  geom_text(aes(0.12, y, label = source), hjust = 0, size = 3.1) +
+  annotate(
+    "text", x = 0, y = -0.05, label = "SEASONAL SYNTHESIS",
+    hjust = 0, fontface = "bold", size = 3.5
+  ) +
+  annotate("rect", xmin = 0.03, xmax = 0.10, ymin = -0.85, ymax = -0.45,
+           fill = seasonal_colors[["CMMT"]], alpha = 0.35) +
+  annotate("text", x = 0.12, y = -0.65, label = "CMMT", hjust = 0, size = 3.1) +
+  annotate("rect", xmin = 0.35, xmax = 0.42, ymin = -0.85, ymax = -0.45,
+           fill = seasonal_colors[["MAAT"]], alpha = 0.35) +
+  annotate("text", x = 0.44, y = -0.65, label = "MAAT", hjust = 0, size = 3.1) +
+  annotate("rect", xmin = 0.66, xmax = 0.73, ymin = -0.85, ymax = -0.45,
+           fill = seasonal_colors[["WMMT"]], alpha = 0.35) +
+  annotate("text", x = 0.75, y = -0.65, label = "WMMT", hjust = 0, size = 3.1) +
+  scale_shape_manual(values = published_source_shapes, guide = "none") +
+  coord_cartesian(xlim = c(0, 1), ylim = c(-1, 7.4), clip = "off") +
+  theme_void() +
+  theme(plot.margin = margin(8, 8, 8, 8))
+main_figure <- main_figure & theme(legend.position = "none")
+
 p_CFB_published_context_slide <-
-  p_chronostrat +
-  p_d13C_published +
-  p_temperature_context +
-  plot_layout(widths = c(1.25, 1.25, 2.25)) +
+  (main_figure | (
+    seasonal_source_note /
+      published_source_legend
+  )) +
+  plot_layout(widths = c(3, 1), heights = 1) +
   plot_annotation(
     title = "Clarks Fork Basin stratigraphy and published climate records",
-    subtitle = "Late Paleocene–early Eocene; shared CFB composite meter scale",
+    subtitle = "Late Paleocene-early Eocene; shared CFB composite meter scale",
     caption = provenance_note,
     theme = theme(
       plot.title = element_text(size = 16, face = "bold"),
@@ -461,14 +616,14 @@ save_figure_variants(
   presentation_plot = p_CFB_published_context_slide,
   base_dir = figure_dir,
   stem = "CFB_published_strat_d13C_temperature_context",
-  manuscript_width = 9,
+  manuscript_width = 12,
   manuscript_height = 6,
-  presentation_width = 9,
+  presentation_width = 12,
   presentation_height = 6
 )
 
 message(
-  "Saved 9 x 6 inch CFB introduction figure; ",
+  "Saved 12 x 6 inch CFB introduction figure (9 x 6 main panels); ",
   sum(projection_audit$plotted), " of ", nrow(projection_audit),
   " aggregate temperature estimates fall within the modeled CFB section."
 )

@@ -1047,8 +1047,11 @@ p_CFB_alteration_probability_T_d18O <- ggplot() +
   ) +
   geom_label(
     data = contour_labels,
-    aes(T47_C, d18Ocarb_vsmow, label = contour_label),
-    hjust = -0.04, size = 2.5, color = "grey35",
+    aes(
+      T47_C, d18Ocarb_vsmow,
+      label = paste0("d18Ow = ", d18Owater_vsmow, " per mil")
+    ),
+    hjust = 1.04, size = 2.25, color = "grey35",
     fill = scales::alpha("white", 0.78),
     label.size = 0, label.padding = unit(0.06, "lines")
   ) +
@@ -1145,8 +1148,11 @@ p_BHB_alteration_probability_T_d18O <- ggplot() +
   ) +
   geom_label(
     data = contour_labels,
-    aes(T47_C, d18Ocarb_vsmow, label = contour_label),
-    hjust = -0.04, size = 2.5, color = "grey35",
+    aes(
+      T47_C, d18Ocarb_vsmow,
+      label = paste0("d18Ow = ", d18Owater_vsmow, " per mil")
+    ),
+    hjust = 1.04, size = 2.25, color = "grey35",
     fill = scales::alpha("white", 0.78),
     label.size = 0, label.padding = unit(0.06, "lines")
   ) +
@@ -1179,6 +1185,11 @@ p_BHB_alteration_probability_T_d18O <- ggplot() +
     limits = c(10, 130), breaks = seq(20, 120, by = 20),
     expand = expansion(mult = c(0.01, 0.02))
   ) +
+  scale_y_continuous(
+    breaks = seq(10, 30, by = 5),
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  coord_cartesian(ylim = c(10, 30), clip = "on") +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = expression(delta^18 * O[carbonate] ~ "(per mil VSMOW)"),
@@ -1190,19 +1201,44 @@ p_BHB_alteration_probability_T_d18O <- ggplot() +
     subtitle = paste0(
       "5% at pooled BHB micrite mean (",
       round(BHB_d18Ocarb_reference_mean_vsmow, 2),
-      " per mil); 95% at 20 per mil; lower values extrapolate to 100%"
+      " per mil); 95% at 20 per mil"
     ),
-    caption = paste(
-      "The index uses d18Ocarb only. Qualitative petrographic classes,",
-      "D47-D48 residuals, and temperature plausibility are not included."
+    caption = paste0(
+      "Index uses d18Ocarb only; petrography, D47-D48 residuals, and\n",
+      "temperature plausibility are excluded."
     )
   ) +
   theme_classic(base_size = 12) +
-  theme(legend.position = "right", legend.box = "vertical")
+  guides(
+    shape = guide_legend(
+      order = 1, nrow = 1,
+      override.aes = list(fill = "white", size = 3)
+    ),
+    fill = guide_colorbar(
+      order = 2,
+      direction = "horizontal",
+      barwidth = grid::unit(7.5, "cm"),
+      barheight = grid::unit(0.35, "cm"),
+      title.position = "top"
+    )
+  ) +
+  theme(
+    plot.title = element_text(size = 11),
+    plot.subtitle = element_text(size = 8.5),
+    plot.caption = element_text(size = 7.5, lineheight = 1.05),
+    legend.position = "bottom",
+    legend.box = "vertical",
+    legend.justification = "center",
+    legend.margin = margin(1, 1, 1, 1),
+    plot.margin = margin(5, 8, 5, 5)
+  )
 
 save_figure_variants(
   p_BHB_alteration_probability_T_d18O,
   here("figures", "diagenetic_screening"),
   "BHB_alteration_probability_T47_d18O",
-  9, 7.5, presentation_width = 12
+  manuscript_width = 6,
+  manuscript_height = 6,
+  presentation_width = 6,
+  presentation_height = 6
 )

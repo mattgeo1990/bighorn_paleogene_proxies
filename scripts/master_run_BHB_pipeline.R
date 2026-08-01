@@ -36,7 +36,8 @@ scripts <- c(
   "12_plot_CFB_longterm_temperature_global_context.R",
   "13_plot_BHB_all_temperature_age_slide.R",
   "15_plot_BHB_Tornillo_PhanDA_latitudinal_gradient.R",
-  "16_plot_Harper_Tornillo_BHB_temperature_synthesis.R"
+  "16_plot_Harper_Tornillo_BHB_temperature_synthesis.R",
+  "17_plot_Barnet_Tornillo_BHB_vertical_synthesis.R"
 )
 
 for (script in scripts) {

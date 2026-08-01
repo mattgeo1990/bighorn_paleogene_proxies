@@ -316,20 +316,9 @@ CFB_T47_observations <- read_csv(
       str_detect(source, regex("U-M|IPL", ignore_case = TRUE)),
       "This study", "Published"
     ),
-    plot_group = case_when(
-      carbonate_type == "Spar" ~ "Spar",
-      carbonate_type == "Altered carbonate" ~ "Altered carbonate",
-      dataset_status == "This study" ~ "U-M micrite",
-      TRUE ~ "Published micrite"
-    ),
-    plot_group = factor(
-      plot_group,
-      levels = c(
-        "U-M micrite",
-        "Published micrite",
-        "Altered carbonate",
-        "Spar"
-      )
+    carbonate_type = factor(
+      carbonate_type,
+      levels = c("Pedogenic micrite", "Altered carbonate", "Spar")
     ),
     p_altered_preservation = if_else(
       is.finite(p_altered_preservation),
@@ -347,31 +336,35 @@ CFB_T47_observations <- read_csv(
     )
   )
 
-# The burial/diagenesis panel retains the full observation inventory, but the
-# overlaid temperature trend is fit only to observations that pass the
-# deterministic production-model screen.
-CFB_T47_screened_for_linear_fit <- read_csv(
-  here("data", "processed", "CFB_temperature_observations.csv"),
-  show_col_types = FALSE
-) %>%
+# Fit the burial-panel trend to every primary pedogenic-micrite observation,
+# including measurements omitted by the deterministic production-model screen.
+# Missing SE values receive the median reported primary-micrite SE so that no
+# primary observation is silently dropped from the weighted fit.
+CFB_T47_primary_for_linear_fit <- CFB_T47_observations %>%
   filter(
-    used_in_primary_temperature_model,
-    is.finite(T_C),
-    is.finite(T_se_C),
+    carbonate_type == "Pedogenic micrite",
+    is.finite(T47_C),
     is.finite(strat_height_m)
   ) %>%
-  mutate(fit_weight = 1 / pmax(T_se_C, 0.5)^2)
+  mutate(
+    fit_se_C = if_else(
+      is.finite(T47_se_C),
+      pmax(T47_se_C, 0.5),
+      median(T47_se_C[is.finite(T47_se_C)], na.rm = TRUE)
+    ),
+    fit_weight = 1 / fit_se_C^2
+  )
 
 CFB_T47_strat_linear_fit <- lm(
-  T_C ~ strat_height_m,
-  data = CFB_T47_screened_for_linear_fit,
+  T47_C ~ strat_height_m,
+  data = CFB_T47_primary_for_linear_fit,
   weights = fit_weight
 )
 
 CFB_T47_strat_linear_grid <- tibble(
   strat_height_m = seq(
-    min(CFB_T47_screened_for_linear_fit$strat_height_m),
-    max(CFB_T47_screened_for_linear_fit$strat_height_m),
+    min(CFB_T47_primary_for_linear_fit$strat_height_m),
+    max(CFB_T47_primary_for_linear_fit$strat_height_m),
     length.out = 300
   )
 )
@@ -459,7 +452,7 @@ p_CFB_T47_burial_comparison <- ggplot() +
     aes(
       T47_C, strat_height_m,
       color = dataset_status, fill = p_altered_preservation,
-      shape = plot_group
+      shape = carbonate_type
     ),
     size = 2.65, stroke = 0.85
   ) +
@@ -489,9 +482,8 @@ p_CFB_T47_burial_comparison <- ggplot() +
   ) +
   scale_shape_manual(
     values = c(
-      "U-M micrite" = 21,
-      "Published micrite" = 22,
-      "Altered carbonate" = 23,
+      "Pedogenic micrite" = 21,
+      "Altered carbonate" = 22,
       "Spar" = 24
     )
   ) +
@@ -510,89 +502,31 @@ p_CFB_T47_burial_comparison <- ggplot() +
     y = "CFB stratigraphic height above K-Pg (m)",
     shape = "CFB clumped material",
     title = "B  CFB T47 and maximum-burial temperature",
-    subtitle = paste(
-      "Points = carbonate formation T; orange = McCulloch Peak;",
-      "grey = Roberts BHB range; blue = screened linear T47 fit;",
-      "fill = d18O-only alteration index"
+    subtitle = paste0(
+      "Points = carbonate formation T; orange = McCulloch Peak;\n",
+      "grey = Roberts BHB range; blue = all-primary fit; fill = alteration index"
     )
   ) +
   guides(
     color = guide_legend(order = 1),
     shape = guide_legend(
-      order = 2, nrow = 2, byrow = TRUE,
+      order = 2, nrow = 1, byrow = TRUE,
       override.aes = list(fill = "white", color = "black")
     ),
     fill = guide_colorbar(order = 3, barwidth = grid::unit(4.2, "cm"))
   ) +
   theme_classic(base_size = 11) +
   theme(
-    legend.position = "top",
+    plot.title = element_text(size = 11),
+    plot.subtitle = element_text(size = 8.5, lineheight = 1.05),
+    legend.position = "bottom",
     legend.box = "vertical",
-    legend.justification = "left"
+    legend.justification = "center",
+    legend.margin = margin(1, 1, 1, 1),
+    plot.margin = margin(5, 5, 5, 5)
   )
 
-p_CFB_T47_burial_panel <- p_CFB_T47_burial_comparison +
-  labs(
-    title = NULL,
-    subtitle = NULL
-  ) +
-  theme(
-    legend.position = "none",
-    aspect.ratio = 1,
-    plot.margin = margin(5, 5, 5, 28)
-  )
-
-CFB_T47_burial_legend <- cowplot::get_legend(
-  p_CFB_T47_burial_comparison +
-    guides(
-      color = guide_legend(order = 1, nrow = 1),
-      shape = guide_legend(
-        order = 2, nrow = 2, byrow = TRUE,
-        override.aes = list(fill = "white", color = "black")
-      ),
-      fill = guide_colorbar(
-        order = 3,
-        barwidth = grid::unit(4.2, "cm"),
-        title.position = "top"
-      )
-    ) +
-    theme(
-      legend.position = "right",
-      legend.justification = c(0, 0),
-      legend.box = "vertical"
-    )
-)
-
-p_CFB_T47_burial_legend_title <- patchwork::wrap_elements(
-  full = grid::textGrob(
-    "CFB T47 and maximum-burial temperature",
-    x = grid::unit(0.02, "npc"), just = "left", hjust = 0,
-    gp = grid::gpar(fontsize = 13, fontface = "bold")
-  )
-)
-
-p_CFB_T47_burial_legend_subtitle <- patchwork::wrap_elements(
-  full = grid::textGrob(
-    "Orange burial model; grey range; blue T47 fit",
-    x = grid::unit(0.02, "npc"), just = "left", hjust = 0,
-    gp = grid::gpar(fontsize = 10)
-  )
-)
-
-p_CFB_T47_burial_legend_block <-
-  patchwork::wrap_elements(full = CFB_T47_burial_legend)
-
-p_CFB_T47_burial_right <-
-  plot_spacer() /
-  p_CFB_T47_burial_legend_title /
-  p_CFB_T47_burial_legend_subtitle /
-  p_CFB_T47_burial_legend_block +
-  plot_layout(heights = c(0.34, 0.07, 0.06, 0.53))
-
-p_CFB_T47_Roberts_geothermal_comparison <-
-  (p_CFB_T47_burial_panel |
-     p_CFB_T47_burial_right) +
-  plot_layout(widths = c(1, 1))
+p_CFB_T47_Roberts_geothermal_comparison <- p_CFB_T47_burial_comparison
 
 #-- 7.) Export Data and Figures --------------------------------------------
 write_csv(
@@ -645,9 +579,9 @@ save_figure_variants(
 save_figure_variants(
   p_CFB_T47_Roberts_geothermal_comparison, figure_dir,
   "CFB_T47_vs_Roberts2008_geothermal_gradients",
-  manuscript_width = 11,
-  manuscript_height = 6.5,
-  presentation_width = 12,
+  manuscript_width = 6,
+  manuscript_height = 6,
+  presentation_width = 6,
   presentation_height = 6
 )
 

@@ -85,12 +85,16 @@ CFB_soilwater <- read_csv(
 )
 
 CFB_temperature_obs <- CFB_temperature_obs %>%
-  filter(used_in_primary_temperature_model) %>%
+  filter(is.finite(T_C), is.finite(strat_height_m)) %>%
   mutate(
-    source = recode(source, IPL = "U-M", Snell = "Caltech"),
+    source = case_when(
+      source %in% c("IPL", "U-M") ~ "U-M",
+      source %in% c("Snell", "Caltech") ~ "Caltech",
+      TRUE ~ source
+    ),
     study_status = if_else(source == "U-M", "This study", "Published data"),
     study_status = factor(
-      study_status, levels = c("This study", "Published data")
+      study_status, levels = c("Published data", "This study")
     )
   )
 
@@ -148,19 +152,6 @@ d13C_observations <- bind_rows(
 #-- 4.) Temperature in Stratigraphic Space ---------------------------------
 p_temperature_strat <- ggplot() +
   add_petm_strat() +
-  geom_ribbon(
-    data = CFB_temperature %>% filter(!is.na(T_model_C)),
-    aes(
-      xmin = T_model_lower95_C, xmax = T_model_upper95_C,
-      y = strat_height_m
-    ),
-    fill = "#B2182B", alpha = 0.18
-  ) +
-  geom_path(
-    data = CFB_temperature %>% filter(!is.na(T_model_C)),
-    aes(T_model_C, strat_height_m),
-    color = "#B2182B", linewidth = 1
-  ) +
   geom_errorbarh(
     data = CFB_temperature_obs,
     aes(
@@ -173,38 +164,32 @@ p_temperature_strat <- ggplot() +
     data = CFB_temperature_obs,
     aes(
       T_C, strat_height_m, color = study_status,
-      fill = p_altered_preservation, shape = study_status
+      fill = study_status
     ),
-    size = 2.4, stroke = 0.8
+    shape = 21, size = 2.8, stroke = 0.9
   ) +
   scale_color_manual(
-    values = c("This study" = "#B2182B", "Published data" = "grey55"),
+    values = c("Published data" = "grey40", "This study" = "#B2182B"),
     drop = FALSE
   ) +
-  scale_fill_gradientn(
-    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
-    limits = c(0, 1), breaks = c(0, 0.5, 1),
-    labels = scales::label_percent(accuracy = 1),
-    name = "d18O trajectory\nP(altered)"
+  scale_fill_manual(
+    values = c("Published data" = "white", "This study" = "#B2182B"),
+    drop = FALSE
   ) +
-  scale_shape_manual(values = t47_status_shapes, drop = FALSE) +
   shared_strat_scale +
   labs(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = "CFB stratigraphic height (m)",
-    color = NULL, shape = "Dataset",
-    title = "A  Temperature"
+    color = NULL, fill = "Dataset",
+    title = expression(Delta[47] * " temperature: published vs. this study")
   ) +
   guides(
     color = "none",
-    shape = guide_legend(
-      order = 1, override.aes = list(fill = "white", color = "black")
-    ),
-    fill = guide_colorbar(
-      order = 2,
-      barwidth = grid::unit(2.0, "cm"),
-      barheight = grid::unit(0.35, "cm"),
-      title.position = "top"
+    fill = guide_legend(
+      override.aes = list(
+        shape = 21, size = 3,
+        color = c("grey40", "#B2182B")
+      )
     )
   ) +
   theme_strat +
@@ -320,10 +305,10 @@ p_CFB_strat_full <-
   plot_layout(widths = c(0.88, 1.12, 1, 1, 1), guides = "collect") &
   theme(legend.position = "top")
 
-petm_zoom_limits <- c(1450, 1600)
+petm_zoom_limits <- c(1400, 1600)
 p_CFB_chronostrat_petm <- build_CFB_chronostrat_strat_panel(
   petm_zoom_limits,
-  breaks = seq(1450, 1600, by = 25)
+  breaks = seq(1400, 1600, by = 25)
 )
 p_CFB_strat_petm <-
   p_CFB_chronostrat_petm +
@@ -335,6 +320,24 @@ p_CFB_strat_petm <-
   plot_layout(widths = c(0.88, 1.12, 1, 1, 1), guides = "collect") &
   theme(legend.position = "top")
 
+# Standalone PETM temperature comparison. Keep only the CFB meter scale and
+# the red PETM interval banner; omit the auxiliary stratigraphic columns.
+p_temperature_strat_petm <- p_temperature_strat +
+  coord_cartesian(ylim = petm_zoom_limits) +
+  scale_y_continuous(
+    limits = petm_zoom_limits,
+    breaks = seq(petm_zoom_limits[1], petm_zoom_limits[2], by = 25),
+    minor_breaks = NULL,
+    expand = expansion(mult = c(0.01, 0.02))
+  ) +
+  labs(
+    y = "CFB stratigraphic height (m)",
+    title = expression(
+      "PETM interval " * Delta[47] *
+        " temperature: published vs. this study"
+    )
+  )
+
 #-- 8.) Export Figures ------------------------------------------------------
 with_chronostrat <- function(plot, framework = p_CFB_chronostrat_full) {
   framework + plot + plot_layout(widths = c(0.88, 2.1))
@@ -342,7 +345,11 @@ with_chronostrat <- function(plot, framework = p_CFB_chronostrat_full) {
 
 save_plot_pair(
   with_chronostrat(p_temperature_strat),
-  "CFB_temperature_strat", 7.4, 7.5, presentation_width = 6
+  "CFB_temperature_strat", 6, 6, presentation_width = 6
+)
+save_plot_pair(
+  p_temperature_strat_petm,
+  "CFB_temperature_strat_PETM_zoom", 3.95, 6, presentation_width = 3.95
 )
 save_plot_pair(
   with_chronostrat(p_d13C_strat),
