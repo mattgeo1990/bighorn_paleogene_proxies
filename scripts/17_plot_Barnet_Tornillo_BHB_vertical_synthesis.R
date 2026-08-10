@@ -38,11 +38,11 @@ add_petm <- function(alpha = 0.075) {
   )
 }
 
-theme_panel <- theme_classic(base_size = 12) +
+theme_panel <- theme_classic(base_size = 18) +
   theme(
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 10.5, color = "black"),
-    plot.title = element_text(size = 13, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18, color = "black"),
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.margin = margin(2, 5, 2, 5),
     legend.position = "none"
   )
@@ -177,16 +177,16 @@ p_age_epoch <- ggplot(epochs) +
   ) +
   geom_text(
     aes(x = 0.5, y = (older_ma + younger_ma) / 2, label = epoch),
-    angle = 90, size = 14 / ggplot2::.pt
+    angle = 90, size = 18 / ggplot2::.pt
   ) +
   scale_fill_identity() +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
   age_scale_left +
   labs(x = NULL, y = "Age (Ma)") +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(
-    axis.title.y = element_text(size = 14),
-    axis.text.y = element_text(size = 10.5, color = "black"),
+    axis.title.y = element_text(size = 18),
+    axis.text.y = element_text(size = 18, color = "black"),
     axis.text.x = element_blank(), axis.ticks.x = element_blank(),
     axis.line.x = element_blank(),
     plot.margin = margin(2, 1, 2, 5)
@@ -202,7 +202,7 @@ p_marine <- ggplot(
   scale_color_manual(values = marine_colors) +
   scale_linetype_manual(values = marine_linetypes) +
   scale_x_reverse(
-    limits = c(1.25, -1.55), breaks = seq(1, -1.5, by = -0.5),
+    limits = c(1.25, -1.55), breaks = c(1, 0, -1),
     name = expression(delta^18 * O[benthic] ~ "(per mil VPDB)"),
     sec.axis = sec_axis(
       transform = ~ barnet_intercept + barnet_slope * ., 
@@ -215,8 +215,8 @@ p_marine <- ggplot(
   theme_panel +
   theme(
     axis.text.y = element_blank(), axis.ticks.y = element_blank(),
-    axis.title.x.top = element_text(size = 14),
-    axis.text.x.top = element_text(size = 10.5)
+    axis.title.x.top = element_text(size = 18),
+    axis.text.x.top = element_text(size = 18)
   )
 
 p_tornillo <- ggplot() +
@@ -354,7 +354,7 @@ p_bhb <- ggplot() +
 
 #-- Legends ---------------------------------------------------------------
 legend_proxy <- tibble(
-  x = 0.03, y = c(0.55, 0.30, 0.05),
+  x = 0.03, y = c(0.62, 0.36, 0.10),
   label = c(
     "T47 soil carbonate", "Vertebrate phosphate d18O",
     "Leaf-Margin Analysis"
@@ -364,54 +364,58 @@ legend_proxy <- tibble(
 
 p_legend <- ggplot() +
   geom_segment(
-    data = tibble(x = c(0.03, 0.30), xend = c(0.12, 0.39), y = 0.87),
+    data = tibble(x = c(0.03, 0.18), xend = c(0.09, 0.24), y = 0.92),
     aes(x, y, xend = xend, yend = y),
     color = c(marine_colors[["Atlantic"]], marine_colors[["Pacific"]]),
     linetype = c("solid", "22"), linewidth = 0.8
   ) +
-  annotate("text", x = c(0.13, 0.40), y = 0.87,
-           label = c("Atlantic", "Pacific"), hjust = 0, size = 3.6) +
+  annotate("text", x = c(0.10, 0.25), y = 0.92,
+           label = c("Atlantic", "Pacific"), hjust = 0,
+           size = 18 / ggplot2::.pt) +
   geom_point(
     data = legend_proxy, aes(x, y, shape = shape),
     size = 3.2, fill = "white", color = "black", stroke = 0.8
   ) +
   geom_text(
     data = legend_proxy, aes(x + 0.035, y, label = label),
-    hjust = 0, size = 2.9
+    hjust = 0, size = 18 / ggplot2::.pt
   ) +
   annotate(
-    "text", x = 0.32, y = 0.30, hjust = 0,
+    "text", x = 0.35, y = 0.36, hjust = 0,
     label = "Tornillo T47 = open circles\nBHB T47 fill = alteration probability",
-    size = 2.9, lineheight = 1.05
+    size = 18 / ggplot2::.pt, lineheight = 1.05
   ) +
   geom_tile(
     data = tibble(
-      x = seq(0.68, 0.96, length.out = 101), y = 0.25,
+      x = seq(0.68, 0.96, length.out = 101), y = 0.21,
       probability = seq(0, 1, length.out = 101)
     ),
     aes(x, y, fill = probability), width = 0.003, height = 0.16
   ) +
   annotate(
-    "text", x = 0.68, y = 0.46,
-    label = "BHB T47 alteration probability", hjust = 0, size = 3.2
+    "text", x = 0.68, y = 0.43,
+    label = "BHB T47 alteration probability", hjust = 0,
+    size = 18 / ggplot2::.pt
   ) +
   annotate(
-    "text", x = c(0.68, 0.82, 0.96), y = 0.06,
-    label = c("0%", "50%", "100%"), size = 2.9
+    "text", x = c(0.68, 0.82, 0.96), y = 0.03,
+    label = c("0%", "50%", "100%"), size = 18 / ggplot2::.pt
   ) +
   annotate(
-    "text", x = 0.68, y = 0.88,
-    label = "BHB seasonal synthesis", hjust = 0, size = 3.2
+    "text", x = 0.68, y = 0.92,
+    label = "BHB seasonal synthesis", hjust = 0,
+    size = 18 / ggplot2::.pt
   ) +
   annotate(
     "rect",
     xmin = c(0.68, 0.78, 0.88), xmax = c(0.72, 0.82, 0.92),
-    ymin = 0.64, ymax = 0.78,
+    ymin = 0.66, ymax = 0.80,
     fill = unname(seasonal_colors), alpha = 0.30
   ) +
   annotate(
-    "text", x = c(0.73, 0.83, 0.93), y = 0.71,
-    label = c("CMMT", "MAAT", "WMMT"), hjust = 0, size = 2.75
+    "text", x = c(0.73, 0.83, 0.93), y = 0.73,
+    label = c("CMMT", "MAAT", "WMMT"), hjust = 0,
+    size = 18 / ggplot2::.pt
   ) +
   scale_shape_manual(values = c("T47" = 21, "Phosphate" = 23, "LMA" = 22)) +
   scale_fill_gradientn(colors = alteration_colors, limits = c(0, 1)) +
@@ -423,7 +427,7 @@ main_panels <- p_age_epoch + p_marine + p_tornillo + p_bhb +
 
 final_plot <- main_panels / p_legend +
   plot_layout(
-    heights = c(4.35, 0.85)
+    heights = c(4.35, 1.70)
   ) +
   plot_annotation(
     title = "Marine and continental temperature records, 59-52.5 Ma",
@@ -434,10 +438,10 @@ final_plot <- main_panels / p_legend +
       round(abs(barnet_slope), 2), " x d18O). Terrestrial T47 age bars show an ",
       "assumed +/-0.2 Myr plotting uncertainty; formal age uncertainty is not propagated. ",
       "Pink band marks the PETM."
-    ), width = 210),
+    ), width = 145),
     theme = theme(
-      plot.title = element_text(size = 16, face = "bold"),
-      plot.caption = element_text(size = 7.5, hjust = 0),
+      plot.title = element_text(size = 18, face = "bold"),
+      plot.caption = element_text(size = 18, hjust = 0),
       plot.margin = margin(4, 7, 4, 7)
     )
   )
@@ -448,13 +452,13 @@ save_figure_variants(
   base_dir = figure_dir,
   stem = "Barnet_Tornillo_BHB_vertical_temperature_synthesis_59_52p5Ma",
   manuscript_width = 12,
-  manuscript_height = 6,
+  manuscript_height = 8,
   presentation_width = 12,
-  presentation_height = 6
+  presentation_height = 8
 )
 
 message(
-  "Saved 12 x 6 synthesis; Barnet conversion slope = ",
+  "Saved 12 x 8 synthesis with 18-point annotation space; Barnet conversion slope = ",
   round(barnet_slope, 4), " C per mil; R2 = ",
   round(summary(barnet_conversion)$r.squared, 5), "."
 )

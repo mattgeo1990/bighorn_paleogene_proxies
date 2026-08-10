@@ -56,14 +56,14 @@ shared_age_scale <- scale_y_reverse(
   expand = expansion(mult = c(0.008, 0.012))
 )
 
-theme_panel <- theme_classic(base_size = 11) +
+theme_panel <- theme_classic(base_size = 18) +
   theme(
-    plot.title = element_text(face = "bold", size = 11),
-    plot.subtitle = element_text(size = 8.5),
-    axis.title = element_text(size = 10.5),
-    axis.text = element_text(size = 8.5, color = "black"),
-    legend.title = element_text(size = 9, face = "bold"),
-    legend.text = element_text(size = 8.5),
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(size = 18),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18, color = "black"),
+    legend.title = element_text(size = 18, face = "bold"),
+    legend.text = element_text(size = 18),
     plot.margin = margin(4, 5, 4, 4)
   )
 
@@ -328,7 +328,7 @@ p_Harper <- ggplot(Harper_SST) +
   ) +
   labs(
     tag = "A", title = "Pacific marine SST",
-    subtitle = "Harper et al.; mean and 95% interval",
+    subtitle = NULL,
     x = expression("SST (" * degree * "C)"), y = "Age (Ma)"
   ) +
   theme_panel
@@ -427,7 +427,7 @@ p_Tornillo <- ggplot() +
   ) +
   labs(
     tag = "B", title = "Tornillo Basin",
-    subtitle = "Screened micrite D47 model; 80% and 95% intervals",
+    subtitle = NULL,
     x = "T47 temperature (degrees C)",
     y = NULL
   ) +
@@ -515,7 +515,7 @@ p_BHB <- ggplot() +
   geom_text(
     data = seasonal,
     aes(x = mean_c, y = 52.62, label = metric, color = metric),
-    size = 2.8, fontface = "bold", show.legend = FALSE
+    size = 18 / ggplot2::.pt, fontface = "bold", show.legend = FALSE
   ) +
   scale_shape_manual(
     values = BHB_record_shapes,
@@ -535,7 +535,7 @@ p_BHB <- ggplot() +
   ) +
   labs(
     tag = "C", title = "Bighorn Basin synthesis",
-    subtitle = "Screened D47, other proxies, and seasonal ranges",
+    subtitle = NULL,
     x = expression("Temperature (" * degree * "C)"), y = NULL
   ) +
   guides(
@@ -567,12 +567,12 @@ p_regional_temperature_synthesis <-
         "50%, 80%, and 95% ranges. These archives record different seasons",
         "and environmental reservoirs."
       ),
-      width = 190
+      width = 145
     ),
     theme = theme(
-      plot.title = element_text(size = 15, face = "bold"),
-      plot.caption = element_text(size = 7.3, hjust = 0),
-      plot.tag = element_text(size = 12, face = "bold"),
+      plot.title = element_text(size = 18, face = "bold"),
+      plot.caption = element_text(size = 18, hjust = 0),
+      plot.tag = element_text(size = 18, face = "bold"),
       plot.margin = margin(5, 7, 4, 7)
     )
   ) &
@@ -584,9 +584,9 @@ save_figure_variants(
   base_dir = figure_dir,
   stem = "Harper_Tornillo_BHB_temperature_age_synthesis",
   manuscript_width = 10,
-  manuscript_height = 5.8,
+  manuscript_height = 8,
   presentation_width = 12,
-  presentation_height = 6
+  presentation_height = 8
 )
 
 save_figure_variants(

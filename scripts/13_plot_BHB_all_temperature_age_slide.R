@@ -31,12 +31,12 @@ age_scale <- scale_y_reverse(
   expand = expansion(mult = c(0.008, 0.012))
 )
 
-theme_slide <- theme_classic(base_size = 12) +
+theme_slide <- theme_classic(base_size = 18) +
   theme(
-    axis.title = element_text(size = 13),
-    axis.text = element_text(size = 10.5, color = "black"),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9.5),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18, color = "black"),
+    legend.title = element_text(size = 18, face = "bold"),
+    legend.text = element_text(size = 18),
     legend.key.height = unit(0.38, "cm"),
     legend.spacing.x = unit(0.12, "cm"),
     plot.margin = margin(5, 6, 5, 5)
@@ -234,12 +234,12 @@ meter_to_age <- function(x) {
 #  age_scale +
 #  labs(x = NULL, y = NULL) +
 #  coord_cartesian(clip = "off") +
-#  theme_classic(base_size = 10) +
+#  theme_classic(base_size = 18) +
 #  theme(
 #    axis.text.y = element_blank(),
 #    axis.ticks.y = element_blank(),
 #    axis.line = element_blank(),
-#    axis.text.x.top = element_text(size = 9, face = "bold"),
+#    axis.text.x.top = element_text(size = 18, face = "bold"),
 #    axis.ticks.x = element_blank(),
 #    plot.margin = margin(5, 1, 5, 2)
 # )
@@ -356,9 +356,9 @@ p_final <- p_temperature +
       "pink band marks the PETM."
     ),
     theme = theme(
-      plot.title = element_text(size = 16, face = "bold"),
+      plot.title = element_text(size = 18, face = "bold"),
       plot.caption = element_text(
-        size = 7.5, hjust = 0, lineheight = 1.05, color = "grey25"
+        size = 18, hjust = 0, lineheight = 1.05, color = "grey25"
       ),
       plot.margin = margin(5, 7, 5, 7)
     )

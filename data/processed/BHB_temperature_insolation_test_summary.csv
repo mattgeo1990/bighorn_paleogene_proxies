@@ -1,2 +1,2 @@
 test,observed,null_mean,null_sd,two_sided_p,caution
-zero-lag Pearson correlation against circular-shift null,-0.0016564005919719395,2.6059692804312334e-5,0.0030397607879054226,0.606,Exploratory only: astronomical and section age-model phase uncertainty is not fully propagated; exact precession phase becomes less secure toward the older part of the record.
+zero-lag Pearson correlation against circular-shift null,-0.0016439897836703578,2.0534504040561086e-5,0.0029471124385087376,0.6284,Exploratory only: astronomical and section age-model phase uncertainty is not fully propagated; exact precession phase becomes less secure toward the older part of the record.

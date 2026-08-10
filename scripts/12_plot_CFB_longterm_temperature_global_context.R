@@ -49,15 +49,15 @@ age_x_scale <- scale_x_reverse(
   expand = expansion(mult = c(0.005, 0.01))
 )
 
-theme_comparison <- theme_classic(base_size = 12) +
+theme_comparison <- theme_classic(base_size = 18) +
   theme(
-    axis.title = element_text(size = 12),
-    axis.text = element_text(size = 10, color = "black"),
-    plot.title = element_text(face = "bold", size = 13),
-    plot.subtitle = element_text(size = 9.5),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18, color = "black"),
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(size = 18),
     legend.position = "top",
     legend.title = element_blank(),
-    legend.text = element_text(size = 9),
+    legend.text = element_text(size = 18),
     plot.margin = margin(4, 6, 4, 6)
   )
 
@@ -392,9 +392,9 @@ p_CFB_global_longterm_temperature <-
       "PANGAEA 10.1594/PANGAEA.884585."
     ),
     theme = theme(
-      plot.title = element_text(face = "bold", size = 15),
-      plot.subtitle = element_text(size = 10),
-      plot.caption = element_text(size = 7.5, hjust = 0),
+      plot.title = element_text(face = "bold", size = 18),
+      plot.subtitle = element_text(size = 18),
+      plot.caption = element_text(size = 18, hjust = 0),
       plot.margin = margin(8, 7, 7, 7)
     )
   )

@@ -110,13 +110,90 @@ names(IPL_D17O_data)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # IPL clumped isotope (Δ47) dataset
 #
-# Cleaned, corrected, and simplified IPL Δ47 spreadsheet prepared by
-# Ben Passey for Bighorn Basin Paleogene carbonate samples.
+# IPL <4800 retains Ben Passey's legacy corrected summary. IPL >=4800 is
+# rebuilt from the July 2026 run-level snapshot produced by the independent
+# IPL_clumped_corrections pipeline. That workflow reproduces Ben's manual
+# procedure, filters extreme standard residuals, and applies the correction to
+# every included analysis through July 2026.
 
-IPL_D47_data <- read.csv(
-  here("data", "raw", "IPL_D47_BHB_Pg_Summary_June2026.csv")
+IPL_D47_legacy <- read_csv(
+  here("data", "raw", "IPL_D47_BHB_Pg_Summary_June2026.csv"),
+  show_col_types = FALSE
+)
+
+IPL_D47_corrected_runs <- read_csv(
+  here(
+    "data", "raw",
+    "IPL_D47_corrected_run_level_through_July2026.csv"
+  ),
+  show_col_types = FALSE
+)
+
+# Normalize the registry header because the source CSV may retain a UTF-8 BOM.
+names(IPL_sample_list)[1] <- "MLA_horizon_id"
+
+CFB_D47_horizon_lookup <- IPL_sample_list %>%
+  select(MLA_horizon_id, strat_height_m) %>%
+  distinct()
+
+IPL_D47_corrected_CFB <- IPL_D47_corrected_runs %>%
+  filter(
+    IPLnum >= 4800,
+    Type.1 == "Sample",
+    included,
+    correction_qc_include,
+    !is.na(D47_corrected),
+    !is.na(T47_C)
+  ) %>%
+  mutate(
+    MLA_sample_id = Sample_Name,
+    MLA_horizon_id = Sample_Name %>%
+      str_remove(regex("-(SPAR|CLKY|DRK|LTE)$", ignore_case = TRUE)) %>%
+      str_replace(regex("^PK95-SC-80-N-1$", ignore_case = TRUE),
+                  "PK95-SC-80")
+  ) %>%
+  inner_join(CFB_D47_horizon_lookup, by = "MLA_horizon_id") %>%
+  left_join(
+    IPL_D47_legacy %>%
+      select(
+        IPLnum,
+        legacy_MLA_sample_id = MLA_sample_id,
+        legacy_MLA_horizon_id = MLA_horizon_id,
+        legacy_strat_height_m = strat_height_m,
+        IPL_NuDog_d13Ccarb_VPDB,
+        IPL_NuDog_d18Ocarb_VPDB,
+        IPL_NuDog_d18Ocarb_VSMOW
+      ),
+    by = "IPLnum"
+  ) %>%
+  transmute(
+    MLA_sample_id = coalesce(legacy_MLA_sample_id, MLA_sample_id),
+    MLA_horizon_id = coalesce(legacy_MLA_horizon_id, MLA_horizon_id),
+    Session = "Ben protocol (IPL >=4800)",
+    strat_height_m = coalesce(legacy_strat_height_m, strat_height_m),
+    IPL_NuDog_d13Ccarb_VPDB,
+    IPL_NuDog_d18Ocarb_VPDB,
+    IPL_NuDog_d18Ocarb_VSMOW,
+    `D47 CDES` = D47_transferred,
+    `D47 CDES Carb Corr` = D47_corrected,
+    `T(D47) Petersen` = T47_C,
+    T47_preferred = T47_C,
+    final_corrections = TRUE,
+    IPLnum,
+    Sample_Name,
+    correction_source = correction_method
+  )
+
+IPL_D47_data <- bind_rows(
+  IPL_D47_legacy %>% filter(IPLnum < 4800),
+  IPL_D47_corrected_CFB
 ) %>%
-  mutate(section_id = "CFB")
+  mutate(section_id = "CFB") %>%
+  arrange(IPLnum)
+
+# Preserve the syntactic column names historically produced by read.csv();
+# retained downstream QC/export blocks refer to D47.CDES-style names.
+names(IPL_D47_data) <- make.names(names(IPL_D47_data))
 
 names(IPL_D47_data)
 table(IPL_D47_data$MLA_horizon_id)
@@ -471,16 +548,16 @@ ggplot(
 # Count analyses per Sample.ID to identify special qualifiers in sample names (e.g.,"SPAR")
 table(IPL_D47_data$MLA_sample_id)
 
-# Extract analyses of sparitic calcite 
-# These samples contain "SPAR" in the Sample.ID and are
-# treated separately from the primary paleosol dataset.
+# Extract analyses of visibly non-primary carbonate.
+# SPAR, chalky (clky), dark (drk), and light (lte) subsamples are targeted
+# textural phases and are kept out of the primary paleosol dataset.
 IPL_D47_SPAR_data <- IPL_D47_data %>%
-  filter(grepl("SPAR", MLA_sample_id))
+  filter(grepl("SPAR|-(clky|drk|lte)$", MLA_sample_id, ignore.case = TRUE))
 
 # Extract analyses of micritic or microsparitic calcite
-# Any sample containing "SPAR" is excluded.
+# Explicitly labeled non-primary textural subsamples are excluded.
 IPL_D47_primary_data <- IPL_D47_data %>%
-  filter(!grepl("SPAR", MLA_sample_id))
+  filter(!grepl("SPAR|-(clky|drk|lte)$", MLA_sample_id, ignore.case = TRUE))
 
 # Plot replicate-level Δ47-derived temperatures versus stratigraphic position
 #
@@ -646,12 +723,18 @@ paired %>%
 # Paired t-test
 #
 # Tests whether the mean strat-level temperature difference between Session 1
-# and Session 2 is significantly different from zero.
-t.test(
-  paired$`Session 1`,
-  paired$`Session 2`,
-  paired = TRUE
-)
+# and Session 2 is significantly different from zero. The production dataset
+# now uses one harmonized Ben-protocol correction for IPL >=4800, so this
+# legacy diagnostic is skipped when fewer than two historical pairs remain.
+if (nrow(paired) >= 2) {
+  print(t.test(
+    paired$`Session 1`,
+    paired$`Session 2`,
+    paired = TRUE
+  ))
+} else {
+  message("Skipping legacy Session 1/Session 2 t-test: fewer than two pairs.")
+}
 
 
 # 1:1 plot of Session 1 versus Session 2 temperatures
@@ -1355,10 +1438,10 @@ IPLD47_primary_summary <- summarize_IPLD47(
   sample_type = "primary"
 )
 
-# Spar summary
+# Non-primary IPL carbonate summary (spar and other targeted textures)
 IPLD47_spar_summary <- summarize_IPLD47(
   IPL_D47_SPAR_data,
-  sample_type = "spar"
+  sample_type = "nonprimary"
 )
 
 IPLD47_primary_summary
@@ -1571,8 +1654,12 @@ spar_altered_combined <- bind_rows(
   IPL_D47_SPAR_data %>%
     transmute(
       source = "IPL D47",
-      sample_group = "SPAR",
-      sample_type = "SPAR",
+      sample_group = if_else(
+        grepl("SPAR", MLA_sample_id, ignore.case = TRUE),
+        "SPAR",
+        "Altered carbonate"
+      ),
+      sample_type = sample_group,
       MLA_sample_id,
       MLA_horizon_id,
       section_id,

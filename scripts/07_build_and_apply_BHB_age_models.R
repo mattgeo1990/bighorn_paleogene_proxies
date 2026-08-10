@@ -432,7 +432,7 @@ age_model_diagnostic <- ggplot(
     title = "Section-specific Bighorn Basin age models",
     subtitle = "Points are dated controls; lines use piecewise-linear interpolation/extrapolation"
   ) +
-  theme_classic()
+  theme_classic(base_size = 18)
 
 save_figure_variants(
   age_model_diagnostic, figure_dir, "BHB_section_age_models",

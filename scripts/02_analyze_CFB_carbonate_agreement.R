@@ -363,7 +363,7 @@ if (nrow(D47_pairwise_agreement) > 0) {
       title = "Independent clumped-isotope temperatures from shared horizons",
       subtitle = "Error bars are reported 1 SE; dashed line is 1:1"
     ) +
-    theme_classic(base_size = 12) +
+    theme_classic(base_size = 18) +
     theme(legend.position = "none")
 
   p_D47_interlab_difference <- ggplot(
@@ -388,7 +388,7 @@ if (nrow(D47_pairwise_agreement) > 0) {
       title = "Interlaboratory temperature differences",
       subtitle = "Error bars show the combined independent analytical SE"
     ) +
-    theme_classic(base_size = 12) +
+    theme_classic(base_size = 18) +
     theme(legend.position = "none")
 
   save_figure_variants(

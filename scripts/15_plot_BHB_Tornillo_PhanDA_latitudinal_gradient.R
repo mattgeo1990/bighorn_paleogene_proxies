@@ -302,11 +302,13 @@ p_PhanDA_clumped_comparison <- ggplot() +
   ) +
   annotate(
     "text", x = Tornillo_paleolat_deg_n, y = Inf,
-    label = "Tornillo", vjust = 1.35, size = 3.2, fontface = "bold"
+    label = "Tornillo", vjust = 1.35,
+    size = 18 / ggplot2::.pt, fontface = "bold"
   ) +
   annotate(
     "text", x = BHB_paleolat_deg_n, y = Inf,
-    label = "BHB", vjust = 1.35, size = 3.2, fontface = "bold"
+    label = "BHB", vjust = 1.35,
+    size = 18 / ggplot2::.pt, fontface = "bold"
   ) +
   facet_wrap(~stage_group, nrow = 1) +
   scale_fill_gradient2(
@@ -337,9 +339,12 @@ p_PhanDA_clumped_comparison <- ggplot() +
   coord_cartesian(xlim = c(20, 82), ylim = c(-5, 55)) +
   labs(
     title = "North American continental temperatures in PhanDA context",
-    subtitle = paste(
-      "Stage-resolved published constraints are sparse in the Thanetian and",
-      "substantially more numerous in the Ypresian"
+    subtitle = str_wrap(
+      paste(
+        "Stage-resolved published constraints are sparse in the Thanetian and",
+        "substantially more numerous in the Ypresian"
+      ),
+      width = 95
     ),
     x = "Paleolatitude (\u00b0N)",
     y = "Temperature (\u00b0C)",
@@ -355,28 +360,54 @@ p_PhanDA_clumped_comparison <- ggplot() +
         "latitudes are modern geographic coordinates; other points use published ",
         "paleolatitudes. Formation temperature and MAT are not equivalent targets."
       ),
-      width = 155
+      width = 110
     )
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(
     legend.position = "bottom",
     legend.box = "vertical",
     strip.background = element_blank(),
-    strip.text = element_text(face = "bold", size = 11),
-    plot.title = element_text(face = "bold", size = 13),
-    plot.subtitle = element_text(size = 9.5),
-    plot.caption = element_text(size = 7.5, hjust = 0),
+    strip.text = element_text(face = "bold", size = 18),
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(size = 18),
+    plot.caption = element_text(size = 18, hjust = 0),
     panel.spacing.x = unit(1.1, "lines"),
-    axis.title = element_text(size = 11),
-    axis.text = element_text(size = 9),
-    legend.title = element_text(size = 8.5),
-    legend.text = element_text(size = 8)
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18)
   ) +
   guides(
-    color = guide_legend(order = 1, nrow = 2, byrow = TRUE),
-    shape = guide_legend(order = 1, nrow = 2, byrow = TRUE),
-    fill = guide_colorbar(order = 2, direction = "horizontal", barwidth = 8)
+    color = guide_legend(
+      order = 1, ncol = 2, byrow = TRUE, title.position = "top"
+    ),
+    shape = guide_legend(
+      order = 1, ncol = 2, byrow = TRUE, title.position = "top"
+    ),
+    fill = guide_colorbar(
+      order = 2, direction = "horizontal", title.position = "top",
+      barwidth = unit(4, "in")
+    )
+  )
+
+# Pass an explicit presentation plot so the shared export helper does not
+# replace the talk-sized typography with its smaller generic defaults.
+p_PhanDA_clumped_comparison_presentation <-
+  p_PhanDA_clumped_comparison +
+  labs(title = NULL, subtitle = NULL, caption = NULL) +
+  theme(
+    strip.text = element_text(face = "bold", size = 20),
+    plot.title = element_text(face = "bold", size = 20),
+    plot.subtitle = element_text(size = 16),
+    plot.caption = element_text(size = 12, hjust = 0),
+    axis.title = element_text(size = 20),
+    axis.text = element_text(size = 20, color = "black"),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 16),
+    legend.title.position = "top",
+    legend.justification = "center",
+    legend.key.height = unit(1.15, "lines")
   )
 
 save_figure_variants(
@@ -385,8 +416,9 @@ save_figure_variants(
   stem = "BHB_Tornillo_D47_PhanDA_latitudinal_gradient",
   manuscript_width = 8.2,
   manuscript_height = 5.8,
+  presentation_plot = p_PhanDA_clumped_comparison_presentation,
   presentation_width = 12,
-  presentation_height = 6.8
+  presentation_height = 8
 )
 
 message(

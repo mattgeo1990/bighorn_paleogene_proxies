@@ -43,14 +43,14 @@ add_petm_age <- function(alpha = 0.14) {
   )
 }
 
-theme_age <- theme_classic(base_size = 11) +
+theme_age <- theme_classic(base_size = 18) +
   theme(
     legend.position = "top",
-    legend.title = element_text(size = 9),
-    legend.text = element_text(size = 8),
-    axis.title = element_text(size = 11),
-    axis.text = element_text(size = 9),
-    plot.title = element_text(face = "bold", size = 11),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18),
+    plot.title = element_text(face = "bold", size = 18),
     plot.margin = margin(5, 5, 5, 5)
   )
 
@@ -551,15 +551,18 @@ barnet_basin_linetypes <- c("Atlantic" = "solid", "Pacific" = "22")
 barnet_d13C_colors <- c("Atlantic" = "#F03B20", "Pacific" = "#A50056")
 barnet_d18O_colors <- c("Atlantic" = "#29A9E0", "Pacific" = "#173F90")
 
-barnet_full_panel_theme <- theme_classic(base_size = 9) +
+barnet_full_panel_theme <- theme_classic(base_size = 18) +
   theme(
-    axis.title = element_text(size = 9.5),
-    axis.text = element_text(size = 8, color = "black"),
-    plot.title = element_text(size = 9.5, face = "bold"),
-    plot.margin = margin(1, 4, 1, 4),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18, color = "black"),
+    plot.title = element_text(size = 18, face = "bold"),
+    # The 6 x 3 export needs explicit room for 18-point vertical axis titles.
+    plot.margin = margin(1, 4, 1, 28),
+    axis.title.y = element_text(size = 18, margin = margin(r = 4)),
     legend.title = element_blank(),
-    legend.text = element_text(size = 6.5),
-    legend.key.width = unit(0.35, "cm"),
+    legend.text = element_text(size = 18),
+    legend.key.width = unit(0.45, "cm"),
+    legend.key.height = unit(0.28, "cm"),
     legend.spacing.x = unit(0.08, "cm"),
     legend.background = element_rect(
       fill = scales::alpha("white", 0.86), color = "grey55", linewidth = 0.25
@@ -577,14 +580,15 @@ p_Barnet_d13C_full_horizontal <-
   scale_linetype_manual(values = barnet_basin_linetypes) +
   labs(
     x = NULL,
-    y = expression(delta^13 * C[benthic])
+    # Keep the 18-point isotope label short enough for the 6 x 3 panel.
+    y = expression(delta^13 * C)
   ) +
   barnet_full_panel_theme +
   theme(
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
     legend.position = "inside",
-    legend.position.inside = c(0.87, 0.78),
+    legend.position.inside = c(0.88, 0.76),
     legend.direction = "vertical"
   )
 
@@ -600,7 +604,7 @@ p_Barnet_d18O_full_horizontal <-
   scale_linetype_manual(values = barnet_basin_linetypes) +
   labs(
     x = NULL,
-    y = expression(delta^18 * O[benthic])
+    y = expression(delta^18 * O)
   ) +
   barnet_full_panel_theme +
   theme(
@@ -611,7 +615,7 @@ p_Barnet_d18O_full_horizontal <-
 
 barnet_epochs <- tribble(
   ~unit,          ~older_ma, ~younger_ma, ~fill,
-  "Late Cret.",      67.10,       66.00,  "#B8DE8A",
+  "Late\nCret.",     67.10,       66.00,  "#B8DE8A",
   "Paleocene",       66.00,       56.00,  "#F6E8A6",
   "Eocene",          56.00,       52.35,  "#F7B267"
 )
@@ -620,7 +624,7 @@ barnet_stages <- tribble(
   ~unit,       ~older_ma, ~younger_ma, ~fill,
   "Maast.",         67.10,       66.00,  "#D8E7A8",
   "Danian",         66.00,       61.66,  "#B8DE8A",
-  "Selandian",      61.66,       59.24,  "#8FD080",
+  "Sel.",           61.66,       59.24,  "#8FD080",
   "Thanetian",      59.24,       56.00,  "#63C178",
   "Ypresian",       56.00,       52.35,  "#F4C96B"
 )
@@ -652,22 +656,42 @@ p_Barnet_chronostrat_full_horizontal <-
     linewidth = 0.35
   ) +
   geom_text(
-    data = barnet_epochs,
+    data = barnet_epochs %>% filter(unit != "Late\nCret."),
     aes(
       x = (older_ma + younger_ma) / 2,
       y = 1.5,
       label = unit
     ),
-    size = 2.55
+    size = 18 / ggplot2::.pt
   ) +
   geom_text(
-    data = barnet_stages,
+    data = barnet_epochs %>% filter(unit == "Late\nCret."),
+    aes(
+      x = (older_ma + younger_ma) / 2,
+      y = 1.5,
+      label = unit
+    ),
+    size = 10 / ggplot2::.pt,
+    lineheight = 0.85
+  ) +
+  geom_text(
+    data = barnet_stages %>% filter(unit != "Maast."),
     aes(
       x = (older_ma + younger_ma) / 2,
       y = 0.5,
       label = unit
     ),
-    size = 2.35
+    size = 18 / ggplot2::.pt
+  ) +
+  geom_text(
+    data = barnet_stages %>% filter(unit == "Maast."),
+    aes(
+      x = (older_ma + younger_ma) / 2,
+      y = 0.5,
+      label = unit
+    ),
+    # The 1.1 Myr Maastrichtian sliver is the constrained-strat exception.
+    size = 10 / ggplot2::.pt
   ) +
   barnet_full_age_scale +
   scale_fill_identity() +
@@ -679,17 +703,17 @@ p_Barnet_chronostrat_full_horizontal <-
     x = "Age (Ma)",
     y = NULL
   ) +
-  theme_classic(base_size = 9) +
+  theme_classic(base_size = 18) +
   theme(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     axis.line.y = element_blank(),
     axis.title.x = element_text(
-      size = 10,
+      size = 18,
       margin = margin(t = 2)
     ),
     axis.text.x = element_text(
-      size = 8.5,
+      size = 18,
       color = "black"
     ),
     plot.margin = margin(0, 4, 1, 4)
@@ -700,10 +724,10 @@ p_Barnet_stable_isotopes_full_horizontal_6x3 <-
   p_Barnet_d18O_full_horizontal /
   p_Barnet_chronostrat_full_horizontal +
   plot_layout(
-    heights = c(1, 1, 0.60)
+    heights = c(1, 1, 0.75)
   )
 
-B_d13C_horizontal <- ggplot(BHB_d13C_published_age) +
+p_BHB_d13C_horizontal <- ggplot(BHB_d13C_published_age) +
   add_petm_horizontal() +
   geom_errorbar(
     aes(
@@ -757,9 +781,9 @@ p_global_Barnet_BHB_d13C <-
       "PETM band = 55.93-55.75 Ma."
     ),
     theme = theme(
-      plot.title = element_text(face = "bold", size = 14),
-      plot.subtitle = element_text(size = 10),
-      plot.caption = element_text(size = 8, hjust = 0)
+      plot.title = element_text(face = "bold", size = 18),
+      plot.subtitle = element_text(size = 18),
+      plot.caption = element_text(size = 18, hjust = 0)
     )
   ) &
   theme(legend.position = "bottom")
@@ -771,13 +795,13 @@ p_global_Barnet_BHB_d13C <-
 # analytical content, age limits, PETM interval, and observations are unchanged.
 
 slide_panel_theme <- theme(
-  axis.title = element_text(size = 12),
-  axis.text = element_text(size = 11, color = "black"),
-  plot.title = element_text(face = "bold", size = 13),
-  plot.subtitle = element_text(size = 10),
+  axis.title = element_text(size = 18),
+  axis.text = element_text(size = 18, color = "black"),
+  plot.title = element_text(face = "bold", size = 18),
+  plot.subtitle = element_text(size = 18),
   plot.margin = margin(2, 6, 2, 6),
-  legend.title = element_text(size = 10),
-  legend.text = element_text(size = 10)
+  legend.title = element_text(size = 18),
+  legend.text = element_text(size = 18)
 )
 
 p_Barnet_BWT_slide <- p_Barnet_BWT_horizontal +
@@ -832,8 +856,8 @@ p_global_Barnet_BHB_d13C_slide <-
     ),
     theme = theme(
       plot.title = element_text(face = "bold", size = 20),
-      plot.subtitle = element_text(size = 11),
-      plot.caption = element_text(size = 8, hjust = 0),
+      plot.subtitle = element_text(size = 18),
+      plot.caption = element_text(size = 18, hjust = 0),
       plot.margin = margin(8, 10, 5, 10)
     )
   ) &
@@ -855,7 +879,7 @@ p_global_Barnet_BHB_d13C_slide_12x6 <-
       "Data: PANGAEA 10.1594/PANGAEA.884585."
     ),
     theme = theme(
-      plot.caption = element_text(size = 8.5, hjust = 0),
+      plot.caption = element_text(size = 18, hjust = 0),
       plot.margin = margin(4, 8, 3, 8)
     )
   ) &
@@ -1649,7 +1673,7 @@ p_T47_petm_phase_context <- ggplot(
       "bars = central 50%, 80%, and 95%."
     )
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "top")
 
 p_seasonal_evidence_forest <- seasonal_constraint_summary %>%
@@ -1677,7 +1701,7 @@ p_seasonal_evidence_forest <- seasonal_constraint_summary %>%
     title = "Published proxy and model constraints",
     subtitle = "MART is a range; the other metrics are absolute temperatures"
   ) +
-  theme_classic(base_size = 9) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "bottom")
 
 p_T47_petm_phase_with_evidence <-
@@ -1724,8 +1748,8 @@ p_BHB_temperature_insolation <-
       "the orbital solution is not tuned to either proxy record"
     ),
     theme = theme(
-      plot.title = element_text(face = "bold", size = 14),
-      plot.subtitle = element_text(size = 10)
+      plot.title = element_text(face = "bold", size = 18),
+      plot.subtitle = element_text(size = 18)
     )
   )
 
@@ -1736,7 +1760,7 @@ p_regional_climate <-
   plot_layout(widths = c(1.2, 1, 1)) +
   plot_annotation(
     title = "Continental temperature, marine temperature, and atmospheric CO2",
-    theme = theme(plot.title = element_text(face = "bold", size = 14))
+    theme = theme(plot.title = element_text(face = "bold", size = 18))
   )
 
 #-- 7.) Build Horizontal-Age and PETM-Focus Variants ----------------------
@@ -1948,9 +1972,9 @@ save_figure_variants(
   base_dir = regional_age_figure_dir,
   stem = "Barnet2019_Atlantic_Pacific_d13C_d18O_horizontal_6x3",
   manuscript_width = 6,
-  manuscript_height = 3,
-  presentation_width = 6,
-  presentation_height = 3
+  manuscript_height = 4,
+  presentation_width = 7,
+  presentation_height = 4
 )
 
 # Supporting table used in the combined figure. This makes explicit which

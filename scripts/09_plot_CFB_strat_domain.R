@@ -42,14 +42,14 @@ add_petm_strat <- function(alpha = 0.14) {
   )
 }
 
-theme_strat <- theme_classic(base_size = 11) +
+theme_strat <- theme_classic(base_size = 18) +
   theme(
     legend.position = "top",
-    legend.title = element_text(size = 9),
-    legend.text = element_text(size = 8),
-    axis.title = element_text(size = 11),
-    axis.text = element_text(size = 9),
-    plot.title = element_text(face = "bold", size = 11),
+    legend.title = element_text(size = 18),
+    legend.text = element_text(size = 18),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18),
+    plot.title = element_text(face = "bold", size = 18),
     plot.margin = margin(5, 5, 5, 5)
   )
 

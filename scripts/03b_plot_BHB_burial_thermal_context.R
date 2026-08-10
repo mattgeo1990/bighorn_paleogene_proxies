@@ -208,7 +208,7 @@ p_basin_geotherms <- ggplot() +
     title = "A  Roberts et al. (2008) burial-temperature scenarios",
     subtitle = "Orange = McCulloch Peak; grey = full BHB model range"
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "none")
 
 #-- 5.) Project Scenarios Through the CFB Composite ------------------------
@@ -250,7 +250,7 @@ p_CFB_max_burial_temperature <- ggplot() +
     title = "B  Thermal projection through the CFB composite",
     subtitle = "Orange = McCulloch Peak; grey = full Roberts et al. BHB range"
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "top")
 
 p_BHB_burial_thermal_context <-
@@ -333,8 +333,9 @@ CFB_T47_observations <- read_csv(
       strat_height_m,
       CFB_strat_limits[1],
       CFB_strat_limits[2]
-    )
-  )
+    ) 
+  ) 
+  
 
 # Fit the burial-panel trend to every primary pedogenic-micrite observation,
 # including measurements omitted by the deterministic production-model screen.
@@ -463,7 +464,7 @@ p_CFB_T47_burial_comparison <- ggplot() +
       y = (base_m + top_m) / 2,
       label = paste0(formation, " Fm")
     ),
-    angle = 90, fontface = "bold", size = 3.2,
+    angle = 90, fontface = "bold", size = 18 / ggplot2::.pt,
     color = "grey30"
   ) +
   scale_fill_gradientn(
@@ -515,10 +516,10 @@ p_CFB_T47_burial_comparison <- ggplot() +
     ),
     fill = guide_colorbar(order = 3, barwidth = grid::unit(4.2, "cm"))
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(
-    plot.title = element_text(size = 11),
-    plot.subtitle = element_text(size = 8.5, lineheight = 1.05),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 18, lineheight = 1.05),
     legend.position = "bottom",
     legend.box = "vertical",
     legend.justification = "center",
@@ -582,7 +583,7 @@ save_figure_variants(
   manuscript_width = 6,
   manuscript_height = 6,
   presentation_width = 6,
-  presentation_height = 6
+  presentation_height = 7
 )
 
 print(thermal_scenarios)

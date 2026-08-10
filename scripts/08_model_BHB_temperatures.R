@@ -419,7 +419,7 @@ write_csv(
 )
 
 #-- 6.) Diagnostic Figures --------------------------------------------------
-temperature_theme <- theme_classic(base_size = 11) +
+temperature_theme <- theme_classic(base_size = 18) +
   theme(
     legend.position = "top",
     plot.title = element_text(face = "bold"),

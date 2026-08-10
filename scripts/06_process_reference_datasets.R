@@ -577,7 +577,7 @@ ggplot(
     x = "Paleolatitude (°N)",
     y = "Mean annual temperature (°C)"
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(
     legend.position = "top"
   )
@@ -758,7 +758,7 @@ p_Wing2000_MAT <- ggplot(
     y = "Mean annual temperature (°C)",
     title = "Wing et al. (2000) leaf-margin MAT"
   ) +
-  theme_classic(base_size = 11)
+  theme_classic(base_size = 18)
 
 p_Wing2000_MAT 
 
@@ -790,7 +790,7 @@ p_Fricke1998_d18Op <- ggplot(
     shape = "Taxon",
     title = "Fricke et al. (1998) biogenic phosphate"
   ) +
-  theme_classic(base_size = 11)
+  theme_classic(base_size = 18)
 
 p_Fricke1998_d18Op 
 
@@ -823,7 +823,7 @@ p_Kelson_T47_d18Ocarb <- Kelson_Tornillo_D47 %>%
     y = expression(delta^18 * O[carb] ~ "(‰ VSMOW)"),
     shape = "Petrography"
   ) +
-  theme_classic(base_size = 11)
+  theme_classic(base_size = 18)
 
 p_Kelson_T47_d18Ocarb
 
@@ -853,7 +853,7 @@ p_Kelson_micrite_T47_age <- ggplot(
     y = "Age (Ma)",
     title = "Kelson Tornillo micrite D47 temperatures"
   ) +
-  theme_classic(base_size = 11)
+  theme_classic(base_size = 18)
 
 # Display quick checks when the script is run interactively.
 if (interactive()) {

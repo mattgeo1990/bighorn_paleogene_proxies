@@ -373,7 +373,7 @@ ggplot(
     shape = expression(delta^18 * O[carb] ~ "source"),
     color = "Temperature source"
   ) +
-  theme_classic()
+  theme_classic(base_size = 18)
 
 ggplot(
   CFB_d18Ow_reconstruction,
@@ -390,7 +390,7 @@ ggplot(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = expression(delta^18 * O[soil-water] ~ "(‰ VSMOW)")
   ) +
-  theme_classic(base_size = 14)
+  theme_classic(base_size = 18)
 
 d18Ow_measuredT47 <- CFB_d18Ow_reconstruction %>%
   filter(T_recon_source == "U-M measured T47")
@@ -415,7 +415,7 @@ ggplot(
     x = expression(Delta[47] * " temperature (" * degree * "C)"),
     y = expression(delta^18 * O[soil-water] ~ "(‰ VSMOW)")
   ) +
-  theme_classic(base_size = 14)
+  theme_classic(base_size = 18)
 
 
 #-- 5.) Export CFB d18O-Water Products -------------------------------------

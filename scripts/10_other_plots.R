@@ -502,11 +502,21 @@ CFB_soilwater_isotope_space <- read_csv(
   mutate(
     dp18Ow_mean = 1000 * log1p(d18Ow_mean_vsmow / 1000),
     dp18Ow_lower95 = 1000 * log1p(d18Ow_lower95_vsmow / 1000),
-    dp18Ow_upper95 = 1000 * log1p(d18Ow_upper95_vsmow / 1000)
+    dp18Ow_upper95 = 1000 * log1p(d18Ow_upper95_vsmow / 1000),
+    p_altered_preservation = coalesce(
+      p_altered_preservation.y,
+      p_altered_preservation.x
+    )
   )
 
+# Apply the same talk screen used for the clumped-isotope temperature plots:
+# carbonate d18O >= 20 per mil VSMOW and direct T47 <= 50 degrees C.
 CFB_soilwater_direct_D47 <- CFB_soilwater_isotope_space %>%
-  filter(has_measured_T47 %in% TRUE)
+  filter(
+    has_measured_T47 %in% TRUE,
+    d18Ocarb_vsmow >= 20,
+    T_recon_C <= 50
+  )
 
 # Kelson et al. (2026): published soil-water observations and uncertainties.
 kelson_reference_waters <- kelson_soilwater %>%
@@ -569,6 +579,50 @@ aron_reference_waters <- aron2021_raw %>%
     Dp17O_permeg, Dp17O_lower, Dp17O_upper
   )
 
+# Event precipitation from the modern-water dataset distributed with Kelson
+# et al. (2026). The Aron et al. (2021) Supplement 1 supplied here contains
+# lake, river, and tap waters, but no precipitation samples.
+modern_precipitation <- read_csv(
+  here(
+    "data", "excel files",
+    "jrkelson-CZ17O_soilwater-efc3bd3", "mw.csv"
+  ),
+  show_col_types = FALSE
+) %>%
+  filter(
+    Water.Type == "Precipitation",
+    !is.na(D17O_pmg)
+  )
+
+modern_precipitation_Dp17O <- modern_precipitation %>%
+  summarise(
+    n = n(),
+    mean = mean(D17O_pmg),
+    se = sd(D17O_pmg) / sqrt(n),
+    lower95 = mean - qt(0.975, df = n - 1) * se,
+    upper95 = mean + qt(0.975, df = n - 1) * se
+  )
+
+# Full monthly range across all eight Campbell et al. (2024) Polecat Bench
+# orbital/CO2 experiments. Convert conventional delta18O to delta-prime space
+# to match the reconstructed-water x axis.
+campbell_precipitation_dp18O <- read_csv(
+  here(
+    "data", "raw",
+    "campbell2024_polecat_monthly_precipitation.csv"
+  ),
+  show_col_types = FALSE
+) %>%
+  mutate(
+    dp18O = 1000 * log1p(d18O_precip_permil_vsmow / 1000)
+  )
+
+campbell_precipitation_range <- campbell_precipitation_dp18O %>%
+  summarise(
+    lower = min(dp18O, na.rm = TRUE),
+    upper = max(dp18O, na.rm = TRUE)
+  )
+
 published_reference_waters <- bind_rows(
   kelson_reference_waters,
   aron_reference_waters
@@ -576,6 +630,36 @@ published_reference_waters <- bind_rows(
 
 soilwater_isotope_space_plot <- function(data, plot_title) {
   ggplot() +
+    annotate(
+      "rect",
+      xmin = campbell_precipitation_range$lower,
+      xmax = campbell_precipitation_range$upper,
+      ymin = -Inf,
+      ymax = Inf,
+      fill = "#F4A261",
+      alpha = 0.10
+    ) +
+    geom_vline(
+      xintercept = unlist(campbell_precipitation_range),
+      color = "#C25A00",
+      linetype = "longdash",
+      linewidth = 0.7
+    ) +
+    annotate(
+      "rect",
+      xmin = -Inf,
+      xmax = Inf,
+      ymin = modern_precipitation_Dp17O$lower95,
+      ymax = modern_precipitation_Dp17O$upper95,
+      fill = "grey45",
+      alpha = 0.10
+    ) +
+    geom_hline(
+      yintercept = modern_precipitation_Dp17O$mean,
+      color = "grey35",
+      linetype = "dashed",
+      linewidth = 0.7
+    ) +
     geom_errorbarh(
       data = published_reference_waters,
       aes(
@@ -604,8 +688,11 @@ soilwater_isotope_space_plot <- function(data, plot_title) {
     ) +
     geom_point(
       data = published_reference_waters,
-      aes(dp18O, Dp17O_permeg),
-      size = 1.7,
+      aes(
+        dp18O, Dp17O_permeg,
+        shape = "Published modern waters"
+      ),
+      size = 2.2,
       color = "grey65",
       alpha = 0.55
     ) +
@@ -635,24 +722,69 @@ soilwater_isotope_space_plot <- function(data, plot_title) {
     ) +
     geom_point(
       data = data,
-      aes(dp18Ow_mean, D17Orsw_mean_permeg),
-      shape = 21,
-      size = 3.2,
+      aes(
+        dp18Ow_mean, D17Orsw_mean_permeg,
+        shape = "This study",
+        fill = p_altered_preservation
+      ),
+      size = 4.0,
       stroke = 0.75,
-      color = "#053061",
-      fill = "#4393C3"
+      color = "black"
     ) +
     labs(
       title = plot_title,
       x = expression(delta * minute^18 * O[soil~water] ~ "(per mil VSMOW)"),
-      y = expression(Delta * minute^17 * O[soil~water] ~ "(per meg)")
+      y = expression(Delta * minute^17 * O[soil~water] ~ "(per meg)"),
+      shape = NULL,
+      fill = "Alteration probability"
+    ) +
+    scale_shape_manual(
+      values = c(
+        "This study" = 21,
+        "Published modern waters" = 16
+      ),
+      breaks = c(
+        "This study",
+        "Published modern waters"
+      )
+    ) +
+    scale_fill_gradientn(
+      colors = c("#2166AC", "#F7F7F7", "#B2182B"),
+      values = scales::rescale(c(0, 0.5, 1)),
+      limits = c(0, 1),
+      labels = scales::label_percent(accuracy = 1),
+      na.value = "grey75"
     ) +
     scale_x_continuous(expand = expansion(mult = c(0.04, 0.04))) +
     scale_y_continuous(expand = expansion(mult = c(0.05, 0.05))) +
+    guides(
+      shape = guide_legend(
+        order = 1,
+        override.aes = list(
+          fill = c("grey55", NA),
+          color = c("black", "grey55"),
+          alpha = 1,
+          size = c(4, 3)
+        )
+      ),
+      fill = guide_colorbar(order = 2, barwidth = unit(2.7, "cm"))
+    ) +
     theme_classic(base_size = 14) +
     theme(
-      plot.title = element_text(face = "bold", size = 16),
-      axis.title = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", size = 18),
+      axis.title = element_text(face = "bold", size = 18),
+      axis.text = element_text(size = 18, color = "black"),
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 14),
+      legend.position = "inside",
+      legend.position.inside = c(0.03, 0.03),
+      legend.justification = c(0, 0),
+      legend.box = "vertical",
+      legend.background = element_rect(
+        fill = scales::alpha("white", 0.88),
+        color = "grey70"
+      ),
+      legend.margin = margin(0, 0, 0, 0),
       plot.margin = margin(10, 12, 8, 10)
     )
 }

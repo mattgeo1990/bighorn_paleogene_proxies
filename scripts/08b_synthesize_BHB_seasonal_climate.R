@@ -336,7 +336,7 @@ p_density <- ggplot(
     y = "Probability density",
     color = "Evidence class"
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "bottom")
 
 p_forest <- ggplot(
@@ -361,7 +361,7 @@ p_forest <- ggplot(
     y = NULL,
     color = "Evidence class"
   ) +
-  theme_classic(base_size = 10) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "bottom")
 
 p_integrated <- ggplot(
@@ -378,7 +378,7 @@ p_integrated <- ggplot(
     x = "Temperature or temperature range (deg C)",
     y = "Probability density"
   ) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "none")
 
 p_lag <- lag_results %>%
@@ -396,7 +396,7 @@ p_lag <- lag_results %>%
     y = "Correlation",
     color = NULL
   ) +
-  theme_classic(base_size = 10)
+  theme_classic(base_size = 18)
 
 p_null <- ggplot(null_correlations, aes(pearson_r)) +
   geom_histogram(bins = 45, fill = "grey75", color = "white") +
@@ -410,7 +410,7 @@ p_null <- ggplot(null_correlations, aes(pearson_r)) +
     x = "Pearson r",
     y = "Null simulations"
   ) +
-  theme_classic(base_size = 10)
+  theme_classic(base_size = 18)
 
 p_jitter <- ggplot(
   age_jitter_results,
@@ -423,7 +423,7 @@ p_jitter <- ggplot(
     x = "Age-jitter SD (kyr)",
     y = "Zero-lag Pearson r"
   ) +
-  theme_classic(base_size = 10)
+  theme_classic(base_size = 18)
 
 save_figure_variants(
   p_density, figure_dir, "BHB_literature_temperature_distributions",

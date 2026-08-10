@@ -1,2 +1,2 @@
 probability_model_version,n_reference_observations,reference_mean_d18Ocarb_vsmow,altered_anchor_d18Ocarb_vsmow,probability_at_reference_mean,probability_at_altered_anchor,reference_population
-BHB_d18O_trajectory_index_v2,60,22.25449224188426,20,0.05,0.95,"All BHB pedogenic-micrite observations with paired T47 and d18Ocarb: IPL, CU, Caltech/CFB, and Snell/MCP"
+BHB_d18O_trajectory_index_v2,59,22.243427960729758,20,0.05,0.95,"All BHB pedogenic-micrite observations with paired T47 and d18Ocarb: IPL, CU, Caltech/CFB, and Snell/MCP"

@@ -458,7 +458,7 @@ p_temperature_scenarios <- ggplot(
     title = "Sensitivity of the CFB temperature model to diagenetic screening",
     subtitle = "Ribbons are approximate 95% intervals for each scenario"
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "top", legend.box = "vertical")
 
 save_figure_variants(

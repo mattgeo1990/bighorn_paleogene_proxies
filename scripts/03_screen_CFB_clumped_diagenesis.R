@@ -128,7 +128,8 @@ p_screening_flags <- CFB_temperature_screening_flags %>%
   ggplot(aes(x = alteration_likelihood, y = strat_height_m,
              color = alteration_likelihood)) +
   geom_point(size = 3) +
-  geom_text(aes(label = MLA_horizon_id), hjust = -0.1, size = 3,
+  geom_text(aes(label = MLA_horizon_id), hjust = -0.1,
+            size = 18 / ggplot2::.pt,
             show.legend = FALSE) +
   scale_color_manual(values = c(
     possible = "#E69F00", moderate = "#D55E00", high = "#A50026"
@@ -140,7 +141,7 @@ p_screening_flags <- CFB_temperature_screening_flags %>%
     color = "Alteration likelihood",
     title = "Horizons flagged by the CFB clumped-isotope screen"
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "none")
 
 save_figure_variants(
@@ -267,7 +268,7 @@ p_CFB_d18O_T47_contours <- ggplot() +
   geom_text(
     data = contour_labels,
     aes(T47_C, d18Ocarb_vsmow, label = contour_label),
-    hjust = -0.05, size = 2.8, color = "grey35"
+    hjust = -0.05, size = 18 / ggplot2::.pt, color = "grey35"
   ) +
   geom_errorbarh(
     data = CFB_d18O_T47_observations,
@@ -328,7 +329,7 @@ p_CFB_d18O_T47_contours <- ggplot() +
       "Calcite-water fractionation: Kim and O'Neil (1997)."
     )
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   guides(
     fill = guide_legend(override.aes = list(shape = 21, size = 3)),
     shape = guide_legend(override.aes = list(fill = "white", size = 3))
@@ -454,7 +455,7 @@ p_CFB_d18O_T47_monte_carlo <- ggplot() +
     caption =
       "Calcite-water fractionation: Kim and O'Neil (1997); random seed = 123."
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(
     legend.position = "top",
     legend.box = "vertical"
@@ -601,7 +602,7 @@ p_CFB_d18O_T47_monte_carlo_envelopes <- ggplot(
       "not fitted confidence intervals; at least 100 paths support each temperature."
     )
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(
     legend.position = "top",
     legend.box = "vertical"
@@ -738,7 +739,7 @@ p_D47_D48 <- ggplot() +
                          " versus " * Delta[48]),
     subtitle = "Scenario fits include 95% confidence intervals"
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "top")
 
 save_figure_variants(
@@ -1051,7 +1052,7 @@ p_CFB_alteration_probability_T_d18O <- ggplot() +
       T47_C, d18Ocarb_vsmow,
       label = paste0("d18Ow = ", d18Owater_vsmow, " per mil")
     ),
-    hjust = 1.04, size = 2.25, color = "grey35",
+    hjust = 1.04, size = 18 / ggplot2::.pt, color = "grey35",
     fill = scales::alpha("white", 0.78),
     label.size = 0, label.padding = unit(0.06, "lines")
   ) +
@@ -1102,7 +1103,7 @@ p_CFB_alteration_probability_T_d18O <- ggplot() +
       "not a calibrated posterior probability."
     )
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   theme(legend.position = "top", legend.box = "vertical")
 
 save_figure_variants(
@@ -1152,7 +1153,7 @@ p_BHB_alteration_probability_T_d18O <- ggplot() +
       T47_C, d18Ocarb_vsmow,
       label = paste0("d18Ow = ", d18Owater_vsmow, " per mil")
     ),
-    hjust = 1.04, size = 2.25, color = "grey35",
+    hjust = 1.04, size = 18 / ggplot2::.pt, color = "grey35",
     fill = scales::alpha("white", 0.78),
     label.size = 0, label.padding = unit(0.06, "lines")
   ) +
@@ -1208,7 +1209,7 @@ p_BHB_alteration_probability_T_d18O <- ggplot() +
       "temperature plausibility are excluded."
     )
   ) +
-  theme_classic(base_size = 12) +
+  theme_classic(base_size = 18) +
   guides(
     shape = guide_legend(
       order = 1, nrow = 1,
@@ -1223,9 +1224,9 @@ p_BHB_alteration_probability_T_d18O <- ggplot() +
     )
   ) +
   theme(
-    plot.title = element_text(size = 11),
-    plot.subtitle = element_text(size = 8.5),
-    plot.caption = element_text(size = 7.5, lineheight = 1.05),
+    plot.title = element_text(size = 18),
+    plot.subtitle = element_text(size = 18),
+    plot.caption = element_text(size = 18, lineheight = 1.05),
     legend.position = "bottom",
     legend.box = "vertical",
     legend.justification = "center",

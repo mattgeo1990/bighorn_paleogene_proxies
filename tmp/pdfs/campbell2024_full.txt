@@ -1,0 +1,1096 @@
+
+--- PAGE 1 ---
+Clim.Past,20,495–522,2024
+https://doi.org/10.5194/cp-20-495-2024
+©Author(s)2024.Thisworkisdistributedunder
+theCreativeCommonsAttribution4.0License.
+CO -driven and orbitally driven oxygen
+2
+isotope variability in the Early Eocene
+JuliaCampbell1,ChristopherJ.Poulsen1,2,JiangZhu3,JessicaE.Tierney4,andJeremyKeeler1
+1DepartmentofEarthandEnvironmentalSciences,UniversityofMichigan,AnnArbor,MI48104,USA
+2DepartmentofEarthSciences,UniversityofOregon,Eugene,OR97403,USA
+3ClimateandGlobalDynamicsLaboratory,NationalCenterforAtmosphericResearch,Boulder,CO80301,USA
+4DepartmentofGeosciences,UniversityofArizona,Tucson,AZ85721,USA
+Correspondence:JuliaCampbell(juliacam@umich.edu)
+Received:26May2023–Discussionstarted:31May2023
+Revised:30October2023–Accepted:30January2024–Published:13March2024
+Abstract.PaleoclimatereconstructionsoftheEarlyEocene maticchangesandinterpretingproxyrecordsintimesofex-
+provideimportantdataconstraintsontheclimateandhydro- tremewarmth.
+logiccycleunderextremewarmconditions.Availableterres-
+trial water isotope records have been primarily interpreted
+to signal an enhanced hydrologic cycle in the Early Eocene
+1 Introduction
+associated with large-scale warming induced by high atmo-
+spheric CO . However, orbital-scale variations in these iso-
+2
+TheEarthhasrapidlywarmedsincethepreindustrial(PI)era,
+toperecordshavebeendifficulttoquantifyandlargelyover-
+drivingsubstantialandwidespreadchangesinthehydrologic
+looked, even though orbitally driven changes in solar irra-
+cycle (Douville et al., 2021). Severe warming and changes
+diance can impact temperature and the hydrologic cycle. In
+in the water cycle are projected to continue depending on
+thisstudy,wefillthisgapusingwaterisotope–climatesimu-
+the level of greenhouse gas emissions. Following a higher
+lationstoinvestigatetheorbitalsensitivityofEarth’shydro-
+emissionspathway,atmosphericCO willexceed1000ppm
+logiccycleunderdifferentCO backgroundstates.Weana- 2
+2
+by the end of the 21st century, a level that last existed dur-
+lyzetherelativedifferencebetweenclimaticchangesresult-
+ingtheEarlyEoceneabout56–48millionyearsago(Tierney
+ingfromCO andorbitalchangesandfindthattheseasonal
+2
+etal.,2020).BymodelingdifferentorbitalandCO configu-
+climate responses to orbital changes are larger than CO - 2
+2
+drivenchangesinseveralregions.Usingterrestrialδ18Oand rationsoftheEarlyEoceneandmatchingthesimulationsto
+δ2HrecordsfromthePaleocene–EoceneThermalMaximum fossilevidence,wecanprovidecontextfortheproxyrecords
+and learn how the orbit may have played a part in the se-
+(PETM),wecompareourmodeledisotopicseasonalrangeto
+verewarmingattheonsetofthePaleocene–EoceneThermal
+fossilevidenceandfindapproximateagreementbetweenem-
+Maximum(PETM),aswellasdifferentseasonalimpactson
+piricalandsimulatedisotopiccompositions.Thelimitations
+theEarlyEoceneclimate.Thisstudyservestodistinguishthe
+surrounding the equilibrated snapshot simulations of this
+warmingsignalfromtheorbitalsignalwithinthehydrologic
+transient event and empirical data include timing and time
+cycleunderthemostrecentextremewarmth.
+interval discrepancies between model and data, the preser-
+The Early Eocene likely experienced atmospheric CO
+vationstateoftheproxy,analyticaluncertainty,therelation- 2
+ship between δ18O or δ2H and environmental context, and concentrations at 3×PI levels, though proxies range from
+500to2000ppm(Anagnostouetal.,2020;Raeetal.,2021).
+vegetation uncertainties within the simulations. In spite of
+The PETM was a ∼100,000 year time interval within the
+the limitations, this study illustrates the utility of fully cou-
+Early Eocene that experienced especially rapid warming,
+pled, isotope-enabled climate models when comparing cli-
+with global surface temperatures rising 5–6°C in response
+to an increase in CO levels as high as 6× PI CO (Zhu
+2 2
+PublishedbyCopernicusPublicationsonbehalfoftheEuropeanGeosciencesUnion.
+--- PAGE 2 ---
+496 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+et al., 2019; Inglis et al., 2020; Tierney et al., 2022). Al- temperature gradient of the PETM and track water isotopes
+though the geography of the Eocene differs from modern- through the hydrologic cycle – which can offer more infor-
+daygeography,simulationofthiswarmingeventfurthersour mation on evaporation, advection, precipitation, and other
+understanding of how the Earth operates under a high CO factorsthatinfluence18O and2H (Zhuetal.,2020).These
+2 p p
+backgroundstate.ThereisstillmuchtolearnabouttheEarly simulations track water isotopes in every component of the
+Eocene and the PETM, especially surrounding the relative model (Brady et al., 2019). This Early Eocene model has
+influencechangesinorbithaveonthehydrologiccycle. been previously published in Zhu et al. (2019), Zhu et al.
+Earth’sorbitalconfigurationhasastronginfluenceonre- (2020), and Tierney et al. (2022). The simulations at varied
+gional climate and is a driver of major climatic fluctuations CO havebeenusedtoanalyzeoceancirculationandshort-
+2
+(Davis and Brewer, 2011). The orbit determines the tim- wave cloud feedbacks to further understand parameteriza-
+ing and intensity of sunlight for a given region and season. tionswithinthemodelthatplayaroleinlarge-scaleclimate
+Obliquity, the tilt on Earth’s axis, has a ∼41000 year cy- sensitivity(Zhuetal.,2019;Zhuetal.,2020).Additionally,
+cle; precession, the Earth’s wobble, is a ∼22000 year cy- these simulations have been statistically sampled through a
+cle; and eccentricity, the Earth’s path around the sun, lasts dataassimilationapproachinordertoreconstructPETMcli-
+∼100000 years. These three factors together determine the matechanges(Tierneyetal.,2022).Noneoftheseprevious
+solarirradianceanyareaonEarthwillreceiveatagiventime. studiesinvestigatetheexceptionalvariationsinseasonalcli-
+A higher eccentricity and a higher obliquity cause height- matebetweenorbitsorthesensitivityoftheterrestrialwater
+ened seasonality, including warmer summer seasons (Davis cycletobothorbitalandatmosphericCO changes.Through
+2
+and Brewer, 2011). Warmer summers often melt more ice, tracking18O ,thispaperunderlinestheimportanceoforbital
+p
+which can accelerate a climatic fluctuation, but the warm cyclesinunderstandingterrestrialwaterisotopes.
+EarlyEocenelacksacryosphere,whichmayhavemodified The biosphere has an impact on water isotopes as well,
+the climate’s response to warmer summers. Seasonal shifts especially since vegetation patterns likely shifted from the
+insolarinsolationalsodrivetemperaturechangesthatimpact PETMtotheEarlyEocene.Precipitationinfiltratesthesoil,
+theisotopesofprecipitation,andthereforetheproxyrecords istakenupbytherootsofplants,andthentranspiredthrough
+relatedtotheisotopiccompositionofprecipitation. leaves.Differentplantsexhibitdifferentpreferentialfraction-
+There is evidence of orbital-scale variations in atmo- ationofwaterisotopes,whichleadstodifferentisotopicsig-
+spheric CO during the Late Paleocene and Early Eocene nals in the transpired moisture returning to the atmosphere
+2
+(Zeebeetal.,2017).Orbitallyinducedchangesintheoceanic (Gat and Airey, 2006). Plant water oxygen isotope signals
+temperatures and circulation may have also been a cause can shift by about 6.5‰ between the rainy and dry sea-
+forthefrequentandvariablehyperthermalsduringtheEarly sons,primarilyduetoshiftsinsoilwaterisotopes(Daietal.,
+Eocene (Lunt et al., 2011; Piedrahita et al., 2022). The 2020). Quantitative constraints on the plant isotopic effect
+PETM was the most extreme hyperthermal, a consequence on atmospheric moisture and precipitation remain difficult
+of even greater atmospheric CO concentrations and poten- to obtain, even more so on a global or regional scale (Gat,
+2
+tiallygreaterseasonalchangesowingtotheEarth’sorbit. 2000). In addition, the vegetation changes for the PETM to
+Oxygen and hydrogen isotopic ratios from meteoric wa- Early Eocene are not well constrained, and the estimated
+ters are often used as a measure of climate variability, in- fractionation factors for Early Eocene vegetation have high
+cludingvariabilitybychangingCO concentrationsororbit. uncertainty(Sachseetal.,2012).Finally,theisotope-enabled
+2
+The ratio of heavy (18O, 2H) to light (16O, 1H) isotopes is land model equipped here assumes the transpired water has
+representedby18Oor2H(Craig,1961).Warmerglobaltem- thesameisotoperatioastheroot-weightedsoilwater(Brady
+peratures mean more energy in the troposphere to increase et al., 2019). Therefore, the way water isotopes interact in
+evaporation of the heavier isotope – commonly referred to the biosphere–atmosphere space is primarily based off the
+asthetemperatureeffect,anddecreasedprecipitationresults soilwater,ratherthanvariousplanttypes.Theisotoperatio
+inrainfallmoreenrichedintheheavierisotope–commonly ofleafwaterissetbytherequirementofisotopicmassbal-
+referred to as the amount effect, which increases the atmo- ance within the plant. There would not be a significant im-
+spheric18Oor2H(Craig,1961).Thiscanbelinkedtoorbit pactonatmosphericwaterisotoperatioswithdifferentvege-
+andatmosphericCO becausedistributionofsolarinsolation tationtypeswithinthemodel,aslongasthevegetatedareas
+2
+andgreenhousegasconcentrationseachdriveglobaltemper- remainedvegetated.Tothatend,thesesimulationsuseiden-
+atureandprecipitationtrends,whichtheninfluencethe18O tical vegetative inputs for each run, isolating CO and orbit
+2
+or 2H of precipitation (18O , 2H ) (Craig, 1961). At a re- ascontrollingfactorsonchangesinwaterisotopes.
+p p
+gionalscale,oceanicandatmosphericdynamics,likeflowof In this study, we use sensitivity experiments to investi-
+airmasstransportandoriginofevaporatedwater,alsoimpact gatetheEarlyEocene’sclimaticandhydrologicresponseto
+waterisotopes. changesinEarth’sorbitandatmosphericCO concentration
+2
+Although the Early Eocene and PETM have been mod- to further understand the impact of orbit on the hydrologic
+eledbefore,thesearethefirstsimulationsofthattimeperiod cycleduringwarmclimatesandtotestEarth’ssensitivityto
+to reproduce the extreme warmth and weakened meridional changesinorbitunderdifferentCO backgroundstates.Ad-
+2
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 3 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 497
+2
+Table1.TheatmosphericCO2 concentrationsandorbitaldetailsarepresentedhereforeachmodeledcase.OrbModrepresentsamodern
+orbit, OrbMin represents a minimum eccentricity orbit with mild seasons, and OrbMaxN and OrbMaxS represent maximum eccentricity
+orbitswithheightenedseasonality.ThelongitudeoftheperihelionistheanglebetweentheEarthattheNorthernHemisphere(NH)autumnal
+equinoxandtheEarthatitsclosesttotheSun:0°representsaperihelionattheNHautumnalequinox,90°isattheNHwintersolstice,180°
+isattheNHvernalequinox,and270°isattheNHsummersolstice.Forexample,theNHisclosesttothesunduringtheNHsummersolstice
+inOrbMaxN(Fig.A1).
+3×PI 3×PI 3×PI 3×PI 6×PI 6×PI 6×PI 6×PI
+OrbMod OrbMin OrbMaxN OrbMaxS OrbMod OrbMin OrbMaxN OrbMaxS
+CO2(ppm) 854.1 854.1 854.1 854.1 1708.2 1708.2 1708.2 1708.2
+Eccentricity 0.0167 0.0 0.054 0.054 0.0167 0.0 0.054 0.054
+Obliquity 23.45 22 24.5 24.5 23.45 22 24.5 24.5
+Movingvernal 90 0 270 90 90 0 270 90
+Equinoxlongitude
+ofperihelion
+ditionally,weincludecomparisonsbetweentheseresponses land, and a nominal 1° for ocean and sea ice. For this rea-
+andterrestrial18Oand2Hrecordstotestthemodel’sability son,wefocusonanalyzinglarge-scale,globalpatternsinthe
+tosimulatechangesinthehydrologiccycleinanextremely hydrologicalcycle.Thepaleogeography,land–seamask,and
+warm climate. The terrestrial data are not constrained to a vegetation distribution follow the Deep-Time Modeling In-
+specific orbit or time of year, so we compare the data to all tercomparison Project (DeepMIP) protocol at about 55 mil-
+orbitssimulatedandtheentireseasonalrangetodetermineif lion years ago (Herold et al., 2014). The ocean temperature
+theglobalwaterisotopesignaliscapturedbythemodeland andsalinitywereinitializedfromaPETMquasi-equilibrated
+to tease out any potential seasonal biases in the data. These state, and the 18O of seawater was initialized from a con-
+analysesstrengthenourcomprehensionoftheenvironmental stant−1‰toaccountfortheabsenceoficesheetsinahot-
+context of terrestrial proxy records, the potential of orbital houseclimate(Zhuetal.,2020).Wecompletedeightexper-
+changes to partly initiate the hyperthermal, the influence of iments, a control simulation with a modern orbit (OrbMod)
+orbit on the hydrologic cycle at different CO forcings, and and3×PICO ,andsevensensitivityexperimentswithdif-
+2 2
+thepotentialofthismodeltosimulateclimatechangesduring fering orbital configurations and CO levels. There are four
+2
+a time with a higher atmospheric CO level than today. We orbital configurations, each run at both a low (3×PI) and
+2
+largelyfindthattheorbitmayhaveamoresubstantialimpact high (6×PI) CO concentration, including a modern orbit
+2
+onterrestrialwaterisotoperecordsthanatmosphericCO in (OrbMod),maximumsummersolarinsolationfortheSouth-
+2
+certainregions,particularlyinseasonallybiaseddatasets. ern Hemisphere (OrbMaxS), maximum summer solar inso-
+lation for the Northern Hemisphere (OrbMaxN), and min-
+imum eccentricity (OrbMin) (Lunt et al., 2011). The Orb-
+2 Methodology MaxSandOrbMaxNsimulationsexperiencehigheccentric-
+ityandobliquity,sothosesimulationswouldexpecthighsea-
+2.1 Earthsystemmodeling
+sonality(Luntetal.,2011).Acontrolsimulationwasrunfor
+2000modelyears.Orbitalcaseswerebranchedfromthecon-
+The simulations were conducted using a water isotope-
+trol simulation and run for an additional 500 model years
+enabled Community Earth System Model (iCESM) ver-
+each. The climatological means presented in the results are
+sion 1.2. CESM1.2 is comprised of the Community At-
+based on the last 100 years of each simulation. Mean an-
+mosphere Model (CAM) version 5.3, Community Land
+nualclimatologiescanbefoundinFigs.A11–A13.Allsim-
+Model(CLM)version4.0,CommunityIceCode(CICE)ver-
+ulationshadanatmosphericCH concentrationof791.6ppb
+sion4.0,RiverTransportModel(RTM),ParallelOceanPro- 4
+and an atmospheric N O concentration of 275.68ppb. At-
+gram(POP)version2,andacouplertoconnectthem(Hur- 2
+mosphericgreenhousegasesotherthanCO ,likeCH ,may
+rell et al., 2013). There are 30 vertical levels in the atmo- 2 4
+havebeenhigherinawarmerclimate,butthesearekeptiden-
+sphereand60verticallevelsintheocean.Inaddition,iCESM
+ticalbetweensimulations.GreenhousegasesotherthanCO
+has the capability to simulate the transport and transforma- 2
+are poorly constrained for the Early Eocene, and the warm-
+tionofwaterisotopesinthemodelhydrologiccycle(Brady
+ingeffectonthewatercycleislargelycapturedbythechange
+et al., 2019). Although there are some noticeable biases in
+inatmosphericCO .CO andorbitaldetailsforthemodeled
+iCESM’s isotope tracking, such as a slight depleted bias in 2 2
+18O ,themodelcapturesthegeneralquantitativefeaturesof casesdiscussedhereareavailableinTable1.Furtherdetails
+p
+areavailableinTierneyetal.(2022).
+waterisotopemovement(Bradyetal.,2019).Themodelres-
+olutionisrathercoarseat1.9°×2.5°fortheatmosphereand
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 4 ---
+498 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Table 2. A list of the proxy records used in model–data compar- from.Thefractionationfactoriscontrolledbythelocalsoil
+isons.PaleosolcarbonatesandsideriteareusedforaPETMoxygen temperature, so each location has a slightly different frac-
+isotope comparison, and leaf fossils are used for a PETM hydro- tionationfactor,thoughallarenear1(vanDijketal.,2018;
+genisotopecomparison.Aterrestrialtemperaturecomparison,re- Friedman and O’Neil, 1977). Siderite oxygen fractionation
+constructedfrommacroflorafossilevidence,isusedtovalidatethe
+wascalculatedthroughVanDijk’sbestfitequation(vanDijk
+EarlyEocene(3×PICO2)simulationsinFig.A2.
+et al., 2018). The paleosol carbonate’s oxygen fractionation
+was calculated through the USGS equation (Friedman and
+Author(year) SampleType Age
+O’Neil,1977).
+Batailleetal.(2016) Paleosolcarbonate,18O PETM Leaf waxes are another powerful tool for paleoclimate
+Bowenetal.(2014) Paleosolcarbonate,18O PETM
+reconstruction and also require a PSM to account for the
+Kelsonetal.(2018) Paleosolcarbonate,18O PETM
+transformations between the 2H of soil water and the δ2H
+Kochetal.(1995) Paleosolcarbonate,18O PETM
+Snelletal.(2013) Paleosolcarbonate,18O PETM within the leaf wax (Konecky et al., 2019a). Therefore, the
+Whiteetal.(2017) Siderite,18O PETM δ2H model–data comparison includes δ2H from PETM leaf
+VanDijketal.(2020) Siderite,18O PETM waxes and model-inferred leaf wax δ2H seasonal ranges.
+Paganietal.(2006) Leafwax,2H PETM Comparingleafwaxδ2Hinadditiontothesoil18Oproxies
+Handleyetal.(2008) Leafwax,2H PETM
+offers an opportunity to explore hydrogen isotope accuracy
+Handleyetal.(2011) Leafwax,2H PETM
+Smithetal.(2007) Leafwax,2H PETM
+withiniCESM.Themodel-inferredleafwax2Hvalueswere
+Tippleetal.(2011) Leafwax,2H PETM calculated through the WaxPSM using the zonal seasonal
+Gareletal.(2013) Leafwax,2H PETM rangeofsoilwater2Handaglobal,fixedapparentfraction-
+Jaramilloetal.(2010) Leafwax,2H PETM ationfactorof−124‰(Koneckyetal.,2019b).Theappar-
+HuberandCaballero(2011) Macroflora,temperature EarlyEocene
+ent fractionation factor differs between different plants, but
+itisunknownforEarlyEocenevegetation,sothisstudyuses
+an average value for a modern landscape that is equal parts
+2.2 Proxyrecords shrubs,trees,forbs,andC3grasses(Sachseetal.,2012).
+Thesoilcarbonateproxiesactasatime-integratedrecord
+There are more hydrological isotope proxy data from the of environmental changes over hundreds to thousands of
+PETMsothattimeintervalisthefocushereratherthanthe years, while the leaves form over a matter of weeks (Bur-
+Early Eocene. The 6× PI CO simulations are compared generetal.,2016).Althoughtheproxyrecordsspanawide
+2
+to several terrestrial proxy records of 18O and 2H from the geographicrange,wecouldnotfindpublishedterrestrial18O
+PETM (Table 2). Our focus is on terrestrial proxies over proxyrecordsforthePETMfromtheSouthernHemisphere
+marine proxies as terrestrial proxies are more heavily im- (SH),whichsignalsaneedformorefocusandfundingtobe
+pacted by changing orbit and seasonality, given the land- directedtoresearchersintheSHtofillthisgap.Thelocations
+oceanwarmingcontrast(ByrneandO’Gorman,2013).How- of the proxies were converted to paleo-coordinates suitable
+ever,theterrestrialdataarenotdatedtoaspecificorbitorsea- forourpaleogeographicreconstruction(Fig.1,Mulleretal.,
+son given uncertainties in the dating relative to orbital pac- 2018).
+ing,soweuseitasanapproximateenvelopeofPETMwater
+isotopevaluesagainsttherangeofvaluesfromallsimulated
+3 Results
+orbitsandseasons.Zhuetal.(2019)previouslyshowedgood
+model–dataagreementbetweenterrestrialtemperatureprox-
+3.1 Responsetoorbit
+iesandtheEarlyEocene(3×PICO )simulation,validating
+2
+the model’s performance (Fig. A2, Zhu et al., 2019). These High eccentricity and obliquity cause more intense season-
+Eocenesimulationsalsoshowstrongagreementwithmarine ality(Berger,1988).WefocusouranalysisontheOrbMaxS
+proxies,asdiscussedinZhuetal.(2020).ThesuiteofEocene andOrbMaxNsimulationsbecausetheirlargeseasonalinso-
+simulations run as part of the Paleoclimate Modeling Inter- lationvariationsdrivethegreatestterrestrialclimateresponse
+comparison Project exhibit close agreement with terrestrial (Fig.A1).OrbMaxSandOrbMaxNareatthesame(high)ec-
+precipitationproxiesaswell(Cramwinckeletal.,2023). centricity and obliquity as one another, so these differences
+Paleosolcarbonatesandsideritepreservetheisotopicsig- are the result of precessional changes only (Table 1). Sec-
+nal of the soil water they form in, thus a comparison with tion3.1focusesonresponsetoorbitatthe3×PICO level
+2
+simulated soil water, rather than precipitation, is the most because there were greater climatic differences between or-
+salientcomparison.Soilcarbonatesarelikelytoformaround bitsatthislevel(seeSect.3.3).
+40–100cmdeep,sothesimulated18Orangerepresentssoil Differential solar heating, controlled by orbital forcing,
+water at this depth as well (Burgener et al., 2016). In or- givesrisetoalatitudinaltemperaturegradientandhasagreat
+dertocomparetheproxy18Otosimulatedsoilwater18O,a influenceonEarth’sclimate.Insolationchangesdrivediffer-
+proxysystemmodel(PSM)isneededtotransform18Oofthe encesinspecifichumiditybetweentheseruns,sincewarmer
+soilcarbonateto18Oofthewaterinwhichtheyprecipitated aircanholdmorewatervaporwithanincreaseinsaturation
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 5 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 499
+2
+Figure1.TheEarlyEocenepaleogeographyusedforthemodelsimulations,withpointsrepresentingthelocationsofthePETMterrestrial
+isotopeproxyrecord.Notethattwooftherecordsoriginatedonislandsthatdonotappearonthispaleogeographicmap.Thereisanoticeable
+lackofpaleo-isotoperecordsfromtheSH.
+vaporpressure(SVP)(Fig.A4).However,areasthatexperi- 18O patterns, since the fractionation of hydrogen and oxy-
+p
+ence an increase in temperature and specific humidity, like genarecontrolledbythesamedistillationfactors(Fig.A6).
+central Africa or Australia during DJF, largely experience a Aside from the large-scale isotopic signals, specific re-
+decreaseinrelativehumidity,theratioofwatervaportothe gions experience large seasonal differences in 18O with a
+p
+SVP, as SVP increases more than specific humidity during changeinorbit.Forinstance,westernNorthAmericaseesa
+warming(Fig.A5,Tichyetal.,2017).Lowerrelativehumid- substantial 18O depletion in precipitation during JJA when
+ityresultsinalowerchanceofcloudformationandrainfall, comparingOrbMaxStoOrbMaxN,upto−5‰(Fig.4).JJA
+which often only occurs when relative humidity is >90%. istheSHwinterseason,somostoftheEarthiscolderatthis
+With a lower chance of precipitation, these areas are less timeintheOrbMaxSsimulations,especiallyregionsofhigh
+likelytoexperienceisotopicrainoutoftheheavyisotopeand elevation like the North American Cordillera, which likely
+thereforeoftenexhibithigher18O (Figs.3and4). had an elevation upwards of 3km in some areas (Fig. 2,
+p
+Both 18O and 2H exhibit large-scale seasonal differ- Mulchetal.,2007).Thedecreaseintemperatureresultedin
+p p
+ences between OrbMaxS and OrbMaxN; DJF (JJA) experi- anincreaseinrelativehumidityinthearea,increasingrain-
+ences greater (lesser) 18O and 2H in OrbMaxS than Orb- fall(Figs.3andA5).Mountainsalreadyintensifyvaporfrac-
+p p
+MaxNdrivenbythedifferenceinseasonalinsolation(Figs.4 tionation, reducing the 18O through the amount and tem-
+p
+andA6).TheincreaseininsolationduringDJFalsoencour- peratureeffects,sotheCordilleraexperiencedespeciallyde-
+ages stronger evaporation rates from the sea surface, which pletedrainfallduringJJAfortheOrbMaxSsimulationscom-
+is influential on isotopic signals as the origin of transported paredtotheOrbMaxNsimulations,whichexperiencedavery
+moisture and sometimes encourages continental recycling hotNHduringJJA(Fig.4,Poulsenetal.,2007).Evaporated
+through evapotranspiration (Figs. 4 and A16; Gierz et al., water from the cool Pacific Ocean travels in the prevailing
+2017; Risi et al., 2019). With higher insolation and lower westerlywindsovercontinentalNorthAmerica.Asthemois-
+relativehumidity,theairisgenerallydrierandabletostimu- tureascendsthemountainside,thereisincreasedrainfall,fur-
+latehigherratesofevaporation(Fig.A5).Therefore,theDJF ther depleting the clouds of the heavier water isotopes, and
+season experiences higher insolation, warmer temperatures, leading to a dry and isotopically light descending air mass
+higher rates of evaporation, and generally a stronger pres- (Fig.4).Furthermore,regionslikenorthernAfricaortheTi-
+enceofheavierisotopesinatmosphericmoistureand,inturn, betan Plateau experience increases in temperature and de-
+precipitation(Figs.2–4,A3,andA5).JJAexperiencesade- creases in precipitation year-round, as well as increases in
+creaseininsolation,lowertemperatures,lowerratesofevap- 18O mostlyduetotemperatureandamounteffects(Figs.2–
+p
+oration, and generally a weaker presence of heavy isotopes 4). Northern Africa experiences enriched rainfall during all
+inprecipitation(Figs.2,4,A1,andA5).Globally,thelarge- seasons,especiallySON,withdifferencesupto∼6.5‰be-
+scalesimulated2H patternsmimicthelarge-scalesimulated tween OrbMaxS and OrbMaxN (Fig. 4). Temperatures are
+p
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 6 ---
+500 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Figure2.TheseasonaltemperaturedifferencesbetweenOrbMaxSandOrbMaxNat3×PICO2.
+Figure 3. The seasonal precipitation differences between OrbMaxS and OrbMaxN at 3×PI CO2. The maximum positive precipitation
+differenceonthecorrespondingcolorbarrepresentsanythingexperiencing10mmd
+−1orhigher.
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 7 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 501
+2
+Figure4.Theseasonal18OpdifferencesbetweenOrbMaxSandOrbMaxNat3×PICO2.
+warmer,andrelativehumidityandrainfallratesarelower,re- reveal any further insights, so we focus on annual-average
+sultinginsubstantiallyenrichedrainfall(Figs.2–4,andA5). results.
+Highratesofevaporationfromthewarmpoolaccompanythe As a consequence of the increase in CO , globally av-
+2
+trade winds to transport relatively isotopically heavy mois- eraged surface temperatures increase by ∼6°C in the 6×
+ture to the primarily warm and dry Sahara Desert region PI CO simulations compared to the 3×PI CO simula-
+2 2
+(Figs.A5andA16).Thisregionhassparsevegetationandre- tions(Fig.5).Thereisagreaterriseintemperatureoverland
+sultinglowratesofevapotranspiration,sothewaterisotopes thanocean–anaverage41%–44%increaseinsurfacetem-
+in precipitation are largely consequence of the evaporative perature over land compared to an average 17%–19% in-
+source – the nearby seawater. The cooler, drier wind above crease in surface temperature over ocean, largely owing to
+the Indo-Pacific during SON passes over the warm sea and the land–sea contrast in heat capacities (Fig. 5, Dong et al.,
+evokes higher evaporation rates due to the strong gradients 2009). Land near the Arctic generally warms the most and
+in temperature and moisture between the air–sea surfaces, sees a slight increase in precipitation (Figs. 5 and 6). The
+andthatenrichedairmassisquicklysweptawaytowardsthe increased temperatures produce higher rates of evaporation
+nearby land mass. The little rainfall this region experiences for the heavier oxygen isotope and increases the residence
+is therefore isotopically heavier in the OrbMaxS simulation timeofwatervaporintheatmosphere,whichmaycontribute
+(Fig.4). to an increased advective length scale of enriched moisture
+transport (Singh et al., 2016). Decreased relative humidity
+leadstodecreasedratesofprecipitation–specificallyinthe
+subtropics at the dry, descending region of the Hadley Cell,
+3.2 ResponsetoCO 2 whichresultinincreased18O inthe6×PICO simulations
+p 2
+(Figs. 6, 7, A8, and A17). There is also an increase in sea
+Past studies have shown that simulated climate responds
+surfacetemperaturesandevaporationoverthesesubtropical
+strongly to changes in atmospheric CO levels (Poulsen
+2 warmerwaterswhichpopulatetheairmasswithheavieroxy-
+et al., 2007). Here, we compare the climatic CO response
+2 genisotopesandincrease18O (Figs.7andA17).
+for different orbits. Increasing greenhouse gases results in p
+Though most areas exhibit an increase in 18O with the
+warmer global temperatures, an enhanced hydrologic cycle, p
+6×PICO modeledcase,thewesternequatorialPacificand
+and 18O enrichment over land (Figs. 5 and 7). Section 3.2 2
+somesubpolarregionsshowaslightdecrease(Fig.7).These
+showshydrologicaland18O responsestoincreasedCO for
+p 2 regions experience increases in relative humidity, cloud
+bothOrbMaxSandOrbMaxN.Seasonalpartitioningdidnot
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 8 ---
+502 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Figure5.Thedifferenceinmeanannualsurfacetemperaturesat6× PICO2comparedto3×PICO2forOrbMaxS(a)andOrbMaxN(b).
+Toviewabsolutemeanannualsurfaceairtemperatures,seeFig.A11.
+Figure6.Thedifferenceinmeanannualprecipitationunder6× PICO2comparedto3×PICO2forOrbMaxS(a)andOrbMaxN(b).The
+maximumpositiveprecipitationdifferenceonthecorrespondingcolorbarrepresentsanythingexperiencing6.0mmd
+−1orhigher.Toview
+absolutemeanannualprecipitation,seeFig.A12.
+Figure7.Thedifferenceinmeanannual18Opat6× PICO2comparedto3×PICO2forOrbMaxS(a)andOrbMaxN(b).Toviewabsolute
+meanannual18Op,seeFig.A13.
+cover, and precipitation under the higher CO background which would increase precipitation, resulting in decreased
+2
+state,resultingin18O-depletedrainfall(Figs.6,A7,andA8). 18O (Tierneyetal.,2022;Cramwinckeletal.,2023;Byrne
+p
+The colder subpolar region does not experience much of an andSchneider,2016).Thenarrowingtendencyislargelydue
+increase in surface air temperatures, ∼2°C or less, which totheenhancedmeridionalmoiststaticenergygradientseen
+may have contributed to the slight increase, ∼3% or less, in warming climates with increased atmospheric moisture
+in relative humidity (Figs. 5 and A8). The equatorial Pa- (Fig.6;ByrneandSchneider,2016).Moreover,thereisoften
+cificseesanincreaseintemperature,butitalsoexperiences a widening of the Hadley circulation projected in warming
+highlyincreasedrainfall(Fig.6).Therehasbeenpreviousev- climates,whichcontributestotheexpansionofadrydescent
+idenceofanarrowingandstrengtheningoftheInter-Tropical regionoffthetropics(Figs.6andA17;ByrneandSchneider,
+Convergence Zone (ITCZ) during the onset of the PETM,
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 9 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 503
+2
+2016).Withstronger,unsaturateddowndrafts,thereisanex- 6×PICO than3×PICO .Averagedglobally,thechange
+2 2
+pectedincreasein18O overmostsubtropicalland(Fig.7). in orbit has a smaller impact on the hydrologic cycle at the
+p
+The North American Cordillera experiences large in- higherCO level,representativeofthePETM.
+2
+creasesin18O underthehigherCO conditions(Fig.7).Ar- Additionally, the regions that experience a larger enrich-
+p 2
+easofhighelevationgenerallyhaveverylow18O compared ment or depletion of heavy oxygen isotopes between orbits
+p
+to areas of low elevation due to isotopic distillation during duringcertainseasons,likewesternNorthAmericaornorth-
+rainout. This elevation distinction is reduced during times ernAfrica,seeamuchsmaller18O differenceatthehigher
+p
+of extremely warm temperatures due to atmospheric subsi- CO level than the lower CO level, by as much as 4‰
+2 2
+denceofvaporenrichedin18O,whichexplainsthesubstan- (Figs.4and8).Therefore,thehigheratmosphericCO level
+2
+tialincrease,upto3‰,in18O withadoubledCO (Fig.7, dampens the orbital sensitivity of the hydrologic cycle, es-
+p 2
+PoulsenandJeffery,2011).However,OrbMaxNdoesnotsee peciallyintheseregions.Fractionationofoxygenisotopesis
+as dramatic an increase in 18O under higher CO condi- morepronouncedatlowertemperatures,andthe3×PICO
+p 2 2
+tionsatthismountainrange(Fig.7).Theisotopicresponseis background state exhibits much lower global temperatures
+lower because the higher insolation in the NH at OrbMaxN than the 6×PI CO background state (Fig. 5, Luz et al.,
+2
+already caused a response under the 3×PI CO conditions 2009).CO -inducedwarmingtendstoslowgeneralcircula-
+2 2
+(Fig.A13).The18O overthemountainrangeishigherinthe tioninthetropicsandsubtropics(Singhetal.,2016).Higher
+p
+OrbMaxN case than the other cases at 3×PI CO because temperaturesresultinhigherratesofevaporation,anincrease
+2
+theincreasedinsolationwarmedthemountainrangeandin- in water vapor residence time, and more 18O in the atmo-
+creased18O substantially,sothereisasmallerdifferencein sphere, which causes a lower fractionation factor between
+p
+18O betweentheCO levels(Fig.7). thelighterandheavieroxygenisotopesandlessrainoutand
+p 2
+Finally, most orbits display just a slight increase in 18O distillation(Luzetal.,2009).Thesmallerfractionationrate
+p
+innorthernAfricaunderthehigherCO state,butOrbMaxN betweenoxygenisotopesduringevaporationanddecreasein
+2
+experiencesasubstantialincreasein18O innorthernAfrica, rainout and distillation results in smaller, muted differences
+p
+upto3‰,largelyowingtodrierconditions,includingover intheoxygenisotopevariabilityofprecipitationbetweenor-
+the Indo–Pacific warm pool where most of the moisture is bits.Therefore,thechangeininsolationdistributionhasless
+sourced (Figs. 6, 7, A8, and A17). Northern Africa experi- of a considerable impact on the hydrologic cycle at higher
+encesastrongerdecreaseinrelativehumidityforOrbMaxN atmosphericCO levels.
+2
+than any other orbit under the higher CO state (Fig. A8).
+2
+Thedecreaseinrelativehumidityandprecipitationresultsin
+3.4 Model–datacomparison
+more enriched rainfall causing a stronger increase in 18O
+p
+over this desert and shrubland region under OrbMaxN con- Isotope-enabledclimatemodelscansimulatethetransforma-
+ditions(Fig.7).Additionally,theprevailingtradewindsare tion and transportation of water isotopes in all components
+alsorelativelycooleranddrierovertheIndo–PacificinOrb- of the model, which allows for direct comparison between
+MaxN, though the Indo–Pacific warm pool remains very modeled isotopic ratios and paleo-recorded isotopic ratios
+warm under all orbits, resulting in a stronger temperature and further assessment of uncertainties (Zhu et al., 2017).
+and moisture gradient atthe air–sea interface. This gradient This study gathers 18O data from soil carbonates and δ2H
+increasesevaporationratesatthesource,resultinginhigher datafromleafwaxesinordertovalidateiCESM’ssimulated
+18O overmostoftheSahara(Figs.7,A8,andA17). terrestrial hydrologic cycle during the PETM, which had
+p
+more available data than the Early Eocene. The lower CO
+2
+backgroundstate,representativeofthegreaterEarlyEocene
+3.3 OrbitalsensitivityunderdifferentCO background
+2
+age,isvalidatedthroughaterrestrialtemperaturemodel–data
+states
+comparison(Fig.A2,Zhuetal.,2019).Theisotopicmodel–
+Given the above results, the hydrologic cycle is clearly im- data comparison results focus only on the 6×PI CO sim-
+2
+pactedbybothchangesinorbitandchangesinatmospheric ulations and PETM records. The comparisons account for
+CO levels. However, none of the above results address the seasonality by including both the highest and lowest mean
+2
+potential difference in the hydrologic cycle’s orbital sensi- monthly soil water 18O or 2H (dashed lines) for all terres-
+tivity under two different CO background states. In other triallongitudesatthegivenlatitudeforeachorbitalsimula-
+2
+words, do changes in orbit at a lower CO level have a tion,alongwiththemeanannualvalues(solidlines)(Figs.9
+2
+greater impact on the oxygen isotopic ratio of precipitation and 10). These figures concisely capture the entire seasonal
+thanchangesinorbitatahigherCO level?Whencompar- range of simulated isotopic signals latitudinally. To account
+2
+ing the 18O differences between OrbMaxS and OrbMaxN for regional effects rather than global effects, we also pro-
+p
+at3×PICO versus6×PICO ,thespatialpatternsofen- duceapoint-by-pointcomparisonofproxyisotopicdatawith
+2 2
+richmentanddepletionofheavyoxygenisotopesaresimilar simulated isotopic data at the grid cells in the model that
+(Figs. 4 and 8). However, the global mean annual 18O dif- correspondwiththepaleo-coordinatesofeachproxyrecord
+p
+ference between these two orbits is over 20% smaller for (Figs.A14andA15).Thesefiguresincludemeanannualand
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 10 ---
+504 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Figure8.Theseasonal18OpdifferencesbetweenOrbMaxSandOrbMaxNat6×PICO2.
+Figure9.Thesimulatedseasonalrangeofsoilwater18Oatadepthof40–100cmforeachorbitunder6×PICO2 conditionscompared
+toPETMpaleosolcarbonateandsiderite18Orecords.Themiddlesolidlinesrepresentthemeanannualsoilwater18Oateachlatitudefor
+allterrestriallongitudes,andthelowerandupperdashedlinesrepresentthelowestandhighestmonthlymeansateachlatitude,respectively.
+Theerrorbarsrepresentuncertainty.ThespecificsummerandwintermeanscanbefoundinFig.A9.
+meansummerisotopicdatatoinvestigatepotentialseasonal as many proxy records as possible and not assume a partic-
+biasesinthedata,aswellasbiaseswithinthemodel. ular seasonal time of formation, Fig. 9 displays the largest
+About 60% of PETM soil carbonate records fall within possible range by utilizing the lowest and highest monthly
+thesimulatedseasonalrangeforsoilwater18O,andseveral modeled soil water 18O at each latitude. However, we also
+sideriterecordsfallabovethehighestmonthlymeans,which created the same figure using specifically summer and win-
+likelyrepresentthewarmseason(Fig.9).Inordertocapture ter means, though the rangebecomes tighter (Fig. A9). The
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 11 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 505
+2
+Figure10.Theseasonalrangeofmodel-inferredleafwax2Hforeachorbitunder6×PICO2conditionscomparedtoPETMleafwax2H
+records.Themiddlesolidlinesrepresentthemeanannualleafwax2Hateachlatitudeforallterrestriallongitudes,andthelowerandupper
+dashedlinesrepresentthelowestandhighestmonthlymeansateachlatitude,respectively.Theerrorbarsrepresentuncertainty.Thespecific
+summerandwintermeanscanbefoundinFig.A10.
+siderite record may be warm season biased, and the model practicallycomparetheseproxyvaluestothesimulatedval-
+may exhibit a slightly low 18O bias. Further assessment of ues,wefoundwhichgroupoffourmodelgridcellscaptured
+model and proxy biases contributing to this occurrence can thepaleo-coordinatesofeachproxylocation,andthenfound
+befoundinSect.4. theNHsummermean18Ovaluesforthatgroupofcellsfor
+About 70% of PETM leaf wax records fall within the each simulation. The siderite proxy values originate from
+simulated seasonal range for model-inferred leaf wax 2H the NH and appear to represent summer values (Table A1,
+(Fig.10).Inordertocaptureasmanyproxyrecordsaspos- Figs.9andA14).Themodeledsummerdayshavebeenad-
+sibleandnotassumeaparticularseasonaltimeofformation, justedforthepaleo-calendareffect,whichstructurestimeas
+Fig. 10 displays the largest possible range by utilizing the afixednumberofdegreesinEarth’sorbit,ratherthanafixed
+lowest and highest monthly model-inferred leaf wax 2H at number of days each month, so that seasonal comparisons
+each latitude. However, we also created the same figure us- betweensimulationanddataareproperlylinedupaccording
+ingspecificallysummerandwintermeans,thoughtherange totheEarth’spositioninitsorbit(BartleinandShafer,2019).
+becomes tighter (Fig. A10). Records outside of the largest Thesimulated18Osummermeansateachofthe10locations
+rangemaybeseasonallybiasedorhaveadifferentfraction- were then used to calculate the root-mean-square deviation
+ation factor than the model-inferred values. Further assess- (RMSD),calculatedfollowingEq.(1):
+ment of model and proxy biases contributing to this occur-
+(cid:118)
+rencecanbefoundinSect.4. (cid:117) N
+(cid:117)(cid:80)(cid:0) χ −χˆ (cid:1)2
+ThePETMwasarelativelyshortperiodofextremewarm- (cid:117) i i
+ing,andtheeccentricityconfigurationwouldhaveremained RMSD=
+(cid:116)i=1
+. (1)
+N
+almost constant during the onset. Furthermore, orbit has a
+substantialinfluenceonclimate,soabestguessastotheorbit RMSD is commonly used for model–data comparisons
+duringtheonsetofthePETMwouldimpactourunderstand- (Flato and Marotzke, 2013; Thompson et al., 2022). The
+ing of the PETM global warming and how it compares to lower the result, the more comparable the simulated values
+present-dayglobalwarming.Figures9and10failtoempha- are to the proxy values. The 6×PI CO and OrbMaxN run
+2
+size orbital differences, as they only display zonal seasonal is in best alignment with the proxy record. However, we
+range, so this study employs a quantitative point-by-point are limited by the lack of SH Van Dijk records represent-
+comparison method to emphasize orbital differences. The ingthePETM.TheVanDijkRMSDvaluesareinbold(Ta-
+simulated 6×PI CO 2 18O p values are compared to the Van ble3).WealsodecidedtocompletetheRMSDwiththeother
+Dijketal.(2020)sideritePETMrecordtoevaluatewhichor- 18Orecords(firstnumberinparentheses),aswellasthe2H
+bital simulation is the best match. This record includes the records (second number in parentheses), to see if their pat-
+widestspanoflatitudesandlongitudesandanalyzedseveral ternofcomparabilitywouldbeconsistentwiththeVanDijk
+samplesateachlocationtofindamean18Ovalue.Inorderto siderite record. All proxy records are more comparable to
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 12 ---
+506 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Table3.ThecalculatedRMSDforeachsimulatedcasecompared Additionally,wefindthatorbitalvariabilityhasrelatively
+totheVanDijksideriterecord(inbold).Theparenthesesholdthe greaterinfluenceonprecipitationisotopesunderalowerCO
+2
+calculated RMSD for each simulated case compared to the other condition. This may imply that orbit exerts more control
+18Orecords,aswellasthe2Hrecords,respectively.
+on the seasonal hydrological cycle in colder climates than
+warmerclimates.Assuch,itmaybeespeciallyimportantto
+Root-mean- 3×PICO2 6×PICO2 incorporate the potential influence of orbital variability on
+square
+colder,long-intervalclimatestudiesinfuturework.Studying
+deviation
+orbitalcontrolonthehydrologicalcycleinwarmerclimates
+OrbMaxN 3.010(3.426,15.804) 2.652(2.924,14.263) isstillrecommended,butitmayhaveaslightlylessconsid-
+OrbMaxS 4.932(3.354,14.457) 3.323(2.262,13.924)
+erableimpactinextremelyhighCO environments.
+2
+OrbMin 4.338(3.196,15.667) 3.059(2.436,14.436)
+Somepaleosolcarbonateproxiesmostcloselymatchmax-
+OrbMod 4.260(3.298,15.517) 3.149(2.437,14.288)
+imum simulated soil water 18O, which represents summer
+values, though not all (Fig. 9). This comparison is consis-
+tent with the idea that paleosol carbonates sometimes pre-
+the6×PICO simulationsthanthe3×PICO simulations
+2 2 serve a signal of the isotopic composition of rainfall during
+sincetheyareallfromthePETM,buttheorbitalpreferences
+thewarmer,moreevaporativeseasoninwhichthecarbonates
+varied(Table3).Otherhesitations,drawbacks,andspecula-
+maybemorelikelytoform(Kelsonetal.,2020).Thesiderite
+tionscanbefoundinSect.4.
+recordsappeartofallalongthemaximum18Osimulatedval-
+uesforallmodeledcases,signalingapossiblewarm-season
+4 Discussion bias.Recentstudiesarguethatpedogenicsideriteformsbe-
+tween the mean annual air temperature and the mean air
+These Early Eocene sensitivity experiments provide a win-
+temperature of the warmest months, depending on the lati-
+dowtolarge-scaleclimatepatternsandpaintsomeenviron-
+tude (Fernandez et al., 2014; van Dijk et al., 2019). Some
+mentalcontextforproxyrecords.Ourmodelsimulatedfour
+temperaturereconstructionssupportthatsideriteformsmore
+orbits at two different atmospheric CO settings and traced
+2 rapidlyunderwarmer,moreevaporiticconditions,especially
+waterisotopicratiostoallowforcomparisonstovariouswa-
+in higher latitudes, since it is controlled by microbial iron
+terisotopeproxyrecords.Apaststudyusingalowerresolu-
+reduction which proceeds faster in higher soil temperatures
+tionmodeloftheEarlyEocenefoundaheavyinfluenceofor-
+(van Dijk et al., 2020). Therefore, both archives likely have
+bitonseasonalprecipitationtrendsduringtheEarlyEocene some records that represent the soil water 18O during the
+and our findings agree (Keery et al., 2018). OrbMaxS and
+warm, dry,evaporative seasonwhen theyare morelikely to
+OrbMaxN simulations exhibit high eccentricity and obliq-
+form,butespeciallythesiderite.Assideriteappearedconsis-
+uity,resultinginintenseseasonality,butdifferentorbitalpre-
+tentlywarmseasonbiased,wechosetousethesummertime
+cession,resultingindramaticdifferencesininsolationdistri-
+average soil temperature for the siderite PSM. The summer
+butionseasonally(Fig.A3).
+seasonreceivesthegreatestinsolation,whichincreasestem-
+We find dramatic differences in 18O between OrbMaxS
+p peratureandevaporationrates,whichinturnwouldhavebi-
+and OrbMaxN as a resultof seasonal changes in insolation,
+asedtheisotoperecordingifthisenvironmentdidencourage
+reaching up to ∼6.5‰ in certain regions (Fig. 4). The dif-
+faster soil carbonate growth. This bias is seen in the point-
+ferences in 18O between the two CO background states
+p 2 by-point comparison as well, which highlights regional cli-
+were less dramatic, reaching only ∼3.0‰ in certain re-
+mateoverglobalclimate,sincethesimulatedmeansummer
+gions(Fig.7).Keyregionsofinterest(thoseexperiencingthe
+isotopicsignalsmorecloselymimictheproxydatathanthe
+greatestdifferencesinoxygenisotopicsignals)showgreater
+simulatedmeanannualisotopicsignals(Figs.A14andA15).
+changes in 18O p in response to orbital change than a CO 2 The terrestrial 18O proxy records span much of the NH,
+doublingduetohigherseasonalsensitivity.Thismaybekey
+but are lacking in the SH, limiting our model–data compar-
+toexplainingsomevariabilitywithinterrestrialwaterisotope
+ison.Althoughthemodel’spaleo-elevationroughlymatches
+paleo-records.Forinstance,thevariationintheterrestrial2H
+the paleo-elevation estimates from the proxy records, prox-
+leaf record in Inglis et al. (2022) may be partly attributed
+iesfromthehighestelevationswereexcludedbecausepaleo-
+toorbitalvariability.However,thesimulationswithdoubled
+altimetry estimates have larger uncertainty. Aside from the
+CO showed a consistent, mean annual increase in 18O ,
+2 p seasonal bias, the exclusion of high-elevation proxies may
+which orbital changes are less likely to provoke. Therefore,
+explain why none of the records sit closer to the minimum
+changes in precession play an important role in the hydro- 18Ovalues,asareasofhighelevationoftenresultinlow18O,
+logiccycleseasonallyandpresentavaluablepieceofinfor-
+thoughthisisnotnecessarilythecaseunderhighCO condi-
+2
+mation to consider when interpreting paleo-records – espe-
+tions(Dansgaard,1964).Additionally,thereisevidencethat
+cially when those records form over shorter periods of time iCESM1.2hasaslightlowbiasfor18O ,whichmaytransfer
+p
+andareseasonallybiased. to the 18O of soil water and drive further misalignment be-
+tweenmodelandproxies(Bradyetal.,2019).Thisslightlow
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 13 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 507
+2
+bias may partially explain the misalignment between simu- with the oxygen isotope records, discussed above, and sev-
+latedandproxyisotopicsignalsthatisseeninthepoint-by- eral drawbacks of the simulations, including the resolution
+pointcomparisonaswell(Figs.A14and15).Themodelalso andmodelbias.Thesemodelsimulationsarerunwitharel-
+exhibitssomedepletedbiasin2H,aswellasthepresenceof atively coarse atmosphere (∼2° horizontal resolution) and
+adoubleITCZ,whichmayencouragebiasesinextratropical topography, which may not fully capture the local environ-
+moisture transport (Brady et al., 2019). Other limitations in ments of the proxy records. Perhaps most importantly, the
+this model–data comparison may include the possibility of timingoftheonsetofthePETMisnotperfectlyconstrained
+evaporation before burial, diagenesis, uncertainty in timing, so the proxy records may not represent the onset itself. So
+varyingelevations,orerrorinpaleo-coordinateconversionor aside from the van Dijk siderite record, we also conducted
+fractionationfactor. an RMSD for the other PETM proxy records to speculate
+Furthermore, the terrestrial 2H proxy records largely fall on what consistent (or inconsistent) patterns between simu-
+within the simulated seasonal range for model-inferred leaf lations couldmean. All recordsmatch the higherCO level
+2
+wax2H(Fig.10).TheJaramilloetal.(2010)recordiscloser betterthanthelowerCO levelwithinthesameorbit,which
+2
+to the minimum 2H, likely because that record was taken was expected with PETM records (Table 3). However, the
+from a tropical rainforest with increased and 2H-depleted other 18O records did not match OrbMaxN best but instead
+rainfall, but the other records align closer to mean or max- matched OrbMaxS best at the PETM greenhouse gas level.
+imum 2H (Fig. 10, Jaramillo et al., 2010). Leaves undergo The2HrecordsseemtofavorOrbMaxSaswellifanything.
+transpirationwhilegrowing,anevaporativeprocessthatfur- GiventhevariabilitywithintheRMSD,wehesitatetodraw
+ther fractionates water isotopes, which often result in 2H- anystrongconclusions,butwespeculatethattherecordsall
+enrichment of leaf water and has a critical effect on the fi- likely formed during varying orbits or were slightly more
+nal 2H of leaf wax n-alkanes (Kahmen et al., 2013). There- likelytoformduringorbitaltimesofmaximumseasonality.
+fore, it is likely that some records align closer to maximum Determining the potential orbit in existence at this time
+2H values in part due to transpiration. Leaves also tend to can contribute to our knowledge of how this past global
+growoveramatterofweeks,soseasonalbiasandshort-term warming differs from our present-day global warming. For
+formationcouldbeanotherreasonforslightmismatchesbe- instance,the6×PICO andOrbMaxNmodeledrunisrela-
+2
+tweenthemodelanddata.Plus,thefractionationfactorused tively far from our present-day warming scenario. The cur-
+intheWaxPSMisagloballyaveragedestimate,andthereis rent atmospheric CO concentration is about one-quarter
+2
+awiderangeofpotentiallyrealisticfractionationfactorsthat as high, and the 6×PI CO OrbMaxN simulation has a
+2
+couldshiftleafwax2Hvaluesbyasmuchas∼20‰(Han- mean annual global temperature 0.71°C higher than the
+dleyetal.,2011;Paganietal.,2006).TheEarthexperienced 6×PICO OrbModsimulation,largelydrivenbythehigher
+2
+a major precession-driven modification of global vegetation insolation maximum of OrbMaxN. If the 6×PI CO Orb-
+2
+during the PETM and across the Eocene, so the changes in MaxN simulation is the closest to representing the onset of
+biosphere–atmosphere interactions and plant biology could thePETM,thishighlightshowthePETMdiffersfrommod-
+have significantly impacted the hydrological cycle and leaf ernclimateinimportantwaysthatconstrainitsuseasanana-
+waxisotopes(Tardifetal.,2021).Asidefromthat,someof loguefortheAnthropocene,especiallysinceamaximumNH
+the same limitations faced in the 18O comparison are also summerinsolationorbitwouldhaveslightlybolsteredglobal
+relevant in the 2H comparison – diagenesis, uncertainty in warmingduringthePETM,unlikeourmodernorbit.
+timing,varyingelevations,orerrorinpaleo-coordinatecon-
+version.However,themajorityofleafwaxrecordsfallwithin
+themodel-inferredseasonalrangeofleafwax2H. 5 Conclusions
+Finally, previous studies indicated that Earth experienced
+near-maximum solar irradiance at the onset of the PETM ThisstudydemonstratestherelativeimpactofCO andorbit
+2
+largely due to variations in eccentricity (Zeebe et al., 2017; onclimateandtheorbitalsensitivityofthehydrologiccycle
+Lourens et al., 2005; Westerhold et al., 2009; Zachos et al., under different CO background states through the combi-
+2
+2010;Galeottietal.,2010;Westerholdetal.,2012).Several nation of a fully coupled climate model suite of the Early
+studies argue that the Earth’s eccentricity at this time may Eocene and published terrestrial 18O and 2H proxy records.
+have partly caused the extreme warming during the PETM, Our results reveal that large variations in orbit can have a
+and our findings agree (Kiehl et al., 2018; Lawrence et al., moresubstantialimpactonthehydrologiccyclingthandou-
+2003).TheKiehletal.(2018)studyalsoarguesthattheEarth bling CO in certain regions seasonally, although doubling
+2
+was likely experiencing an orbit most similar to OrbMaxN CO hasamoreconsistentandglobal-scaleimpact,andthat
+2
+at the onset of the PETM (Table 3). Although it is worth orbital sensitivity weakens under a higher CO background
+2
+constraining the orbit at the onset of the PETM in order to state. These findings highlight the importance of modeling
+further understand the relatively rapid and extreme warm- variousorbitalstatestounderstandvariationinwaterisotope
+ingthatfollowed,thereareseverallimitationstothismodel– recordsandstresstheinfluencechangesinorbithaveonsea-
+datacomparisonthatrenderitlesseffective.Therearebiases sonal climate relative to changes in greenhouse gases. This
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 14 ---
+508 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+study also determines that the concentration of greenhouse
+gasesintheatmospherepartlycontrolsthesensitivityofthe
+climatetoorbitalchanges.Thecomparisontoterrestrial18O
+and2Hrecordsverifiesthereliabilityofourmodelandlends
+some interpretation to the biases within iCESM and the en-
+vironmentalcontextpertainingtothepotentialwarm-season
+biasofsomeoftheproxiessowemaybetterunderstandwhat
+theyrepresent.TheiCESMgenerallyperformswellinsim-
+ulating hydrologic cycling during a warmer climate, which
+increases trust in iCESM to project future climate change,
+though some water isotope biases exist within the realm of
+themodel.Theempiricalevidenceappearstohostbiasesas
+well, especially siderite with a seasonal bias, which under-
+scores the importance of taking orbit into account when as-
+sessing siderite records. Exploring OrbMaxN as a potential
+causefortheonsetofthePETMisworthwhile,thoughmany
+uncertainties in the model–data comparison exist. Simulat-
+ingtheEarlyEoceneisvaluableasitexperiencedhighCO
+2
+levels, heightened seasonality, and precipitation extremes,
+which we expect with future climate change. These simu-
+lations further our understanding of the role CO and orbit
+2
+playinclimatechangeandthehydrologiccycle.
+AppendixA
+TableA1.Themodernandpaleo-coordinatesforeachvanDijketal.(2020)proxylocation,followedbytheappropriatemodelgridcells
+andsitenames.
+Moderncoordinates(°N,°E) Paleocoordinates(°N,°E) Gridcells(lat,long) Sitename
+62,−6.5 57.88,−10.4 78–79,139–140 Faroe
+33.4,−117.2 37.36,−99.78 67–68,104–105 Alberhill
+75.3,135.5 77.69,128.26 88–89,51–52 Arctic
+34.55,−92.51 35.8,−74.96 66–67,114–115 Arkansas
+47.32,−122 52.49,−102.24 75–76,103–104 Blum
+56.33,−133.22 62.66,−111.69 80–81,99–100 Alaska
+4,−72 −0.24,−58.7 47–48,120–121 Colombia2
+39.02,−104.27 41.92,−85.8 69–70,109–110 Colorado
+41.99,−106.44 45.15,−87.26 71–72,109–110 Hanna
+49,2.2 44.3,−0.95 70–71,142–143 France
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 15 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 509
+2
+FigureA1.Thezonal,monthlytop-of-atmosphere(TOA)solarinsolationdistributionforallorbits.OrbMaxSandOrbMaxNreachahigher
+summerinsolationthanOrbModorOrbMin.
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 16 ---
+510 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+FigureA2.Model–datacomparisonbetweentheHuberandCaballero(2011)Eoceneterrestrialdatasetandthe3×PICO2simulations.The
+middlesolidlinesrepresenttheannualmeanateachlatitudeforallterrestriallongitudes,andthelowerandupperdashedlinesrepresentthe
+lowestandhighestmonthlymeansateachlatitude,respectively.
+FigureA3.Theseasonalzonaltop-of-atmosphere(TOA)solarinsolationdifferencebetweenOrbMaxSandOrbMaxN.
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 17 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 511
+2
+FigureA4.TheseasonalspecifichumiditydifferencesbetweenOrbMaxSandOrbMaxNat3×PICO2.Specifichumidityispresentedhere
+at850atmospherehybridsigmapressurecoordinates.SigmacoordinatesrepresentpressureattheEarth’ssurfaceratherthanthemeansea
+level, so it follows the actual terrain. We chose these coordinates because they represent the same pressure level above the land without
+runningintomountains.
+FigureA5.TheseasonalrelativehumiditydifferencesbetweenOrbMaxSandOrbMaxNat3×PICO2.Relativehumidityispresentedhere
+at850atmospherehybridsigmapressurecoordinates.SigmacoordinatesrepresentpressureattheEarth’ssurfaceratherthanthemeansea
+level,meaningitfollowstheactualterrain.Wechosethesecoordinatesbecausetheyrepresentthesamepressurelevelabovethelandwithout
+runningintomountains.
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 18 ---
+512 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+FigureA6.Theseasonal2HpdifferencesbetweenOrbMaxSandOrbMaxNat3×PICO2.
+Figure A7. The difference in mean annual total cloud coverage under 6×PI CO2 compared to 3×PI CO2 for OrbMaxS (a) and Orb-
+MaxN(b).
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 19 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 513
+2
+FigureA8.Thedifferenceinmeanannualrelativehumidityat6×PICO2 comparedto3×PICO2 forOrbMaxS(a)andOrbMaxN(b).
+Relativehumidityispresentedhereat850atmospherehybridsigmapressurecoordinates.SigmacoordinatesrepresentpressureattheEarth’s
+surfaceratherthanthemeansealevel,soitfollowstheactualterrain.Wechosethesecoordinatesbecausetheyrepresentthesamepressure
+levelabovethelandwithoutrunningintomountains.
+FigureA9.Thesimulatedseasonalrangeofsoilwater18Oatadepthof40–100cmforeachorbitunder6×PICO2conditionscomparedto
+PETMpaleosolcarbonateandsiderite18Orecords.Themiddlesolidlinesrepresentthemeanannualsoilwater18Oateachlatitudeforall
+terrestriallongitudes,andthelowerandupperdashedlinesrepresentthewinterandsummermeansateachlatitude,respectively.Theerror
+barsrepresentuncertainty.
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 20 ---
+514 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+FigureA10.Theseasonalrangeofmodel-inferredleafwax2Hforeachorbitunder6×PICO2conditionscomparedtoPETMleafwax2H
+records.Themiddlesolidlinesrepresentthemeanannualleafwax2Hateachlatitudeforallterrestriallongitudes,andthelowerandupper
+dashedlinesrepresentthewinterandsummermeansateachlatitude,respectively.Theerrorbarsrepresentuncertainty.
+FigureA11.Themeanannualsurfaceairtemperatureat3×PICO2(a,b)and6×PICO2(c,d)forOrbMaxS(a,c)andOrbMaxN(b,d).
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 21 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 515
+2
+Figure A12. The mean annual precipitation at 3×PI CO2 (a,b) and 6× PI CO2 (c,d) for OrbMaxS (a,c) and OrbMaxN (b,d). The
+maximumpositiveprecipitationdifferenceonthecorrespondingcolorbarrepresentsanythingexperiencing10mmd
+−1orhigher.
+FigureA13.Themeanannual18Opat3×PICO2(a,b)and6×PICO2(c,d)forOrbMaxS(a,c)andOrbMaxN(b,d).
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 22 ---
+516 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+FigureA14.Themeanannualandmeansummersoilwater18Oat6×PICO2forallfourorbitalsimulationscomparedtotheproxyrecord
+18O. Orbit is denoted by marker shape, time of year is denoted by marker color, unfilled markers represent paleosol carbonate records,
+andfilledmarkersrepresentsideriterecords.Thesimulated18Oistakenfromtheapproximatelocationinthemodelthatcorrespondsto
+the location of each given proxy record. The dotted lines represent trend lines for the mean annual and mean summer values. The mean
+annualslope(blue)is0.679andthemeansummerslope(red)is0.789,suggestingthatsimulatedmeansummerisotopicsignalsareincloser
+alignmenttotheproxydata.
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 23 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 517
+2
+FigureA15.Themeanannualandmeansummermodel-inferredleafwax2Hat6×PICO2 forallfourorbitalsimulationscomparedto
+theleafwaxrecord2H.Orbitisdenotedbymarkershapeandtimeofyearisdenotedbymarkercolor.Thesimulated2Histakenfromthe
+approximatelocationinthemodelthatcorrespondstothelocationofeachgivenproxyrecord.
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 24 ---
+518 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+FigureA16.Theseasonalnetprecipitation(precipitationminusevaporation)differencesbetweenOrbMaxSandOrbMaxNat3×PICO2.
+FigureA17.Thedifferenceinmeanannualnetprecipitation(precipitationminusevaporation)under6×PICO2comparedto3×PICO2
+forOrbMaxS(left)andOrbMaxN(right).
+Codeanddataavailability. Alldataneededtoevaluatethecon- Authorcontributions. JCandCPdesignedtheexperimentalap-
+clusions in the paper are presented in the paper. The pub- proach.JCanalyzedtheresultsandpreparedthefigures.JZdevel-
+lished proxy records used in this study are all cited. Ad- oped the model code and performed the simulations. JT provided
+ditional data related to this paper are available in the Zen- proxy data. JK provided code templates for analysis. JC prepared
+odo repository (https://doi.org/10.5281/zenodo.7971738, Camp- themanuscript,andallco-authorsprovidedcomments.
+bell, 2023). Additional data can be provided upon request to the
+authors. The CESM model code is available through the Na-
+tional Center for Atmospheric Research software development Competinginterests. Thecontactauthorhasdeclaredthatnone
+repository (https://svn-ccsm-models.cgd.ucar.edu/cesm1/exp_tags/ oftheauthorshasanycompetinginterests.
+pcesm_cesm1_2_2_tags/dt-cesm1.0_cesm1_2_2_1/,NationalCen-
+terforAtmosphericResearch,2019).
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 25 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 519
+2
+Disclaimer. Publisher’s note: Copernicus Publications remains ory and idealized simulations, J. Climate, 26, 4000–4016,
+neutral with regard to jurisdictional claims made in the text, pub- https://doi.org/10.1175/jcli-d-12-00262.1,2013.
+lishedmaps,institutionalaffiliations,oranyothergeographicalrep- Byrne, M. and Schneider, T.: Narrowing of the ITCZ in a warm-
+resentationinthispaper.WhileCopernicusPublicationsmakesev- ingclimate:Physicalmechanisms,Geophys.Res.Lett.,43,350–
+eryefforttoincludeappropriateplacenames,thefinalresponsibility 357,https://doi.org/10.1002/2016GL070396,2016.
+lieswiththeauthors. Campbell, J.: CESM1.2 simulation data for “CO2 and orbitally
+drivenoxygenisotopevariabilityintheEarlyEocene”,Zenodo
+[dataset],https://doi.org/10.5281/zenodo.7971738,2023.
+Acknowledgements. We would like to thank the editor Yan- Craig, H.: Isotopic variations in meteoric waters, Science,
+nick Donnadieu, as well as the reviewers, Gordon Inglis and an 133,1702–1703,https://doi.org/10.1126/science.133.3465.1702,
+anonymousreviewer,fortheirhelpinimprovingthemanuscript. 1961.
+Cramwinckel, M., Burls, N., Fahad, A., Knapp, S., West, C., Re-
+ichgelt,T.,Greenwood,D.,Chan,W.,Donnadieu,Y.,Hutchin-
+son, D., de Boer, A., Ladant, J., Morozova, P., Niezgodzki, I.,
+Financialsupport. This research has been supported by the
+Knorr, G., and Inglis, G.: Global and zonal-mean hydrologi-
+National Science Foundation, Directorate for Geosciences (grant
+calresponsetoearlyEocenewarmth,Palaeoceanography,38,6,
+no.2002397).
+https://doi.org/10.1029/2022PA004542,2023.
+Dai, J., Zhang, X., Luo, Z., Liu, Z., He, X., Rao, Z., Guan,
+H.: Variation of the stable isotopes of water in the soil-plant-
+Reviewstatement. ThispaperwaseditedbyYannickDonnadieu
+atmosphere continuum of a Cinnamomum camphora wood-
+andreviewedbytwoanonymousreferees.
+land in the East Asian monsoon region, J. Hydrol., 589,
+https://doi.org/10.1016/j.jhydrol.2020.125199,2020.
+Dansgaard, W.: Stable isotopes in precipitation, Tellus, 16, 436–
+468,https://doi.org/10.1111/j.2153-3490.1964.tb00181.x,1964.
+References Davis, B. and Brewer, S.: A unified approach to orbital, so-
+lar, and lunar forcing based on the earth’s latitudinal insola-
+Anagnostou, E., John, E., Babila, T., Sexton, P., Ridgwell, A., tion/temperaturegradient,QuaternarySci.Rev.,30,1861–1874,
+Lunt, D., Pearson, P., Chalk, T., Pancost, R., and Foster, https://doi.org/10.1016/j.quascirev.2011.04.016,2011.
+G.: Proxy evidence for state-dependence of climate sensi- Dong, B., Gregory, J., and Sutton, R.: Understanding land–
+tivity in the Eocene greenhouse, Nat. Commun., 11, 4436, sea warming contrast in response to increasing greenhouse
+https://doi.org/10.1038/s41467-020-17887-x,2020. gases, Part I: Transient adjustment, J. Climate, 22, 3079–3097,
+Bartlein,P.J.andShafer,S.L.:Paleocalendar-effectadjustments https://doi.org/10.1175/2009JCLI2652.1,2009.
+intime-sliceandtransientclimate-modelsimulations(PaleoCal- Douville,H.,Raghavan,K.,andRenwick,J.:Watercyclechanges,
+Adjust v1.0): impact and strategies for data analysis, Geosci. in:ClimateChange2021:ThePhysicalScienceBasis.Contribu-
+Model Dev., 12, 3889–3913, https://doi.org/10.5194/gmd-12- tionofworkinggroupItothesixthassessmentreportoftheInter-
+3889-2019,2019. governmentalPanelonClimateChange,CambridgeUniversity
+Bataille, C., Watford, D., Ruegg, S., Lowe, A., and Bowen, Press, 1055–1210, https://doi.org/10.1017/9781009157896.010,
+G.: Chemostratigraphic age model for the Tornillo 2021.
+Group: A possible link between fluvial stratigraphy Fernandez,A.,Tang,J.,andRosenheim,B.:Siderite‘clumped’iso-
+and climate, Palaeogeogr. Palaeocl., 457, 277–289, tope thermometry: A new paleoclimate proxy for humid conti-
+https://doi.org/10.1016/j.palaeo.2016.06.023,2016. nentalenvironments,Geochim.Cosmochim.Ac.,126,411–421,
+Berger, A.: Milankovitch theory and climate, Rev. Geophys., 26, https://doi.org/10.1016/j.gca.2013.11.006,2014.
+624–657,https://doi.org/10.1029/RG026i004p00624,1988. Flato,G.andMarotzke,J.:Evaluationofclimatemodels,in:Cli-
+Bowen, G., Maibauer, B., Kraus, M., Rohl, U., Westerhold, T., mateChange2013:ThePhysicalScienceBasis.Contributionof
+Steimke, A., Gingerich, P., Wing, S., and Clyde, W.: Two workinggroupItothefifthassessmentreportoftheIntergovern-
+massive, rapid released of carbon during the onset of the mental Panel on Climate Change, Cambridge University Press,
+Paleocene–Eocene thermal maximum, Nat. Geosci., 8, 44–47, 741–866,https://doi.org/10.1017/CBO9781107415324,2013.
+https://doi.org/10.1038/ngeo2316,2014. Friedman,I.andO’Neil,J.:Compilationofstableisotopefraction-
+Brady,E.,Stevenson,S.,Bailey,D.,Liu,Z.,Noone,D.,Nusbaumer, ationfactorsofgeochemicalinterest,in:DataofGeochemistry,
+J.,Otto-Bliesner,B.,Tabor,C.,Tomas,R.,Wong,T.,Zhang,J., USGS,https://doi.org/10.3133/pp440KK,1977.
+andZhu,J.:Theconnectedisotopicwatercycleinthecommunity Galeotti, S., Krishnan, S., Pagani, M., Lanci, L., Gaudio, A., Za-
+earthsystemmodelversion1,J.Adv.ModelEarthSy.,11,2547– chos, J., Monechi, S., Morelli, G., and Lourens, L.: Orbital
+2566,https://doi.org/10.1029/2019MS001663,2019. chronology of early Eocene hyperthermals from the Contessa
+Burgener,L.,Huntington,K.,Hoke,G.,Schauer,A.,Ringham,M., Roadsection,centralItaly,EarthPlanetSc.Lett.,290,192–200,
+Latorre,C.,andDiaz,F.:Variationsinsoilcarbonateformation 192–200.https://doi.org/10.1016/j.epsl.2009.12.021,2010.
+andseasonalbiasover>4kmofreliefinthewesternAndesre- Garel, S., Schnyder, J., Jacob, J., Dupuis, C., Boussafir, M., Mil-
+vealedbyclumpedisotopethermometry,EarthPlanetSc.Lett., beau,C.,Storme,J-Y.,Iakovleva,A.,Yans,J.,Baudin,F.,Flehoc,
+441,188–199,https://doi.org/10.1016/j.epsl.2016.02.033,2016. C., and Quesnel, F.: Paleohydrological and paleoenvironmental
+Byrne, M. and O’Gorman, P.: Land-ocean warming contrast over changes recorded in terrestrial sediments of the Paleocene–
+a wide range of climates: Convective quasi-equilibrium the-
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 26 ---
+520 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Eocene boundary (Normandy, France), Palaeogeogr. Palaeocl., varan, M., Osorno, J., Crowley, J., Valencia, V., and Vervoort,
+376, 184–199, https://doi.org/10.1016/j.palaeo.2013.02.035, J.: Effects of rapid global warming at the Paleocene–Eocene
+2013. boundary on neotropical vegetation, Science, 330, 957–961,
+Gat, J. R.: Atmospheric water balance – the isotopic perspective, https://doi.org/10.1126/science.1193833,2010.
+Hydrol. Process., 14, 1357–1369, https://doi.org/10.1002/1099- Kahmen, A., Hoffmann, B., Schefub, E., Arndt, S., Cer-
+1085(20000615)14:8<1357::AID-HYP986>3.0.CO;2-7,2000. nusak, L., West, J., and Sachse, D.: Leaf water deu-
+Gat, J. R. and Airey, P. L.: Stable water isotopes in the terium enrichment shapes leaf wax n-alkane ??D val-
+atmosphere/biosphere/lithosphere interface: Scaling- ues of angiosperm plants II: Observational evidence and
+up from the local to continental scale, under humid global implications, Geochim. Cosmochim. Ac., 111, 50–63,
+and dry conditions, Global Planet. Change, 51, 25–33, https://doi.org/10.1016/j.gca.2012.09.004,2013.
+https://doi.org/10.1016/j.gloplacha.2005.12.004,2006. Keery,J.S.,Holden,P.B.,andEdwards,N.R.:Sensitivityofthe
+Gierz, P., Werner, M., and Lohmann, G.: Simulating climate and Eocene climate to CO2 and orbital variability, Clim. Past, 14,
+stablewaterisotopesduringtheLastInterglacialusingacoupled 215–238,https://doi.org/10.5194/cp-14-215-2018,2018.
+climate-isotopemodel,J.Adv.Model.EarthSy.,9,2027–2045, Kelson, J., Watford, D., Bataille, C., Huntington, K., Hyland, E.,
+https://doi.org/10.1002/2017MS001056,2017. and Bowen, G.: Warm terrestrial subtropics during the Pale-
+Handley,L.,Pearson,P.,McMillan,I.,andPancost,R.:Largeterres- oceneandEocene:Carbonateclumpedisotopeevidencefromthe
+trialandmarinecarbonandhydrogenisotopeexcursionsinanew TornilloBasin,Texas(USA),Palaeogeogr.Palaeocl.33,1230–
+Paleocene/EoceneboundarysectionfromTanzania,EarthPlanet 1249,https://doi.org/10.1029/2018pa003391,2018.
+Sc.Lett.,275,17–25,https://doi.org/10.1016/j.epsl.2008.07.030, Kelson, J., Huntington, K., Breecker, D., Burgener, L., Gal-
+2008. lagher, T., Hoke, G., and Petersen, S.: A proxy for
+Handley,L.,Crouch,E.,andPancost,R.:ANewZealandrecordof all seasons? A synthesis of clumped isotope data from
+sea level rise and environmental change during the Paleocene– Holocene soil carbonates, Quaternary Sci. Rev., 234,
+Eocene thermal maximum, Palaeogeogr. Palaeocl., 305, 185– https://doi.org/10.1016/j.quascirev.2020.106259,2020.
+200,https://doi.org/10.1016/j.palaeo.2011.03.001,2011. Kiehl, J., Shields, C., Snyder, M., Zachos, J., and Rothstein,
+Herold, N., Buzan, J., Seton, M., Goldner, A., Green, J. A. M., M.: Greenhouse and orbital forced climate extreme dur-
+Müller, R. D., Markwick, P., and Huber, M.: A suite of early ing the early Eocene, Philos. T. R. Soc. A, 376, 2130,
+Eocene ( 55 Ma) climate model boundary conditions, Geosci. https://doi.org/10.1098/rsta.2017.0085,2018.
+ModelDev.,7,2077–2090,https://doi.org/10.5194/gmd-7-2077- Koch, P., Zachos, J., and Dettman, D.: Stable isotope stratigra-
+2014,2014. phy and paleoclimatology of the Paleogene Bighorn Basin
+Huber, M. and Caballero, R.: The early Eocene equable (Wyoming, USA), Palaeogeogr. Palaeocl., 115, 61–89,
+climate problem revisited, Clim. Past, 7, 603–633, https://doi.org/10.1016/0031-0182(94)00107-j,1995.
+https://doi.org/10.5194/cp-7-603-2011,2011. Konecky,B.,Dee,S.,andNoone,D.:WaxPSM:Aforwardmodel
+Hurrell, J., Holland, M., Gent, P., Ghan, S., Kay, J., Kushner, P., ofleafwaxhydrogenisotoperatiostobridgeproxyandmodel
+LamarqueJ.,Large,W.,Lawrence,D.,Lindsay,K.,Lipscomb, estimatesofpastclimate,J.Geophys.Res.-Biogeo.,124,2107–
+W., Long, M., Mahowald, N., Marsh, D., Neale, R., Rasch, 2125,https://doi.org/10.1029/2018JG004708,2019a.
+R., Vavrus, S., Vertenstein, M., Bader, D., Collins, W., Hack, Konecky, B., Noone, D., and Cobb, K.: The influence of
+J., Kiehl, J., and Marshall, S.: The community earth system competing hydroclimate processes on stable isotope ratios
+model: A framework for collaborative research, B. Am. Me- in tropical rainfall, Geophys. Res. Lett., 46, 1622–1633,
+teorol.Soc.,94,1339–1360,https://doi.org/10.1175/bams-d-12- https://doi.org/10.1029/2018GL080188,2019b.
+00121.1,2013. Lawrence,K.,Sloan,L.,andSewall,J.:Terrestrialclimaticresponse
+Inglis, G., Bhattacharya, T., Hemingway, J., Hollingsworth, E., toprecessionalorbitalforcingintheEocene,in:CausesandCon-
+Feakins, S., and Tierney, J.: Biomarker approaches for recon- sequences of Globally Warm Climates in the Early Paleogene,
+structingterrestrialenvironmentalchange,Annu.Rev.EarthPl. Geol.Soc.Am.,369,https://doi.org/10.1130/0-8137-2369-8.65,
+Sc.,50,369–394,https://doi.org/10.1146/annurev-earth-032320- 2003.
+095943,2022. Lourens,L.,Sluijs,A.,Zachos,J.,Thomas,E.,Rohl,U.,Bowles,
+Inglis, G. N., Bragg, F., Burls, N. J., Cramwinckel, M. J., Evans, J., and Raffi, I.: Astronomical pacing of late Paleocene to
+D., Foster, G. L., Huber, M., Lunt, D. J., Siler, N., Steinig, S., early Eocene global warming events, Nature, 435, 1083–1087,
+Tierney, J. E., Wilkinson, R., Anagnostou, E., de Boer, A. M., https://doi.org/10.1038/nature03814,2005.
+Dunkley Jones, T., Edgar, K. M., Hollis, C. J., Hutchinson, D. Lunt, D., Ridgwell, A., Sluijs, A., Zachos, J., Hunter, S., and
+K.,andPancost,R.D.:Globalmeansurfacetemperatureandcli- Haywood, A.: A model for orbital pacing of methane hydrate
+matesensitivityoftheearlyEoceneClimaticOptimum(EECO), destabilizationduringthePaleogene,Nat.Geosci.,4,775–778,
+Paleocene–Eocene Thermal Maximum (PETM), and latest Pa- https://doi.org/10.1038/ngeo1266,2011.
+leocene,Clim.Past,16,1953–1968,https://doi.org/10.5194/cp- Luz, B., Barkan, E., Yam, R., and Shemesh, A.: Frac-
+16-1953-2020,2020. tionation of oxygen and hydrogen isotopes in evaporat-
+Jaramillo,C.,Ochoa,D.,Contreras,L.,Pagani,M.,Carvajal-Ortiz, ing water, Geochim. Cosmochim. Ac., 73, 6697–6703,
+H., Pratt, L., Krishnan, S., Cardonna, A., Romero, M., Quiroz, https://doi.org/10.1016/j.gca.2009.08.008,2009.
+L.,Rodriguez,G.,Rueda,M.,delaParra,F.,Moron,S.,Green, Mulch, A., Teyssier, C., Cosca, M., and Chamberlain, C.:
+W., Bayona, G., Montes, C., Quintero, O., Ramirez, R., Mora, Stable isotope paleoaltimetry of Eocene core complexes
+G., Schouten, S., Bermudez, H., Navarrete, R., Parra, F., Al-
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024
+--- PAGE 27 ---
+J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability 521
+2
+in the North American Cordillera, Tectonics, 26, 4, Tardif, D., Toumoulin, A., Frédéric, F., Donnadieu, Y., Le Hir,
+https://doi.org/10.1029/2006TC001995,2007. G., Barbolini, N., Licht, A., Ladant, J. B., Sepulchre, P.,
+Muller, R., Cannon, J., Qin, X., Watson, R., Gurnis, M., Viovy, N., Hoorn, C., and Dupont-Nivet, G.: Orbital varia-
+Williams, S., Pfaffelmoser, T., Seton, M., Russell, S., and tions as a major driver of climate and biome distribution dur-
+Zahirovic, S.: GPlates: Building a virtual earth through ing the greenhouse to icehouse transition, Sci. Adv., 7, 43,
+deep time, Geochem. Geophy. Geosy., 19, 2243–2261, https://doi.org/10.1126/sciadv.abh2819,2021.
+https://doi.org/10.1029/2018GC007584,2018. Thompson, A., Zhu, J., Poulsen, C., Tierney, J., and
+National Center for Atmospheric Research: The Commu- Skinner, C.: Northern Hemisphere vegetation change
+nity Earth System Model version 1.2.2, SVN [code], drives a Holocene thermal maximum, Science, 8, 15,
+https://svn-ccsm-models.cgd.ucar.edu/cesm1/exp_tags/pcesm_ https://doi.org/10.1126/sciadv.abj6535,2022.
+cesm1_2_2_tags/dt-cesm1.0_cesm1_2_2_1/ (last access: Tichy,H.,Hellwisg,M.,andKallina,W.:Revisitingtheoriesofhu-
+11March2024),2019. miditytransduction:Afocusonelectrophysiologicaldata,Front.
+Pagani, M., Pedentchouk, N., Huber, M., Sluijs, A., Schouten, Physiol.,8,1,https://doi.org/10.3389/fphys.2017.00650,2017.
+S., Brinkhuis, H., Damste, J., Dickens, G., and Expedition Tierney, J., Poulsen, C., Montanez, I., Bhattacharya, T., Feng,
+302 Scientists: Arctic hydrology during global warming at the R., Ford, H., Honisch, B., Inglis, G., Petersen, S., Sagoo,
+Paleocene/Eocene thermal maximum, Nature, 442, 671–675, N., Tabor, C., Thirumalai, K., Zhu, J., Burls, N., Foster,
+https://doi.org/10.1038/nature05043,2006. G., Godderis, Y., Huber, B., Ivany, L., Turner, S., Lunt, D.,
+Piedrahita, V., Galeotti, S., Zhao, X., Roberts, A., Rohling, Mcelwain, J., Mills, B., Otto-Bliesner, B., Ridgwell, A., and
+E., Heslop, D., Florindo, F., Grant, K., Rodríguez-Sanz, L., Zhang,Y.:Pastclimatesinformourfuture,Science,370,6517,
+Reghellin,D.,andZeebe,R.:OrbitalphasingofthePaleocene– https://doi.org/10.1126/science.aay3701,2020.
+EoceneThermalMaximum,EarthPlanetSc.Lett.,598,117839, Tierney, J., Zhu, J., Li, M., Ridgwell, A., Hakim, G., Poulsen,
+https://doi.org/10.1016/j.epsl.2022.117839,2022. C., Whiteford, R., Raw, J., and Kump, L.: Spatial pat-
+Poulsen, C. and Jeffery, M.: Climate change imprinting on stable terns of climate change across the Paleocene–Eocene ther-
+isotopic compositions of high-elevation meteoric water cloaks mal maximum, P. Natl. Acad. Sci. USA, 119, e2205326119,
+pastsurfaceelevationsofmajororogens,Geology,39,595–598, https://doi.org/10.1073/pnas.2205326119,2022.
+https://doi.org/10.1130/g32052.1,2011. Tipple, B., Pagani, M., Krishnan, S., Dirghangi, S., Galeotti,
+Poulsen,C.,Pollard,D.,andWhite,T.:Generalcirculationmodel S., Agnini, C., Giusberti, L., and Rio D.: Coupled high-
+simulation of the δ18O content of continental precipitation in resolution marine and terrestrial records of carbon and hy-
+themiddleCretaceous:Amodel-proxycomparison,Geology,35, drologic cycles variations during the Paleocene–Eocene ther-
+199–202,https://doi.org/10.1130/g23343a.1,2007. mal maximum (PETM), Earth Planet Sc. Lett., 311, 82–92,
+Rae, J., Zhang, Y., Liu, X., Foster, G., Stoll, H., and White- https://doi.org/10.1016/j.epsl.2011.08.045,2011.
+ford, R.: Atmospheric CO2 over the past 66 million years Westerhold,T.,Rohl,U.,McCarren,H.,andZachos,J.:Lateston
+from marine archives, Annu. Rev. Earth Pl. Sc., 49, 609–641, the absolute age of the Paleocene–Eocene thermal maximum
+https://doi.org/10.1146/annurev-earth-082420-063026,2021. (PETM):Newinsightsfromexactstratigraphicpositionofkey
+Risi, C., Galewsky, J., Reverdin, G., and Brient, F.: Controls on ashlayers+19and−17,EarthPlanetSc.Lett.,287,412–419,
+the water vapor isotopic composition near the surface of tropi- https://doi.org/10.1016/j.epsl.2009.08.027,2009.
+caloceansandroleofboundarylayermixingprocesses,Atmos. Westerhold, T., Rohl, U., and Laskar, J.: Time scale
+Chem.Phys.,19,12235–12260,https://doi.org/10.5194/acp-19- controversy: Accurate orbital calibration of the early
+12235-2019,2019. Paleogene, Geochem. Geophy. Geosy., 13, Q06015,
+Sachse, D., Billault, I., Bowen, G., Chikaraishi, Y., Dawson, T., https://doi.org/10.1029/2012gc004096,2012.
+Feakins, S., Freeman, K., Magill, C., McInerney, F., van der White, T., Bradley, D., Haeussler, P., and Rowley, D.: Late
+Meer, M., Polissar, P., Robins, R., Sachs, J., Schmidt, H-L., Paleocene-early Eocene paleosols and a new measure of the
+Sessions, A., White, J., West, J., and Kahmen, A.: Molecular transportdistanceofAlaska’sYakutatterrane,J.Geol.,125,113–
+paleohydrology:Interpretingthehydrogen-isotopiccomposition 123,https://doi.org/10.1086/690198,2017.
+of lipid biomarkers from photosynthesizing organisms, Annu. vanDijk,J.,Fernandez,A.,Muller,I.,Lever,M.,andBernasconi
+Rev.EarthPl.Sc.,40,221–249,https://doi.org/10.1146/annurev- S.:Oxygenisotopefractionationinthesiderite-watersystembe-
+earth-042711-105535,2012. tween8.5and62°C,Geochim.Cosmochim.Ac.,220,535–551,
+Singh, H., Bitz, C., Donohoe, A., Nusbaumer, J., and Noone, https://doi.org/10.1016/j.gca.2017.10.009,2018.
+D.: A mathematical framework for analysis of water tracers. van Dijk, J., Fernandez, A., Storch, J., White, T., Lever, M.,
+Part II: Understanding large-scale perturbations in the hydro- Muller, I., Bishop, S., Seifert, R., Driese, S., Krylov, A.,
+logical cycle dur to CO2 doubling, J. Climate, 29, 6765–6782, Ludvigson, G., Turchyn, A., Link, C., Wittkop, C., and
+https://doi.org/10.1175/JCLI-D-16-0293.1,2016. Bernasconi, S.: Experimental calibration of clumped isotopes
+Smith,F.,Wing,S.,andFreeman,K.:Magnitudeofthecarboniso- in siderite between 8.5 and 62°C and its application as paleo-
+topeexcursionatthePaleocene–Eocenethermalmaximum:The thermometer in paleosols, Geochim. Cosmochim. Ac., 254, 1–
+roleofplantcommunitychange,EarthPlanetSc.Lett.,262,50– 20,https://doi.org/10.1016/j.gca.2019.03.018,2019.
+65,https://doi.org/10.1016/j.epsl.2007.07.021,2007. vanDijk,J.,Fernandez,A.,Bernasconi,S.,Rugenstein,J.,Passey,
+Snell,K.,Thrasher,B.,Eiler,J.,Koch,P.,Sloan,L.,andTabor,N.: S., and White, T.: Spatial pattern of super-greenhouse warmth
+HotsummersintheBighornBasinduringtheearlyPaleogene, controlledbyelevatedspecifichumidity,Nat.Geosci.,13,739–
+Geology,41,55–58,https://doi.org/10.1130/g33567.1,2013. 744,https://doi.org/10.1038/s41561-020-00648-2,2020.
+https://doi.org/10.5194/cp-20-495-2024 Clim.Past,20,495–522,2024
+--- PAGE 28 ---
+522 J.Campbelletal.:CO -drivenandorbitallydrivenoxygenisotopevariability
+2
+Zachos, J., McCarren, H., Murphy, B., Rohl, U., and West- Zhu,J.,Poulsen,C.,andTierney,J.:SimulationofEoceneextreme
+erhold, T.: Tempo and scale of late Paleocene and early warmth and high climate sensitivity through cloud feedbacks,
+Eocene carbon isotope cycles: Implications for the origin Science, 5, eaax1874, https://doi.org/10.1126/sciadv.aax1874,
+of hyperthermals, Earth Planet. Sc. Lett., 299, 242–249, 2019.
+https://doi.org/10.1016/j.epsl.2010.09.004,2010. Zhu, J., Poulsen, C., Otto-Bliesner, B., Liu, Z., Brady, E.,
+Zeebe,R.,Westerhold,T.,Littler,K.,andZachos,J.:Orbitalforcing and Noone, D.: Simulation of Early Eocene water iso-
+ofthePaleoceneandEocenecarboncycle,Palaeoceanography, topes using an Earth system model and its implication
+32,440–465,https://doi.org/10.1002/2016pa003054,2017. for past climate reconstruction, Earth Planet Sc. Lett., 537,
+Zhu, J., Liu, Z., Otto-Bliesner, B., Brady, E., Noone, D., Zhang, https://doi.org/10.1016/j.epsl.2020.116164,2020.
+J., Tomas, R., Jahn, A., Nusbaumer, J., and Wong, T.: Re-
+duced ENSO variability at the LGM revealed by an isotope-
+enabled earth system model, Geophys. Res. Lett., 44, 6984–
+6992,https://doi.org/10.1002/2017GL073406,2017.
+Clim.Past,20,495–522,2024 https://doi.org/10.5194/cp-20-495-2024

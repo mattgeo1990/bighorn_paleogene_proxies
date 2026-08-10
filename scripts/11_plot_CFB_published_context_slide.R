@@ -43,13 +43,13 @@ shared_y <- scale_y_continuous(
   expand = expansion(mult = c(0.005, 0.01))
 )
 
-theme_slide_panel <- theme_classic(base_size = 12) +
+theme_slide_panel <- theme_classic(base_size = 18) +
   theme(
-    axis.title = element_text(size = 12),
-    axis.text = element_text(size = 10, color = "black"),
-    plot.title = element_text(size = 13, face = "bold"),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 18, color = "black"),
+    plot.title = element_text(size = 18, face = "bold"),
+    legend.title = element_text(size = 18, face = "bold"),
+    legend.text = element_text(size = 18),
     legend.key.height = unit(0.35, "cm"),
     legend.spacing.x = unit(0.10, "cm"),
     plot.margin = margin(4, 4, 4, 4)
@@ -501,11 +501,13 @@ p_chronostrat <- build_chronostrat_panel(
   )
 ) +
   theme(
-    axis.text.x.top = element_text(size = 9, face = "bold"),
+    axis.text.x.top = element_text(
+      size = 18, face = "bold", angle = 55, hjust = 0, vjust = 0.5
+    ),
     plot.margin = margin(4, 1, 4, 2)
   )
 
-# Main stratigraphic labels are 14 point; the mammal zones remain smaller so
+# Main stratigraphic labels are 18 point; the mammal zones remain smaller so
 # their short intervals stay legible and contained within their boxes.
 p_chronostrat$layers[[2]]$data <- chronostrat_intervals[0, ]
 p_chronostrat <- p_chronostrat +
@@ -515,7 +517,7 @@ p_chronostrat <- p_chronostrat +
       x = x, y = ymid, label = label, color = text_color,
       angle = if_else(column %in% c("Epoch", "Stage", "Formation"), 90, 0)
     ),
-    size = 14 / ggplot2::.pt, lineheight = 0.88
+    size = 18 / ggplot2::.pt, lineheight = 0.88
   ) +
   geom_text(
     data = chronostrat_intervals %>% filter(column == "Biozone"),
@@ -523,30 +525,29 @@ p_chronostrat <- p_chronostrat +
     size = 2.25, lineheight = 0.88
   )
 
-provenance_note <- paste(
+provenance_note <- str_wrap(paste(
   "Published proxy data only; U-M observations excluded. Wing and Fricke-Wing",
   "aggregate ages are projected to CFB height using the section-specific",
   "GTS2020 age model (no extrapolation); Fricke-Wing MAAT is phosphate-derived.",
   "\nMAAT/CMMT/WMMT context:",
   "literature-informed relevance-weighted marginal Monte Carlo intervals",
   "(50/80/95%); not fitted posteriors."
-)
+), width = 145)
 
 seasonal_source_note <- ggplot() +
   annotate(
     "text", x = 0, y = 1, hjust = 0, vjust = 1,
     label = paste(
-      "SEASONAL TEMPERATURE RIBBONS",
-      "CMMT, MAAT, and WMMT are",
-      "literature-informed, relevance-weighted",
-      "syntheses based on:",
-      "- Snell et al. (2013), summarized by",
+      "SEASONAL RIBBON SOURCES",
+      "CMMT, MAAT, and WMMT synthesis:",
+      "- Snell et al. (2013), via",
       "  Kiehl et al. (2018)",
-      "- Kiehl et al. (2018) BHB simulations",
-      "- Hyland et al. (2018) dry-interior simulations",
+      "- Kiehl et al. (2018), BHB",
+      "- Hyland et al. (2018),",
+      "  dry continental interior",
       sep = "\n"
     ),
-    size = 3.2, lineheight = 1.12
+    size = 18 / ggplot2::.pt, lineheight = 1.12
   ) +
   xlim(0, 1) + ylim(0, 1) + theme_void() +
   theme(plot.margin = margin(8, 8, 8, 8))
@@ -559,33 +560,39 @@ legend_sources <- tibble(
   source = factor(
     names(published_source_shapes), levels = names(published_source_shapes)
   ),
-  y = rev(seq_along(published_source_shapes))
+  y = rev(seq_along(published_source_shapes)) * 1.25 + 0.50
 )
 published_source_legend <- ggplot(legend_sources) +
   annotate(
-    "text", x = 0, y = 7.1, label = "PUBLISHED DATASETS",
-    hjust = 0, fontface = "bold", size = 3.5
+    "text", x = 0, y = 8.55, label = "PUBLISHED DATASETS",
+    hjust = 0, fontface = "bold", size = 18 / ggplot2::.pt
   ) +
   geom_point(
     aes(0.03, y, shape = source), size = 3.1, stroke = 0.8,
     color = "black", fill = "white"
   ) +
-  geom_text(aes(0.12, y, label = source), hjust = 0, size = 3.1) +
-  annotate(
-    "text", x = 0, y = -0.05, label = "SEASONAL SYNTHESIS",
-    hjust = 0, fontface = "bold", size = 3.5
+  geom_text(
+    aes(0.12, y, label = str_wrap(as.character(source), width = 24)), hjust = 0,
+    size = 18 / ggplot2::.pt
   ) +
-  annotate("rect", xmin = 0.03, xmax = 0.10, ymin = -0.85, ymax = -0.45,
+  annotate(
+    "text", x = 0, y = 0.35, label = "SEASONAL SYNTHESIS",
+    hjust = 0, fontface = "bold", size = 18 / ggplot2::.pt
+  ) +
+  annotate("rect", xmin = 0.03, xmax = 0.10, ymin = -0.95, ymax = -0.55,
            fill = seasonal_colors[["CMMT"]], alpha = 0.35) +
-  annotate("text", x = 0.12, y = -0.65, label = "CMMT", hjust = 0, size = 3.1) +
-  annotate("rect", xmin = 0.35, xmax = 0.42, ymin = -0.85, ymax = -0.45,
+  annotate("text", x = 0.12, y = -0.75, label = "CMMT", hjust = 0,
+           size = 18 / ggplot2::.pt) +
+  annotate("rect", xmin = 0.35, xmax = 0.42, ymin = -0.95, ymax = -0.55,
            fill = seasonal_colors[["MAAT"]], alpha = 0.35) +
-  annotate("text", x = 0.44, y = -0.65, label = "MAAT", hjust = 0, size = 3.1) +
-  annotate("rect", xmin = 0.66, xmax = 0.73, ymin = -0.85, ymax = -0.45,
+  annotate("text", x = 0.44, y = -0.75, label = "MAAT", hjust = 0,
+           size = 18 / ggplot2::.pt) +
+  annotate("rect", xmin = 0.66, xmax = 0.73, ymin = -0.95, ymax = -0.55,
            fill = seasonal_colors[["WMMT"]], alpha = 0.35) +
-  annotate("text", x = 0.75, y = -0.65, label = "WMMT", hjust = 0, size = 3.1) +
+  annotate("text", x = 0.75, y = -0.75, label = "WMMT", hjust = 0,
+           size = 18 / ggplot2::.pt) +
   scale_shape_manual(values = published_source_shapes, guide = "none") +
-  coord_cartesian(xlim = c(0, 1), ylim = c(-1, 7.4), clip = "off") +
+  coord_cartesian(xlim = c(0, 1), ylim = c(-1.25, 8.9), clip = "off") +
   theme_void() +
   theme(plot.margin = margin(8, 8, 8, 8))
 main_figure <- main_figure & theme(legend.position = "none")
@@ -593,18 +600,21 @@ main_figure <- main_figure & theme(legend.position = "none")
 p_CFB_published_context_slide <-
   (main_figure | (
     seasonal_source_note /
-      published_source_legend
+      published_source_legend +
+      plot_layout(heights = c(0.42, 0.58))
   )) +
-  plot_layout(widths = c(3, 1), heights = 1) +
+  # Preserve the requested 9-inch scientific panel block and give the
+  # 18-point source material its own 4.5-inch column.
+  plot_layout(widths = c(2, 1), heights = 1) +
   plot_annotation(
     title = "Clarks Fork Basin stratigraphy and published climate records",
     subtitle = "Late Paleocene-early Eocene; shared CFB composite meter scale",
     caption = provenance_note,
     theme = theme(
-      plot.title = element_text(size = 16, face = "bold"),
-      plot.subtitle = element_text(size = 11),
+      plot.title = element_text(size = 18, face = "bold"),
+      plot.subtitle = element_text(size = 18),
       plot.caption = element_text(
-        size = 7.1, hjust = 0, lineheight = 1.05, color = "grey25"
+        size = 18, hjust = 0, lineheight = 1.05, color = "grey25"
       ),
       plot.margin = margin(5, 6, 5, 6)
     )
@@ -616,14 +626,14 @@ save_figure_variants(
   presentation_plot = p_CFB_published_context_slide,
   base_dir = figure_dir,
   stem = "CFB_published_strat_d13C_temperature_context",
-  manuscript_width = 12,
-  manuscript_height = 6,
-  presentation_width = 12,
-  presentation_height = 6
+  manuscript_width = 13.5,
+  manuscript_height = 8,
+  presentation_width = 13.5,
+  presentation_height = 8
 )
 
 message(
-  "Saved 12 x 6 inch CFB introduction figure (9 x 6 main panels); ",
+  "Saved 13.5 x 8 inch CFB introduction figure (9-inch main panel block); ",
   sum(projection_audit$plotted), " of ", nrow(projection_audit),
   " aggregate temperature estimates fall within the modeled CFB section."
 )

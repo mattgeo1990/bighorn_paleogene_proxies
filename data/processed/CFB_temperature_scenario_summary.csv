@@ -1,6 +1,6 @@
 screening_scenario_id,screening_scenario,n_excluded_horizons,n_temperature_horizons,model_min_strat_height_m,model_max_strat_height_m,n_interpolated_horizons,n_outside_model_range,min_model_T_C,max_model_T_C
-exclude_any_alteration_indication,Exclude any indication,10,41,820,2210,160,5,21.88998183850765,37.79562719825203
-exclude_high_likelihood,Exclude high likelihood,4,47,520,2210,165,0,21.93892009786868,42.8200010895545
-exclude_moderate_or_higher,Exclude moderate or higher,7,44,700,2210,162,3,21.92891680046463,37.79543192558681
-none,All data,0,51,520,2210,165,0,22.959645680876275,49.78461803917672
-talk_geochemical_screen,Talk screen: d18Ocarb >= 20 per mil and T <= 50 C,2,49,520,2210,165,0,21.921280986221376,50.51398220519752
+exclude_any_alteration_indication,Exclude any indication,10,42,820,2210,160,5,22.015933253668663,37.55661494692749
+exclude_high_likelihood,Exclude high likelihood,4,48,520,2210,165,0,22.055845943833084,41.3699925786916
+exclude_moderate_or_higher,Exclude moderate or higher,7,45,700,2210,162,3,22.04602191069667,37.42139028229168
+none,All data,0,52,520,2210,165,0,23.07245901821997,48.081804773830285
+talk_geochemical_screen,Talk screen: d18Ocarb >= 20 per mil and T <= 50 C,4,48,520,2210,165,0,22.033243056270205,48.9579327426097
