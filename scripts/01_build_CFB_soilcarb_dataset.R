@@ -369,6 +369,22 @@ bowen <- read_csv(
 
 # 3. Clean IPL Δ′17O data -------------------------------------
 
+# quick look at replication
+# Count nonmissing accepted D17O values per horizon
+D17O_counts <- IPL_D17O_data %>%
+  group_by(MLA_horizon_id) %>%
+  summarise(
+    n_D17O = sum(!is.na(Dp17Ocarb_permeg_ACCEPTED)),
+    .groups = "drop"
+  )
+
+# Horizons with exactly one D17O value
+D17O_singletons <- D17O_counts %>%
+  filter(n_D17O == 1)
+
+D17O_singletons
+
+
 # check for mismatch issues or outliers
 # Plot a histogram of mismatch values to visualize the overall distribution
 hist(IPL_D17O_data$X33_mismatch,
@@ -409,7 +425,7 @@ ggplotly(
   p,
   tooltip = "text"
 )
-# Manually exclude analyses with anomalously high X33 mismatch, very low O2 yields, or that have suspiciously anomolous D17O values.
+# Manually exclude analyses with anomalously high X33 mismatch, very low O2 yields, or that have suspiciously anomalous D17O values.
 # These exclusions are based on analytical QC, not on Δ′17Ocarb value.
 excluded_17O <- c("5699", "5841", "6332", "6325", "6344")
 

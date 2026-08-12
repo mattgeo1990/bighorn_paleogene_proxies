@@ -1241,5 +1241,5 @@ save_figure_variants(
   manuscript_width = 6,
   manuscript_height = 6,
   presentation_width = 6,
-  presentation_height = 6
+  presentation_height = 7
 )
