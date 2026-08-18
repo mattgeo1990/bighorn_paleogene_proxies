@@ -1,0 +1,2 @@
+MLA_horizon_id,strat_height_m,host_T47_C,host_T47_se_C,host_d18Ocarb_vsmow,host_d18Ocarb_se_vsmow,spar_T47_C,spar_T47_se_C,spar_d18Ocarb_vsmow,spar_d18Ocarb_se_vsmow,host_d18Owater_vsmow,spar_d18Owater_vsmow,d18Owater_shift_host_to_spar,constant_host_water_spar_d18Ocarb_vsmow,spar_offset_from_constant_host_water
+PK95-SC-4,1570,50.85906717205821,9.108990373292658,22.660551765,NA,81.66287562764802,1.721182337281732,14.11448803,0.00229020999999995,-0.8186401542291151,-4.370134734551243,-3.551494580322128,17.731918797913295,-3.6174307679132944

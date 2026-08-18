@@ -1,0 +1,2 @@
+n_horizons_checked,n_equation_checks_pass,n_temperature_inputs_valid,max_abs_d18Ow_median_difference,max_abs_D17Orsw_median_difference,all_reference_scales_valid,all_temperature_inputs_valid,all_equation_checks_pass
+39,39,39,0.04399572017041464,0.44117069809990994,TRUE,TRUE,TRUE

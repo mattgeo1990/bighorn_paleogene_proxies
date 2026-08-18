@@ -1,0 +1,10 @@
+D17O_qc_decision,D17O_qc_mismatch_flag,D17O_qc_precision_flag,n_analyses
+exclude,exclude,pass,3
+exclude,exclude,review,1
+exclude,review,review,1
+omit_pending_replicates,pass,review,1
+retain_for_summary,exclude,pass,1
+retain_for_summary,pass,pass,65
+retain_for_summary,pass,review,3
+retain_for_summary,review,pass,15
+retain_for_summary,review,review,1

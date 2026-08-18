@@ -369,8 +369,75 @@ bowen <- read_csv(
 
 # 3. Clean IPL Δ′17O data -------------------------------------
 
-# quick look at replication
-# Count nonmissing accepted D17O values per horizon
+# Analytical QC scope: this section evaluates whether individual IPL analyses
+# are analytically suitable for sample-level summaries. Geological/diagenetic
+# interpretation is intentionally handled elsewhere.
+D17O_qc_mismatch_review_threshold <- 0.05
+D17O_qc_mismatch_exclude_threshold <- 0.13
+D17O_qc_d17O_err_review_threshold <- 0.010
+D17O_qc_CAP17O_err_review_threshold <- 0.010
+
+# Existing decisions are retained as explicit, auditable analytical decisions.
+excluded_17O <- c("5699", "5841", "6332", "6325", "6344")
+omit_low_confidence <- c("5780")
+
+IPL_D17O_data <- IPL_D17O_data %>%
+  mutate(
+    D17O_qc_mismatch_max = pmax(X33_mismatch, X34_mismatch, na.rm = TRUE),
+    D17O_qc_mismatch_flag = case_when(
+      !is.finite(D17O_qc_mismatch_max) ~ "missing",
+      D17O_qc_mismatch_max >= D17O_qc_mismatch_exclude_threshold ~ "exclude",
+      D17O_qc_mismatch_max >= D17O_qc_mismatch_review_threshold ~ "review",
+      TRUE ~ "pass"
+    ),
+    D17O_qc_precision_flag = case_when(
+      !is.finite(d17O.err) | !is.finite(d18O.err) | !is.finite(CAP17O.err) ~ "missing",
+      d17O.err >= D17O_qc_d17O_err_review_threshold |
+        CAP17O.err >= D17O_qc_CAP17O_err_review_threshold ~ "review",
+      TRUE ~ "pass"
+    ),
+    D17O_qc_value_flag = if_else(is.finite(Dp17Ocarb_permeg_ACCEPTED), "pass", "missing"),
+    D17O_qc_manual_decision = case_when(
+      IPL_num %in% excluded_17O ~ "exclude",
+      IPL_num %in% omit_low_confidence ~ "omit_pending_replicates",
+      TRUE ~ "retain"
+    ),
+    D17O_qc_reason = case_when(
+      IPL_num %in% c("5699", "6325") ~ "high mass-33/34 mismatch",
+      IPL_num == "5841" ~ "high mismatch and poor analytical precision",
+      IPL_num == "6332" ~ "poor analytical precision",
+      IPL_num == "6330" ~ "high mismatch flag; retained pending contextual review",
+      IPL_num == "6344" ~ "high mass-33/34 mismatch",
+      IPL_num == "5780" ~ "large within-horizon replicate disagreement; replicate needed",
+      TRUE ~ "no analytical exclusion"
+    ),
+    D17O_qc_decision = case_when(
+      D17O_qc_manual_decision == "exclude" ~ "exclude",
+      D17O_qc_manual_decision == "omit_pending_replicates" ~ "omit_pending_replicates",
+      D17O_qc_value_flag != "pass" ~ "exclude_missing_value",
+      TRUE ~ "retain_for_summary"
+    )
+  )
+
+D17O_analytical_QC <- IPL_D17O_data %>%
+  select(
+    IPL_num, MLA_sample_id, MLA_horizon_id, reactor_id,
+    Dp17Ocarb_permeg_ACCEPTED, X33_mismatch, X34_mismatch,
+    d17O.err, d18O.err, CAP17O.err, D17O_qc_mismatch_max,
+    D17O_qc_mismatch_flag, D17O_qc_precision_flag, D17O_qc_value_flag,
+    D17O_qc_manual_decision, D17O_qc_decision, D17O_qc_reason
+  )
+
+D17O_analytical_QC_summary <- D17O_analytical_QC %>%
+  count(D17O_qc_decision, D17O_qc_mismatch_flag, D17O_qc_precision_flag,
+        name = "n_analyses")
+
+write_csv(D17O_analytical_QC,
+          here("data", "processed", "CFB_IPL_D17O_analytical_QC_analysis_level.csv"))
+write_csv(D17O_analytical_QC_summary,
+          here("data", "processed", "CFB_IPL_D17O_analytical_QC_summary.csv"))
+
+# Count nonmissing accepted D17O values per horizon.
 D17O_counts <- IPL_D17O_data %>%
   group_by(MLA_horizon_id) %>%
   summarise(
@@ -425,10 +492,6 @@ ggplotly(
   p,
   tooltip = "text"
 )
-# Manually exclude analyses with anomalously high X33 mismatch, very low O2 yields, or that have suspiciously anomalous D17O values.
-# These exclusions are based on analytical QC, not on Δ′17Ocarb value.
-excluded_17O <- c("5699", "5841", "6332", "6325", "6344")
-
 # Inspect excluded high-mismatch analyses.
 IPL_D17O_data %>%
   filter(IPL_num %in% excluded_17O) %>%
@@ -494,8 +557,6 @@ IPL_D17O_data_clean %>%
 # Temporarily omit the high Δ′17Ocarb replicate from PB-00-02-09L.
 # The paired replicate is ~-120 per meg, so this sample requires additional
 # replication before the less negative value is treated as representative.
-omit_low_confidence <- c("5780")
-
 IPL_D17O_data_final <- IPL_D17O_data_clean %>%
   filter(!IPL_num %in% omit_low_confidence)
 
@@ -1304,6 +1365,54 @@ nrow(bowen_spar)
 # from this minimum uncertainty threshold.
 
 generic_sd <- 12
+D17O_replicate_range_threshold <- 24
+
+# Sample-level replicate audit. This is intentionally downstream of
+# analysis-level QC: excluded analyses remain counted as attempted, but do not
+# contribute to means or uncertainty estimates.
+D17O_sample_QC <- IPL_D17O_data %>%
+  group_by(section_id, MLA_horizon_id) %>%
+  summarise(
+    D17O_n_attempted = n(),
+    D17O_n_analysis_excluded = sum(!IPL_num %in% IPL_D17O_data_final$IPL_num),
+    D17O_pending_replicates = any(IPL_num %in% omit_low_confidence),
+    .groups = "drop"
+  ) %>%
+  left_join(
+    IPL_D17O_data_final %>%
+      filter(is.finite(Dp17Ocarb_permeg_final_correction)) %>%
+      group_by(section_id, MLA_horizon_id) %>%
+      summarise(
+        D17O_n_retained = n(),
+        D17O_replicate_range_permeg = max(
+          Dp17Ocarb_permeg_final_correction
+        ) - min(Dp17Ocarb_permeg_final_correction),
+        .groups = "drop"
+      ),
+    by = c("section_id", "MLA_horizon_id")
+  ) %>%
+  mutate(
+    D17O_n_retained = coalesce(D17O_n_retained, 0L),
+    D17O_replicate_status = case_when(
+      D17O_pending_replicates ~ "pending_replicates",
+      D17O_n_retained == 0 ~ "no_usable_analysis",
+      D17O_n_retained == 1 ~ "singleton_provisional",
+      D17O_replicate_range_permeg <= D17O_replicate_range_threshold ~
+        "replicated_concordant",
+      TRUE ~ "replicated_heterogeneous"
+    ),
+    D17O_primary_use = case_when(
+      D17O_replicate_status == "replicated_concordant" ~ "primary",
+      D17O_replicate_status %in% c("no_usable_analysis", "pending_replicates") ~
+        "exclude",
+      TRUE ~ "sensitivity_only"
+    )
+  )
+
+write_csv(
+  D17O_sample_QC,
+  here("data", "processed", "CFB_IPL_D17O_sample_level_QC.csv")
+)
 
 IPL17O_summary <- IPL_D17O_data_final %>%
   group_by(section_id, MLA_horizon_id) %>%
@@ -1342,6 +1451,10 @@ IPL17O_summary <- IPL_D17O_data_final %>%
     
     .groups = "drop"
   ) %>%
+  left_join(
+    D17O_sample_QC,
+    by = c("section_id", "MLA_horizon_id")
+  ) %>%
   
   # Attach stratigraphic height after summarizing so each horizon receives
   # one stratigraphic position from the project sample list.
@@ -1368,6 +1481,12 @@ IPL17O_summary <- IPL_D17O_data_final %>%
     
     IPL17O_ci95_Dp17Ocarb_adj =
       IPL17O_se_Dp17Ocarb_adj * 1.96,
+
+    # Explicit alias used by downstream soil-water reconstruction and audit
+    # tables. The observed replicate scatter is never allowed to imply less
+    # than the 12 per meg project reproducibility floor.
+    D17O_sd_used_permeg = IPL17O_sd_Dp17Ocarb_adj,
+    D17O_se_used_permeg = IPL17O_se_Dp17Ocarb_adj,
     
     # Convert mean δ′ values back to conventional δ notation
     IPL17O_mean_d17Ocarb =

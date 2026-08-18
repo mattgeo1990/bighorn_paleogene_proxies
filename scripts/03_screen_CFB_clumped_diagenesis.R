@@ -353,6 +353,170 @@ save_figure_variants(
   "CFB_d18O_T47_contours", 9, 7.5, presentation_width = 6
 )
 
+#-- 5b.) Paired Host-Spar Fractionation Trajectories ----------------------
+# Restrict this comparison to horizons with T47 and d18Ocarb measurements for
+# both U-M host matrix and spar. For each pair, infer the water in equilibrium
+# with the host, then calculate the carbonate trajectory expected if that same
+# water precipitated calcite over the temperature interval from host to spar.
+# The offset between the observed spar and the modeled endpoint therefore
+# measures the change in inferred parent-water d18O required by the pair; the
+# curve is a fractionation reference, not proof of a temporal reaction path.
+
+calc_d18Owater_from_carb_KO97 <- function(T_C, d18Ocarb_vsmow) {
+  alpha_calcite_water <- exp(
+    (18.03 * (1000 / (T_C + 273.15)) - 32.42) / 1000
+  )
+  ((d18Ocarb_vsmow + 1000) / alpha_calcite_water) - 1000
+}
+
+CFB_host_spar_pairs <- CFB_d18O_T47_observations %>%
+  filter(
+    source == "U-M micrite",
+    carbonate_type == "Pedogenic micrite"
+  ) %>%
+  transmute(
+    MLA_horizon_id,
+    strat_height_m,
+    host_T47_C = T47_C,
+    host_T47_se_C = T47_se_C,
+    host_d18Ocarb_vsmow = d18Ocarb_vsmow,
+    host_d18Ocarb_se_vsmow = d18Ocarb_se_vsmow
+  ) %>%
+  inner_join(
+    CFB_d18O_T47_observations %>%
+      filter(carbonate_type == "Spar") %>%
+      transmute(
+        MLA_horizon_id,
+        spar_T47_C = T47_C,
+        spar_T47_se_C = T47_se_C,
+        spar_d18Ocarb_vsmow = d18Ocarb_vsmow,
+        spar_d18Ocarb_se_vsmow = d18Ocarb_se_vsmow
+      ),
+    by = "MLA_horizon_id"
+  ) %>%
+  mutate(
+    host_d18Owater_vsmow = calc_d18Owater_from_carb_KO97(
+      host_T47_C, host_d18Ocarb_vsmow
+    ),
+    spar_d18Owater_vsmow = calc_d18Owater_from_carb_KO97(
+      spar_T47_C, spar_d18Ocarb_vsmow
+    ),
+    d18Owater_shift_host_to_spar =
+      spar_d18Owater_vsmow - host_d18Owater_vsmow,
+    constant_host_water_spar_d18Ocarb_vsmow =
+      calc_d18Ocarb_from_water_KO97(spar_T47_C, host_d18Owater_vsmow),
+    spar_offset_from_constant_host_water =
+      spar_d18Ocarb_vsmow - constant_host_water_spar_d18Ocarb_vsmow
+  )
+
+if (nrow(CFB_host_spar_pairs) == 0) {
+  warning(
+    "No CFB horizons currently have paired host and spar T47-d18Ocarb data."
+  )
+} else {
+  CFB_host_spar_trajectories <- CFB_host_spar_pairs %>%
+    mutate(
+      trajectory = map2(
+        host_T47_C, spar_T47_C,
+        ~ tibble(T47_C = seq(.x, .y, length.out = 100))
+      )
+    ) %>%
+    select(MLA_horizon_id, host_d18Owater_vsmow, trajectory) %>%
+    unnest(trajectory) %>%
+    mutate(
+      d18Ocarb_vsmow = calc_d18Ocarb_from_water_KO97(
+        T47_C, host_d18Owater_vsmow
+      )
+    )
+
+  CFB_host_spar_points <- bind_rows(
+    CFB_host_spar_pairs %>%
+      transmute(
+        MLA_horizon_id, carbonate_fabric = "Host matrix",
+        T47_C = host_T47_C, T47_se_C = host_T47_se_C,
+        d18Ocarb_vsmow = host_d18Ocarb_vsmow,
+        d18Ocarb_se_vsmow = host_d18Ocarb_se_vsmow
+      ),
+    CFB_host_spar_pairs %>%
+      transmute(
+        MLA_horizon_id, carbonate_fabric = "Spar",
+        T47_C = spar_T47_C, T47_se_C = spar_T47_se_C,
+        d18Ocarb_vsmow = spar_d18Ocarb_vsmow,
+        d18Ocarb_se_vsmow = spar_d18Ocarb_se_vsmow
+      )
+  ) %>%
+    mutate(
+      carbonate_fabric = factor(
+        carbonate_fabric, levels = c("Host matrix", "Spar")
+      )
+    )
+
+  p_CFB_host_spar_fractionation <- ggplot() +
+    geom_line(
+      data = CFB_host_spar_trajectories,
+      aes(T47_C, d18Ocarb_vsmow, color = MLA_horizon_id,
+          group = MLA_horizon_id),
+      linewidth = 1.1
+    ) +
+    geom_segment(
+      data = CFB_host_spar_pairs,
+      aes(
+        x = spar_T47_C, xend = spar_T47_C,
+        y = constant_host_water_spar_d18Ocarb_vsmow,
+        yend = spar_d18Ocarb_vsmow,
+        color = MLA_horizon_id
+      ),
+      linewidth = 0.8, linetype = 2,
+      arrow = arrow(length = unit(0.12, "inches"))
+    ) +
+    geom_point(
+      data = CFB_host_spar_points,
+      aes(
+        T47_C, d18Ocarb_vsmow,
+        color = MLA_horizon_id, shape = carbonate_fabric
+      ),
+      size = 3.5, stroke = 0.9
+    ) +
+    scale_shape_manual(values = c("Host matrix" = 16, "Spar" = 17)) +
+    labs(
+      x = expression(Delta[47] * " temperature (" * degree * "C)"),
+      y = expression(delta^18 * O[carbonate] ~ "(per mil VSMOW)"),
+      color = "Horizon",
+      shape = "Carbonate fabric",
+      title = expression("Paired host-spar " * T[47] * "-" * delta^18 * O *
+                           " trajectories"),
+      subtitle = paste0(
+        "Solid curve: equilibrium heating at constant host-inferred water d18O\n",
+        "Dashed arrow: spar offset requiring water evolution"
+      ),
+      caption = paste0(
+        "Calcite-water fractionation: Kim and O'Neil (1997).\n",
+        "Trajectories are equilibrium references, not fitted burial histories."
+      )
+    ) +
+    theme_classic(base_size = 18) +
+    theme(
+      legend.position = "top",
+      legend.box = "vertical",
+      plot.margin = margin(8, 12, 8, 12)
+    )
+
+  write_csv(
+    CFB_host_spar_pairs,
+    here("data", "processed", "CFB_paired_host_spar_fractionation_summary.csv")
+  )
+  write_csv(
+    CFB_host_spar_trajectories,
+    here("data", "processed", "CFB_paired_host_spar_fractionation_trajectories.csv")
+  )
+  save_figure_variants(
+    p_CFB_host_spar_fractionation,
+    here("figures", "diagenetic_screening"),
+    "CFB_paired_host_spar_fractionation_trajectories", 8, 6.5,
+    presentation_width = 6
+  )
+}
+
 #-- 6.) Restore the Monte Carlo Burial-Fluid Trajectory Plot ---------------
 # This sensitivity experiment is retained from the original exploratory
 # diagenesis_screening.R script. It draws plausible primary conditions,
