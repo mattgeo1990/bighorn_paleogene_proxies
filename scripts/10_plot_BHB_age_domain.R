@@ -362,7 +362,14 @@ p_d18Owater_age <- CFB_soilwater_age %>%
   theme_age + theme(legend.position = "none")
 
 p_D17Owater_age <- CFB_soilwater_age %>%
-  filter(!is.na(D17Orsw_mean_permeg), !is.na(Age_Ma)) %>%
+  # Primary manuscript inference requires replicated, concordant D17O.
+  # Provisional, heterogeneous, and pending horizons remain in the processed
+  # audit tables but are not shown as primary observations.
+  filter(
+    D17O_primary_use == "primary",
+    !is.na(D17Orsw_mean_permeg),
+    !is.na(Age_Ma)
+  ) %>%
   ggplot() +
   add_petm_age() +
   geom_errorbarh(

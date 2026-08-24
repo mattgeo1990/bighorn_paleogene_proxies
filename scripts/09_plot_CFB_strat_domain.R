@@ -266,7 +266,11 @@ p_d18Owater_strat <- ggplot(d18Owater_obs) +
   theme(legend.position = "none")
 
 D17Owater_obs <- CFB_soilwater %>%
-  filter(!is.na(D17Orsw_mean_permeg), !is.na(strat_height_m))
+  filter(
+    D17O_primary_use == "primary",
+    !is.na(D17Orsw_mean_permeg),
+    !is.na(strat_height_m)
+  )
 
 p_D17Owater_strat <- ggplot(D17Owater_obs) +
   add_petm_strat() +

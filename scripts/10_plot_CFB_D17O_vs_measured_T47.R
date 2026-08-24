@@ -16,6 +16,7 @@ dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 plot_data <- read_csv(input_file, show_col_types = FALSE) %>%
   filter(
+    D17O_primary_use == "primary",
     is.finite(T_measured_C),
     is.finite(D17Orsw_median_permeg),
     is.finite(T_measured_se_C),
@@ -28,13 +29,8 @@ plot_data <- read_csv(input_file, show_col_types = FALSE) %>%
     T_upper95_C = T_measured_C + 1.96 * T_measured_se_C
   )
 
-if ("D17O_replicate_status" %in% names(plot_data)) {
-  plot_data <- plot_data %>%
-    mutate(sample_support = D17O_replicate_status)
-} else {
-  plot_data <- plot_data %>%
-    mutate(sample_support = "not classified")
-}
+plot_data <- plot_data %>%
+  mutate(sample_support = D17O_replicate_status)
 
 write_csv(
   plot_data,

@@ -43,6 +43,16 @@ Kelson_temp_ltg <- Kelson_Tornillo_D47 %>%
 BHB_multiproxy_final <- read.csv(here::here("data", "processed",
   "BHB_multiproxy_final.csv"))
 
+# Authoritative sample-level D17O support classification. The legacy
+# multiproxy table contains reconstructed values but not the QC-use field, so
+# join the primary horizon list explicitly before any D17O inference.
+CFB_D17O_primary_horizons <- read_csv(
+  here("data", "processed", "CFB_soilwater_reconstruction_summary.csv"),
+  show_col_types = FALSE
+) %>%
+  filter(D17O_primary_use == "primary") %>%
+  distinct(MLA_horizon_id)
+
 
 BHB_temp_ltg <- BHB_multiproxy_final %>%
   filter(!is.na(Age_Ma)) %>%
@@ -218,6 +228,7 @@ kelson_soilwater <- read_csv(
 
 
 BHB_water_isotope_space <- BHB_multiproxy_final %>%
+  semi_join(CFB_D17O_primary_horizons, by = "MLA_horizon_id") %>%
   filter(
     !is.na(strat_height_m),
     !is.na(d18Ow_mean_vsmow),
@@ -496,6 +507,7 @@ CFB_soilwater_isotope_space <- read_csv(
   show_col_types = FALSE
 ) %>%
   filter(
+    D17O_primary_use == "primary",
     !is.na(d18Ow_mean_vsmow),
     !is.na(D17Orsw_mean_permeg)
   ) %>%
@@ -848,6 +860,7 @@ print(p_soilwater_isotope_space_all_D17O)
     # Vertical error bars use the carbonate Δ′17O 95% CI.
     
     BHB_T_D17Orsw <- BHB_multiproxy_final %>%
+      semi_join(CFB_D17O_primary_horizons, by = "MLA_horizon_id") %>%
       filter(
         !is.na(T_recon_C),
         !is.na(T_recon_se_C),

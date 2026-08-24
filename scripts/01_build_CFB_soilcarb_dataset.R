@@ -538,10 +538,10 @@ IPL_D17O_data_clean %>%
   ) %>%
   arrange(Dp17Ocarb_permeg_final_correction)
 
-# Retain SC-49 and SC-50 for now.
-# SC-49 has two low-mismatch analyses after removal of the high-mismatch run,
-# and SC-50 is a single extreme value with no independent QC reason for exclusion.
-# Additional SC-50 replicates are pending.
+# Retain the individual SC-49 and SC-50 measurements in the auditable data
+# tables. Their horizon-level classifications prevent primary use: SC-49 is
+# replicated_heterogeneous and SC-50 is singleton_provisional. Neither belongs
+# in primary manuscript figures or inferential summaries without resolution.
 
 # Inspect PB-00-02-09L, which shows poor replicate agreement.
 IPL_D17O_data_clean %>%
