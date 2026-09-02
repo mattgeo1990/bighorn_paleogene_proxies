@@ -24,6 +24,7 @@ scripts <- c(
   "02_analyze_CFB_carbonate_agreement.R",
   "06_process_reference_datasets.R",
   "03_screen_CFB_clumped_diagenesis.R",
+  "03a_analyze_CFB_petrography_isotopes.R",
   "03b_plot_BHB_burial_thermal_context.R",
   "04_model_CFB_temperatures.R",
   "05_reconstruct_CFB_soilwater.R",
