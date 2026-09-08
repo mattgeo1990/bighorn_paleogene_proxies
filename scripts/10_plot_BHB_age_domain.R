@@ -262,20 +262,13 @@ p_temperature_age <- ggplot() +
   geom_point(
     data = CFB_temperature_obs_age,
     aes(
-      T_C, Age_Ma, color = study_status,
-      fill = p_altered_preservation, shape = study_status
+      T_C, Age_Ma, color = study_status, shape = study_status
     ),
-    size = 2.5, stroke = 0.8
+    fill = "white", size = 2.5, stroke = 0.8
   ) +
   scale_color_manual(
     values = c("This study" = "#B2182B", "Published data" = "grey55"),
     drop = FALSE
-  ) +
-  scale_fill_gradientn(
-    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
-    limits = c(0, 1), breaks = c(0, 0.5, 1),
-    labels = scales::label_percent(accuracy = 1),
-    name = "d18O trajectory\nP(altered)"
   ) +
   scale_shape_manual(values = t47_status_shapes, drop = FALSE) +
   age_scale(cfb_age_limits) +
@@ -288,12 +281,6 @@ p_temperature_age <- ggplot() +
     color = "none",
     shape = guide_legend(
       order = 1, override.aes = list(fill = "white", color = "black")
-    ),
-    fill = guide_colorbar(
-      order = 2,
-      barwidth = grid::unit(2.0, "cm"),
-      barheight = grid::unit(0.35, "cm"),
-      title.position = "top"
     )
   ) +
   theme_age +

@@ -145,7 +145,8 @@ The current dependency order is:
 
 ``` mermaid
 flowchart TD
-  A["01 Build CFB soil-carbonate dataset"] --> B["02 Test carbonate-dataset agreement"]
+  Z["00 Import Ben Session 22 corrections"] --> A["01 Build CFB soil-carbonate dataset"]
+  A --> B["02 Test carbonate-dataset agreement"]
   B --> C["03 Screen clumped-isotope alteration"]
   C --> D["04 Model CFB temperatures"]
   D --> E["05 Reconstruct CFB soil water"]
@@ -160,6 +161,7 @@ The production scripts are:
 
 | Order | Script                                 | Primary role                                                               |
 |----------------------------:|----------------------|----------------------|
+|     0 | `00_import_Ben_S22_clumped.R`          | Import Ben's final MATLAB results and calculate Anderson (2021) temperatures |
 |     1 | `01_build_CFB_soilcarb_dataset.R`      | Clean source datasets and build the authoritative CFB soil-carbonate table |
 |     2 | `02_analyze_CFB_carbonate_agreement.R` | Evaluate inter-dataset carbonate-isotope agreement                         |
 |     3 | `03_screen_CFB_clumped_diagenesis.R`   | Generate alteration flags and cumulative screening scenarios               |
@@ -179,6 +181,24 @@ script unless it is explicitly refactored into the main workflow.
 ------------------------------------------------------------------------
 
 ## 4. Script-by-script methods and data contracts
+
+### 4.0 Script 00: import final Session 22 clumped-isotope results
+
+Ben Passey's Session 22A/22B MATLAB workbook is the authoritative source
+for the new IPL measurements. The import preserves Ben's inclusion status,
+session, workbook row, and corrected isotope values. Temperature work uses
+carbonate-residual-corrected D47 on I-CDES (`D47_90_iCDES carbcorr`, workbook
+column AN). Dual-clumped work uses pure-CDES D47 and D48 (columns Z and AC).
+
+Preferred temperature is recalculated with Anderson et al. (2021):
+
+``` text
+T(C) = sqrt(39100 / (D47 - 0.154)) - 273.15
+```
+
+No additional acid-fractionation term is added because the workbook value is
+already reported on the 90 C I-CDES scale. Workbook Petersen temperatures are
+retained only for audit and comparison.
 
 ### 4.1 Script 01: build the CFB soil-carbonate dataset
 
@@ -232,87 +252,69 @@ The script:
 Agreement analysis is a diagnostic. It should inform data selection and
 uncertainty interpretation, not automatically delete observations.
 
-### 4.3 Script 03: diagenetic screening
+### 4.3 Script 03: fabric and diagenetic screening
 
-Diagenetic screening is part of the production pipeline because
-alteration decisions affect the temperature model that feeds the
-soil-water calculation.
+The production fabric screen follows the actual sampling design. Only two
+materials were sampled: host matrix and explicitly named fracture/void-fill
+`SPAR`. Analytically accepted host-matrix analyses pass. Explicit `SPAR`
+analyses are excluded from the primary paleotemperature model but retained for
+host--fill comparisons and paragenetic interpretation.
 
-The script creates reproducible horizon-level flags and four cumulative
-scenarios:
+Microspar, crystal coarsening, and recrystallization within host matrix do not
+by themselves establish late carbonate formation and do not trigger exclusion.
+Likewise, fracture fill is paragenetically later than its host but is not
+automatically interpreted as burial carbonate; some fill may record
+near-surface desiccation cracks. Petrographic scoring and EMPA imagery document
+these relationships rather than impose blanket horizon-level rejection.
 
-1.  all data;
-2.  exclude high alteration likelihood;
-3.  exclude moderate or higher alteration likelihood;
-4.  exclude any alteration indication.
+#### δ18Ocarbonate use
 
-It retains paired Δ47--Δ48 information and supporting isotope-space
-plots. Screening flags are data products; the screening script does not
-itself decide which scenario becomes the production temperature model.
+The pipeline retains measured δ18Ocarbonate and plots it directly in isotope
+space, including paired host--fill comparisons and equilibrium parent-water
+contours. It does not transform distance from a population mean into an
+alteration probability or screening index. Unusual δ18Ocarbonate can reflect
+climate, evaporation, soil-water variability, or diagenesis and therefore
+requires contextual interpretation.
 
-#### Continuous probability of substantial alteration
+#### Temperature plausibility
 
-Script 03 also exports a continuous,
-`p_altered_preservation`, for every observation with paired T47 and
-δ18Ocarbonate. This is a transparent δ18O trajectory index, not a
-trained classifier, calibrated posterior probability, or correction
-applied to T47.
+High temperature alone does not demonstrate late carbonate growth. However,
+modern soil observations indicate that temperatures recorded at carbonate-
+forming depths are strongly damped relative to the ground surface. The pipeline
+therefore separates paragenetic interpretation from physical plausibility:
 
-The reference mean is calculated from all available BHB
-pedogenic-micrite observations with paired T47 and δ18Ocarbonate,
-including IPL, CU, Caltech/CFB, and Snell/MCP data. The mapping assigns:
+-   T47 at or below 40 C passes the primary soil-temperature screen;
+-   T47 above 40 C through 45 C is cautionary and enters only a sensitivity
+    model;
+-   T47 above 45 C is retained in the dataset but fails interpretation as a
+    primary soil-formation temperature.
 
--   `P(altered) = 0.05` at the pooled BHB mean δ18Ocarbonate;
--   `P(altered) = 0.95` at 20 per mil VSMOW;
--   linear interpolation between those anchors;
--   linear extrapolation below 20 per mil, capped at 1; and
--   a 0.05 floor for values above the pooled mean.
-
-``` text
-P altered =
-  0.05 + 0.90 *
-  (pooled BHB mean d18Ocarb - observed d18Ocarb) /
-  (pooled BHB mean d18Ocarb - 20)
-```
-
-Qualitative alteration classes, petrographic/expert priors,
-Δ47--Δ48 residuals, and temperature or WMMT plausibility are
-intentionally excluded. Carbonate-material classes remain available as
-plot symbols but do not determine point fill. The Kim and O'Neil
-equilibrium trajectories provide the physical interpretation of the
-low-δ18O direction; the numeric probability scale itself is the
-specified linear index.
+Failed values are described as non-primary or thermally modified, without
+assuming that they represent late carbonate formation. δ18Ocarbonate is not
+used in this pass/fail decision.
 
 The principal outputs are:
 
 -   `CFB_temperature_screening_flags.csv`;
 -   `CFB_d18O_T47_screening_observations.csv`;
--   `CFB_alteration_probability_parameters.csv`; and
--   `BHB_d18O_alteration_probability_parameters.csv`.
-
-Point color may communicate the probability in plots where preservation
-is central to interpretation. Plots designed primarily to distinguish
-U--M from published observations retain stronger provenance encoding;
-shape or outline can preserve provenance while fill shows alteration
-probability. Probability weighting is a sensitivity analysis and must
-not be described as correcting an altered temperature.
+No δ18O-derived alteration-probability products are generated. Interpretation
+emphasizes paired host--fill differences and agreement with independent
+petrographic and geochemical evidence.
 
 ### 4.4 Script 04: CFB temperature modeling
-
-The temperature script fits a separate model for every screening
-scenario and plots them together with uncertainty ribbons. This
-preserves the sensitivity of the inferred temperature history to the
-alteration decision.
 
 The current production setting is:
 
 ``` r
-primary_screening_scenario <- "exclude_moderate_or_higher"
+primary_screening_scenario <- "primary_integrated_screen"
 ```
 
-Changing that single setting changes which scenario supplies the
-production `T_model_*` columns used for soil-water reconstruction. The
-other scenario models remain available for comparison.
+This uses analytically accepted host-matrix measurements at or below 40 C.
+Measurements from above 40 through 45 C are included in a separate sensitivity
+scenario. Values above 45 C remain in row-level outputs and diagnostic plots
+but are excluded from primary soil-temperature modeling. δ18Ocarbonate does
+not determine pass/fail status. Explicit secondary-fill samples remain
+available in separate paragenetic products.
 
 #### Combining co-located temperature measurements
 

@@ -438,7 +438,7 @@ message(
   nrow(CFB_T47_model_pedogenic),
   " screened pedogenic T47 observations; ",
   nrow(CFB_T47_all_pedogenic) - nrow(CFB_T47_model_pedogenic),
-  " primary observations shown but excluded by the talk screen; ",
+  " secondary-fill observations shown for paragenetic comparison; ",
   nrow(CFB_nonprimary_T47),
   " non-primary observations shown but excluded from the fit."
 )

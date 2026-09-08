@@ -301,8 +301,9 @@ p_bhb <- ggplot() +
   ) +
   geom_point(
     data = bhb_d47,
-    aes(temperature_C, Age_Ma, fill = p_altered_preservation),
-    shape = 21, color = "black", size = 2.8, stroke = 0.75
+    aes(temperature_C, Age_Ma),
+    shape = 21, color = "black", fill = "#B2182B",
+    size = 2.8, stroke = 0.75
   ) +
   geom_errorbarh(
     data = wing_lma,
@@ -330,22 +331,11 @@ p_bhb <- ggplot() +
     data = phosphate, aes(temperature_C, Age_Ma),
     shape = 23, fill = "white", color = "#762A83", size = 2.8, stroke = 0.85
   ) +
-  scale_fill_gradientn(
-    colors = alteration_colors, limits = c(0, 1),
-    breaks = c(0, 0.5, 1), labels = scales::label_percent(accuracy = 1),
-    name = "BHB T47 alteration probability"
-  ) +
   scale_color_manual(values = seasonal_colors, guide = "none") +
   scale_x_continuous(breaks = seq(0, 60, by = 10)) +
   age_scale_blank +
   coord_cartesian(xlim = c(0, 60)) +
   labs(title = "Bighorn Basin synthesis", x = expression("Temperature (" * degree * "C)")) +
-  guides(
-    fill = guide_colorbar(
-      direction = "horizontal", barwidth = unit(5.0, "cm"),
-      barheight = unit(0.35, "cm"), title.position = "top"
-    )
-  ) +
   theme_panel +
   theme(
     axis.text.y = element_blank(), axis.ticks.y = element_blank(),

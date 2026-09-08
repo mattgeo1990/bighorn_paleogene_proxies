@@ -514,20 +514,14 @@ CFB_soilwater_isotope_space <- read_csv(
   mutate(
     dp18Ow_mean = 1000 * log1p(d18Ow_mean_vsmow / 1000),
     dp18Ow_lower95 = 1000 * log1p(d18Ow_lower95_vsmow / 1000),
-    dp18Ow_upper95 = 1000 * log1p(d18Ow_upper95_vsmow / 1000),
-    p_altered_preservation = coalesce(
-      p_altered_preservation.y,
-      p_altered_preservation.x
-    )
+    dp18Ow_upper95 = 1000 * log1p(d18Ow_upper95_vsmow / 1000)
   )
 
-# Apply the same talk screen used for the clumped-isotope temperature plots:
-# carbonate d18O >= 20 per mil VSMOW and direct T47 <= 50 degrees C.
+# Direct-D47 reconstruction uses the production host-matrix screen upstream.
+# d18Ocarb and high temperature remain diagnostic rather than exclusionary.
 CFB_soilwater_direct_D47 <- CFB_soilwater_isotope_space %>%
   filter(
-    has_measured_T47 %in% TRUE,
-    d18Ocarb_vsmow >= 20,
-    T_recon_C <= 50
+    has_measured_T47 %in% TRUE
   )
 
 # Kelson et al. (2026): published soil-water observations and uncertainties.
@@ -736,19 +730,17 @@ soilwater_isotope_space_plot <- function(data, plot_title) {
       data = data,
       aes(
         dp18Ow_mean, D17Orsw_mean_permeg,
-        shape = "This study",
-        fill = p_altered_preservation
+        shape = "This study"
       ),
       size = 4.0,
       stroke = 0.75,
-      color = "black"
+      color = "black", fill = "#2166AC"
     ) +
     labs(
       title = plot_title,
       x = expression(delta * minute^18 * O[soil~water] ~ "(per mil VSMOW)"),
       y = expression(Delta * minute^17 * O[soil~water] ~ "(per meg)"),
-      shape = NULL,
-      fill = "Alteration probability"
+      shape = NULL
     ) +
     scale_shape_manual(
       values = c(
@@ -759,13 +751,6 @@ soilwater_isotope_space_plot <- function(data, plot_title) {
         "This study",
         "Published modern waters"
       )
-    ) +
-    scale_fill_gradientn(
-      colors = c("#2166AC", "#F7F7F7", "#B2182B"),
-      values = scales::rescale(c(0, 0.5, 1)),
-      limits = c(0, 1),
-      labels = scales::label_percent(accuracy = 1),
-      na.value = "grey75"
     ) +
     scale_x_continuous(expand = expansion(mult = c(0.04, 0.04))) +
     scale_y_continuous(expand = expansion(mult = c(0.05, 0.05))) +

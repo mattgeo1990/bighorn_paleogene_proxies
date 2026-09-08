@@ -108,86 +108,40 @@ names(IPL_D17O_data)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# IPL clumped isotope (Δ47) dataset
-#
-# IPL <4800 retains Ben Passey's legacy corrected summary. IPL >=4800 is
-# rebuilt from the July 2026 run-level snapshot produced by the independent
-# IPL_clumped_corrections pipeline. That workflow reproduces Ben's manual
-# procedure, filters extreme standard residuals, and applies the correction to
-# every included analysis through July 2026.
-
-IPL_D47_legacy <- read_csv(
-  here("data", "raw", "IPL_D47_BHB_Pg_Summary_June2026.csv"),
+# IPL clumped isotope dataset. Ben Passey's final Session 22 MATLAB output is
+# authoritative. D47 temperature uses carbonate-residual-corrected I-CDES;
+# dual-clumped work uses pure-CDES D47 and D48. Petersen temperatures from the
+# workbook are audit values only; T47_preferred uses Anderson et al. (2021).
+IPL_D47_data <- read_csv(
+  here("data", "processed", "Ben_S22_BHB_run_level.csv"),
   show_col_types = FALSE
-)
-
-IPL_D47_corrected_runs <- read_csv(
-  here(
-    "data", "raw",
-    "IPL_D47_corrected_run_level_through_July2026.csv"
-  ),
-  show_col_types = FALSE
-)
-
-# Normalize the registry header because the source CSV may retain a UTF-8 BOM.
-names(IPL_sample_list)[1] <- "MLA_horizon_id"
-
-CFB_D47_horizon_lookup <- IPL_sample_list %>%
-  select(MLA_horizon_id, strat_height_m) %>%
-  distinct()
-
-IPL_D47_corrected_CFB <- IPL_D47_corrected_runs %>%
-  filter(
-    IPLnum >= 4800,
-    Type.1 == "Sample",
-    included,
-    correction_qc_include,
-    !is.na(D47_corrected),
-    !is.na(T47_C)
-  ) %>%
-  mutate(
-    MLA_sample_id = Sample_Name,
-    MLA_horizon_id = Sample_Name %>%
-      str_remove(regex("-(SPAR|CLKY|DRK|LTE)$", ignore_case = TRUE)) %>%
-      str_replace(regex("^PK95-SC-80-N-1$", ignore_case = TRUE),
-                  "PK95-SC-80")
-  ) %>%
-  inner_join(CFB_D47_horizon_lookup, by = "MLA_horizon_id") %>%
-  left_join(
-    IPL_D47_legacy %>%
-      select(
-        IPLnum,
-        legacy_MLA_sample_id = MLA_sample_id,
-        legacy_MLA_horizon_id = MLA_horizon_id,
-        legacy_strat_height_m = strat_height_m,
-        IPL_NuDog_d13Ccarb_VPDB,
-        IPL_NuDog_d18Ocarb_VPDB,
-        IPL_NuDog_d18Ocarb_VSMOW
-      ),
-    by = "IPLnum"
-  ) %>%
+) %>%
+  filter(passes_analytical_screen) %>%
   transmute(
-    MLA_sample_id = coalesce(legacy_MLA_sample_id, MLA_sample_id),
-    MLA_horizon_id = coalesce(legacy_MLA_horizon_id, MLA_horizon_id),
-    Session = "Ben protocol (IPL >=4800)",
-    strat_height_m = coalesce(legacy_strat_height_m, strat_height_m),
-    IPL_NuDog_d13Ccarb_VPDB,
-    IPL_NuDog_d18Ocarb_VPDB,
-    IPL_NuDog_d18Ocarb_VSMOW,
-    `D47 CDES` = D47_transferred,
-    `D47 CDES Carb Corr` = D47_corrected,
-    `T(D47) Petersen` = T47_C,
-    T47_preferred = T47_C,
+    MLA_sample_id,
+    MLA_horizon_id,
+    Session = correction_session,
+    strat_height_m,
+    IPL_NuDog_d13Ccarb_VPDB = d13Ccarb_VPDB,
+    IPL_NuDog_d18Ocarb_VPDB = d18Ocarb_VPDB,
+    IPL_NuDog_d18Ocarb_VSMOW = d18Ocarb_VSMOW,
+    `D47 CDES` = D47_CDES,
+    `D48 CDES` = D48_CDES,
+    `D47 iCDES Carb Corr` = D47_iCDES_carb_corr,
+    `T(D47) Petersen` = T47_Petersen_workbook_C,
+    `T(D47) Anderson 2021` = T47_Anderson2021_C,
+    T47_preferred = T47_Anderson2021_C,
+    material_type,
+    passes_fabric_screen,
+    passes_primary_temperature_screen,
+    primary_screen_reason,
     final_corrections = TRUE,
     IPLnum,
     Sample_Name,
-    correction_source = correction_method
-  )
-
-IPL_D47_data <- bind_rows(
-  IPL_D47_legacy %>% filter(IPLnum < 4800),
-  IPL_D47_corrected_CFB
-) %>%
+    correction_source,
+    workbook_sheet,
+    workbook_row
+  ) %>%
   mutate(section_id = "CFB") %>%
   arrange(IPLnum)
 
@@ -626,15 +580,16 @@ ggplot(
 table(IPL_D47_data$MLA_sample_id)
 
 # Extract analyses of visibly non-primary carbonate.
-# SPAR, chalky (clky), dark (drk), and light (lte) subsamples are targeted
-# textural phases and are kept out of the primary paleosol dataset.
+# Only explicitly named SPAR samples represent separately sampled
+# fracture/void fill. Chalky, dark, and light labels are host-matrix
+# subfabrics and are not evidence of late carbonate formation.
 IPL_D47_SPAR_data <- IPL_D47_data %>%
-  filter(grepl("SPAR|-(clky|drk|lte)$", MLA_sample_id, ignore.case = TRUE))
+  filter(material_type == "secondary_fill_spar")
 
 # Extract analyses of micritic or microsparitic calcite
 # Explicitly labeled non-primary textural subsamples are excluded.
 IPL_D47_primary_data <- IPL_D47_data %>%
-  filter(!grepl("SPAR|-(clky|drk|lte)$", MLA_sample_id, ignore.case = TRUE))
+  filter(passes_primary_temperature_screen)
 
 # Plot replicate-level Δ47-derived temperatures versus stratigraphic position
 #
@@ -732,20 +687,20 @@ ggplot(IPL_D47_data,
 # Compare Δ47-derived temperatures between analytical sessions by strat level
 #
 # Purpose:
-# Identify stratigraphic levels analyzed in both Session 1 and Session 2,
+# Identify stratigraphic levels analyzed in both Session 22A and 22B,
 # calculate the mean temperature for each strat level within each session,
 # and quantify the temperature difference between sessions.
 #
-# Positive dT values indicate Session 1 produced hotter temperatures than
-# Session 2 at the same stratigraphic level.
+# Positive dT values indicate Session 22A produced hotter temperatures than
+# Session 22B at the same stratigraphic level.
 
 paired <- IPL_D47_data %>%
   
-  # Keep only analyses from Session 1 and Session 2 with valid temperatures
+  # Keep only analyses from Session 22A and 22B with valid temperatures
   # and valid stratigraphic positions
   filter(
     !is.na(Session),
-    Session %in% c("Session 1", "Session 2"),
+    Session %in% c("22A", "22B"),
     !is.na(T47_preferred),
     !is.na(strat_height_m)
   ) %>%
@@ -761,7 +716,7 @@ paired <- IPL_D47_data %>%
   ) %>%
   
   # Reshape from long to wide format so each strat level occupies one row
-  # with separate columns for Session 1 and Session 2 mean temperatures
+  # with separate columns for Session 22A and 22B mean temperatures
   pivot_wider(
     names_from = Session,
     values_from = T_mean
@@ -769,21 +724,21 @@ paired <- IPL_D47_data %>%
   
   # Retain only strat levels measured in both sessions
   filter(
-    !is.na(`Session 1`),
-    !is.na(`Session 2`)
+    !is.na(`22A`),
+    !is.na(`22B`)
   ) %>%
   
   # Calculate temperature offset between sessions
   mutate(
-    dT = `Session 1` - `Session 2`
+    dT = `22A` - `22B`
   )
 
 
 # Inspect paired strat-level session comparison
 #
 # Interpretation:
-#   dT > 0  -> Session 1 hotter
-#   dT < 0  -> Session 2 hotter
+#   dT > 0  -> Session 22A hotter
+#   dT < 0  -> Session 22B hotter
 print(paired)
 
 summary(paired$dT)
@@ -799,28 +754,28 @@ paired %>%
 
 # Paired t-test
 #
-# Tests whether the mean strat-level temperature difference between Session 1
-# and Session 2 is significantly different from zero. The production dataset
+# Tests whether the mean strat-level temperature difference between Session 22A
+# and 22B is significantly different from zero. The production dataset
 # now uses one harmonized Ben-protocol correction for IPL >=4800, so this
 # legacy diagnostic is skipped when fewer than two historical pairs remain.
 if (nrow(paired) >= 2) {
   print(t.test(
-    paired$`Session 1`,
-    paired$`Session 2`,
+    paired$`22A`,
+    paired$`22B`,
     paired = TRUE
   ))
 } else {
-  message("Skipping legacy Session 1/Session 2 t-test: fewer than two pairs.")
+  message("Skipping Session 22A/22B t-test: fewer than two pairs.")
 }
 
 
-# 1:1 plot of Session 1 versus Session 2 temperatures
+# 1:1 plot of Session 22A versus Session 22B temperatures
 #
-# Points above the dashed line indicate Session 1 is hotter.
-# Points below the dashed line indicate Session 2 is hotter.
+# Points above the dashed line indicate Session 22A is hotter.
+# Points below the dashed line indicate Session 22B is hotter.
 ggplot(paired,
-       aes(x = `Session 2`,
-           y = `Session 1`)) +
+       aes(x = `22B`,
+           y = `22A`)) +
   geom_abline(
     slope = 1,
     intercept = 0,
@@ -830,8 +785,8 @@ ggplot(paired,
   geom_point(size = 3) +
   coord_equal() +
   labs(
-    x = expression("Session 2 " * T[Delta47] * " (" * degree * "C)"),
-    y = expression("Session 1 " * T[Delta47] * " (" * degree * "C)")
+    x = expression("Session 22B " * T[Delta47] * " (" * degree * "C)"),
+    y = expression("Session 22A " * T[Delta47] * " (" * degree * "C)")
   ) +
   theme_classic()
 
@@ -850,7 +805,7 @@ ggplot(paired,
   ) +
   geom_point(size = 3) +
   labs(
-    x = expression(Delta * "T = Session 1 - Session 2 (" * degree * "C)"),
+    x = expression(Delta * "T = Session 22A - Session 22B (" * degree * "C)"),
     y = "Stratigraphic Level (m)"
   ) +
   theme_classic()
@@ -1517,8 +1472,11 @@ max_or_na <- function(x) {
 
 summarize_IPLD47 <- function(data, sample_type) {
   data %>%
-    group_by(section_id, MLA_sample_id, MLA_horizon_id) %>%
+    group_by(section_id, MLA_horizon_id) %>%
     summarise(
+      MLA_sample_id = paste(
+        sort(unique(MLA_sample_id)), collapse = "; "
+      ),
       strat_height_m = mean_or_na(strat_height_m),
       
       IPLD47_n_T47 = sum(!is.na(T47_preferred)),
@@ -1576,7 +1534,7 @@ IPLD47_primary_summary <- summarize_IPLD47(
 # Non-primary IPL carbonate summary (spar and other targeted textures)
 IPLD47_spar_summary <- summarize_IPLD47(
   IPL_D47_SPAR_data,
-  sample_type = "nonprimary"
+  sample_type = "secondary_fill_spar"
 )
 
 IPLD47_primary_summary
@@ -1803,8 +1761,8 @@ spar_altered_combined <- bind_rows(
       d18Ocarb_vpdb = IPL_NuDog_d18Ocarb_VPDB,
       d18Ocarb_vsmow = IPL_NuDog_d18Ocarb_VSMOW,
       D47 = D47.CDES,
-      D47_carb_corr = D47.CDES.Carb.Corr,
-      T47_C = T.D47..Petersen,
+      D47_carb_corr = D47.iCDES.Carb.Corr,
+      T47_C = T.D47..Anderson.2021,
       T47_preferred,
       T47_se_C = NA_real_
     ),

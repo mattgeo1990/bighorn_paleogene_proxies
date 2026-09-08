@@ -66,8 +66,7 @@ BHB_points <- read_csv(
   filter(
     used_in_temperature_model,
     !is.na(Age_Ma),
-    !is.na(temperature_C),
-    !is.na(p_altered_preservation)
+    !is.na(temperature_C)
   ) %>%
   transmute(
     region = "Bighorn Basin",
@@ -79,7 +78,6 @@ BHB_points <- read_csv(
     paleolatitude_deg_n = BHB_paleolat_deg_n,
     temperature_C,
     temperature_se_C,
-    p_altered_preservation,
     passed_BHB_screen = TRUE
   ) %>%
   filter(!is.na(stage_group))
@@ -102,7 +100,6 @@ Tornillo_points <- read_csv(
     paleolatitude_deg_n = Tornillo_paleolat_deg_n,
     temperature_C = T47_C,
     temperature_se_C = T47_se_C,
-    p_altered_preservation = NA_real_,
     passed_BHB_screen = NA
   ) %>%
   filter(!is.na(stage_group))
@@ -276,13 +273,9 @@ p_PhanDA_clumped_comparison <- ggplot() +
   ) +
   geom_point(
     data = BHB_plot_points,
-    aes(
-      x = display_paleolatitude_deg_n,
-      y = temperature_C,
-      fill = p_altered_preservation
-    ),
+    aes(x = display_paleolatitude_deg_n, y = temperature_C),
     shape = 21, size = 2.8,
-    stroke = 0.55, color = "black"
+    stroke = 0.55, color = "black", fill = "#0072B2"
   ) +
   geom_errorbar(
     data = Tornillo_plot_points,
@@ -311,13 +304,6 @@ p_PhanDA_clumped_comparison <- ggplot() +
     size = 18 / ggplot2::.pt, fontface = "bold"
   ) +
   facet_wrap(~stage_group, nrow = 1) +
-  scale_fill_gradient2(
-    low = "#2166AC", mid = "#F7F7F7", high = "#B2182B",
-    midpoint = 0.5, limits = c(0, 1),
-    breaks = c(0, 0.25, 0.5, 0.75, 1),
-    labels = scales::label_percent(accuracy = 1),
-    name = "Modeled BHB\nalteration probability"
-  ) +
   scale_color_manual(
     values = published_record_colors,
     breaks = names(published_record_colors),

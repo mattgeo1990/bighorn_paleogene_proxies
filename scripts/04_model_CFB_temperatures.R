@@ -8,37 +8,30 @@ library(tidyverse)
 library(here)
 library(zoo)
 source(here("scripts", "helpers", "save_figure_variants.R"))
-source(
-  here(
-    "scripts", "helpers",
-    "BHB_d18O_alteration_probability.R"
-  )
-)
 
 dir.create(here("figures", "temperature_models"), recursive = TRUE,
            showWarnings = FALSE)
 
 # This is the only setting that determines which scenario supplies the
 # production T_model_* columns used by the soil-water reconstruction.
-# The talk model uses an explicit, observation-level geochemical screen while
-# all observations remain available to the diagenesis and screening figures.
-primary_screening_scenario <- "talk_geochemical_screen"
+# Production temperatures use analytically accepted host-matrix analyses with
+# physically plausible soil-formation temperatures. Explicit SPAR samples are
+# retained for paragenetic comparisons but excluded upstream. d18Ocarb remains
+# contextual evidence rather than a pass/fail criterion.
+primary_screening_scenario <- "primary_integrated_screen"
 
-talk_d18Ocarb_min_vsmow <- 20
-talk_temperature_max_C <- 50
+soil_temperature_caution_C <- 40
+soil_temperature_maximum_C <- 45
 
 screening_scenarios <- tribble(
   ~screening_scenario_id, ~screening_scenario, ~screen_column,
   "none", "All data", "none",
-  "talk_geochemical_screen",
-    "Talk screen: d18Ocarb >= 20 per mil and T <= 50 C",
-    "talk_geochemical_screen",
-  "exclude_high_likelihood", "Exclude high likelihood",
-    "exclude_high_likelihood",
-  "exclude_moderate_or_higher", "Exclude moderate or higher",
-    "exclude_moderate_or_higher",
-  "exclude_any_alteration_indication", "Exclude any indication",
-    "exclude_any_alteration_indication"
+  "include_temperature_caution",
+    "Host matrix at or below 45 C",
+    "temperature_le_45",
+  "primary_integrated_screen",
+    "Host matrix at or below 40 C",
+    "temperature_le_40"
 )
 
 if (!primary_screening_scenario %in% screening_scenarios$screening_scenario_id) {
@@ -59,28 +52,10 @@ CFB_temperature_screening_flags <- read_csv(
   here("data", "processed", "CFB_temperature_screening_flags.csv"),
   show_col_types = FALSE
 )
-BHB_d18O_probability_parameters <- read_csv(
-  here(
-    "data", "processed",
-    "BHB_d18O_alteration_probability_parameters.csv"
-  ),
-  show_col_types = FALSE
-)
-BHB_d18Ocarb_reference_mean_vsmow <-
-  BHB_d18O_probability_parameters$reference_mean_d18Ocarb_vsmow[[1]]
-
 screen_columns <- screening_scenarios$screen_column %>%
   keep(~ str_starts(.x, "exclude_"))
-probability_columns <- c(
-  "p_altered_preservation",
-  "p_altered_preservation_lower_sensitivity",
-  "p_altered_preservation_upper_sensitivity",
-  "alteration_evidence_class",
-  "probability_model_version"
-)
 required_flag_columns <- c(
-  "MLA_horizon_id", "alteration_likelihood", screen_columns,
-  probability_columns
+  "MLA_horizon_id", "alteration_likelihood", screen_columns
 )
 missing_flag_columns <- setdiff(
   required_flag_columns, names(CFB_temperature_screening_flags)
@@ -121,7 +96,6 @@ make_temperature_observations <- function(data, screen_column) {
   observations <- data %>%
     select(
       section_id, MLA_horizon_id, strat_height_m,
-      all_of(probability_columns),
       IPLD47_mean_T47_C, IPLD47_se_T47_C,
       IPL_NuDog_d18Ocarb_VSMOW,
       CU_mean_T47_C, CU_2se_T47_C,
@@ -149,51 +123,37 @@ make_temperature_observations <- function(data, screen_column) {
         source == "U-M" ~ IPL_NuDog_d18Ocarb_VSMOW,
         source == "CU" ~ CU_mean_d18Ocarb_vsmow,
         source == "Caltech" ~ Snell_mean_d18Ocarb_vsmow
-      ),
-      p_altered_preservation = calc_d18O_alteration_probability(
-        d18Ocarb_vsmow,
-        BHB_d18Ocarb_reference_mean_vsmow
-      ),
-      p_altered_preservation_lower_sensitivity =
-        p_altered_preservation,
-      p_altered_preservation_upper_sensitivity =
-        p_altered_preservation,
-      alteration_evidence_class = case_when(
-        p_altered_preservation < 0.20 ~ "low",
-        p_altered_preservation < 0.50 ~ "limited",
-        p_altered_preservation < 0.80 ~ "substantial",
-        TRUE ~ "strong"
-      ),
-      probability_model_version = "BHB_d18O_trajectory_index_v2"
+      )
     ) %>%
     select(
       section_id, MLA_horizon_id, strat_height_m,
-      all_of(probability_columns), source, T_C, T_se_C, d18Ocarb_vsmow
+      source, T_C, T_se_C, d18Ocarb_vsmow
     ) %>%
     filter(!is.na(T_C), !is.na(strat_height_m)) %>%
     mutate(
-      passes_d18Ocarb_screen =
-        is.finite(d18Ocarb_vsmow) &
-        d18Ocarb_vsmow >= talk_d18Ocarb_min_vsmow,
-      passes_temperature_screen =
-        is.finite(T_C) & T_C <= talk_temperature_max_C,
-      passes_talk_temperature_model_screen =
-        passes_d18Ocarb_screen & passes_temperature_screen,
-      talk_screen_exclusion_reason = case_when(
-        !is.finite(d18Ocarb_vsmow) ~ "Missing d18Ocarb VSMOW",
-        d18Ocarb_vsmow < talk_d18Ocarb_min_vsmow &
-          T_C > talk_temperature_max_C ~
-            "d18Ocarb < 20 per mil VSMOW and T > 50 C",
-        d18Ocarb_vsmow < talk_d18Ocarb_min_vsmow ~
-          "d18Ocarb < 20 per mil VSMOW",
-        T_C > talk_temperature_max_C ~ "T > 50 C",
-        TRUE ~ NA_character_
+      temperature_plausibility = case_when(
+        T_C <= soil_temperature_caution_C ~ "pass",
+        T_C <= soil_temperature_maximum_C ~ "caution",
+        TRUE ~ "fail_primary_temperature"
+      ),
+      passes_primary_integrated_screen =
+        T_C <= soil_temperature_caution_C,
+      passes_caution_inclusive_screen =
+        T_C <= soil_temperature_maximum_C,
+      temperature_screen_reason = case_when(
+        temperature_plausibility == "pass" ~
+          "At or below 40 C; physically plausible soil temperature",
+        temperature_plausibility == "caution" ~
+          "Above 40 C but at or below 45 C; retained only in sensitivity model",
+        TRUE ~
+          "Above 45 C; not credible as a primary soil-formation temperature"
       )
     )
 
-  if (screen_column == "talk_geochemical_screen") {
-    observations <- observations %>%
-      filter(passes_talk_temperature_model_screen)
+  if (screen_column == "temperature_le_40") {
+    observations <- observations %>% filter(passes_primary_integrated_screen)
+  } else if (screen_column == "temperature_le_45") {
+    observations <- observations %>% filter(passes_caution_inclusive_screen)
   }
 
   valid_se <- observations$T_se_C[
@@ -212,9 +172,19 @@ make_temperature_observations <- function(data, screen_column) {
 
 fit_temperature_scenario <- function(scenario_id, scenario_label,
                                      screen_column, prediction_grid) {
+  all_observations <- make_temperature_observations(
+    CFB_soilcarb_isotope_summary, "none"
+  )
   observations <- make_temperature_observations(
     CFB_soilcarb_isotope_summary, screen_column
   )
+
+  excluded_observations <- all_observations %>%
+    anti_join(
+      observations %>%
+        select(MLA_horizon_id, source, T_C),
+      by = c("MLA_horizon_id", "source", "T_C")
+    )
 
   # Combine co-located temperature estimates using an inverse-variance-
   # weighted mean. This is appropriate when U-M, CU, and Caltech observations
@@ -237,19 +207,6 @@ fit_temperature_scenario <- function(scenario_id, scenario_label,
       T_measured_se_C = sqrt(1 / sum(weight, na.rm = TRUE)),
       n_T_obs = n(),
       T_sources = paste(sort(unique(source)), collapse = ", "),
-      p_altered_preservation =
-        mean(p_altered_preservation, na.rm = TRUE),
-      p_altered_preservation_lower_sensitivity =
-        mean(p_altered_preservation_lower_sensitivity, na.rm = TRUE),
-      p_altered_preservation_upper_sensitivity =
-        mean(p_altered_preservation_upper_sensitivity, na.rm = TRUE),
-      alteration_evidence_class = case_when(
-        p_altered_preservation < 0.20 ~ "low",
-        p_altered_preservation < 0.50 ~ "limited",
-        p_altered_preservation < 0.80 ~ "substantial",
-        TRUE ~ "strong"
-      ),
-      probability_model_version = first(probability_model_version),
       .groups = "drop"
     ) %>%
     arrange(strat_height_m) %>%
@@ -310,19 +267,12 @@ fit_temperature_scenario <- function(scenario_id, scenario_label,
       model_max_strat_height_m = model_max_strat_height_m,
       screening_scenario_id = scenario_id,
       screening_scenario = scenario_label,
-      n_excluded_horizons = case_when(
-        screen_column == "none" ~ 0L,
-        screen_column == "talk_geochemical_screen" ~
-          as.integer(
-            n_distinct(
-              make_temperature_observations(
-                CFB_soilcarb_isotope_summary, "none"
-              )$MLA_horizon_id
-            ) - n_distinct(observations$MLA_horizon_id)
-          ),
-        TRUE ~ as.integer(
-          sum(CFB_soilcarb_isotope_summary[[screen_column]], na.rm = TRUE)
-        )
+      n_excluded_observations = nrow(excluded_observations),
+      n_horizons_with_excluded_observations =
+        n_distinct(excluded_observations$MLA_horizon_id),
+      n_excluded_horizons = as.integer(
+        n_distinct(all_observations$MLA_horizon_id) -
+          n_distinct(observations$MLA_horizon_id)
       ),
       uncertainty_method = paste(
         "Approximate 95% interval: analytical SE plus spline residual",
@@ -366,6 +316,9 @@ CFB_temperature_scenario_models <- map_dfr(scenario_fits, "model") %>%
 CFB_temperature_scenario_summary <- CFB_temperature_scenario_models %>%
   group_by(screening_scenario_id, screening_scenario) %>%
   summarise(
+    n_excluded_observations = first(n_excluded_observations),
+    n_horizons_with_excluded_observations =
+      first(n_horizons_with_excluded_observations),
     n_excluded_horizons = first(n_excluded_horizons),
     n_temperature_horizons = sum(has_measured_T47),
     model_min_strat_height_m = first(model_min_strat_height_m),
@@ -388,7 +341,7 @@ primary_fit <- scenario_fits[[primary_screening_scenario]]
 temp_obs <- scenario_fits[["none"]]$observations %>%
   mutate(
     used_in_primary_temperature_model =
-      passes_talk_temperature_model_screen
+      passes_primary_integrated_screen
   )
 temp_horizon <- primary_fit$horizons
 CFB_temperature_model <- primary_fit$model
@@ -423,9 +376,8 @@ CFB_soilcarb_with_temperature <- CFB_soilcarb_isotope_summary %>%
 #-- 6.) Plot Scenario Sensitivity with 95% Error Ribbons -------------------
 scenario_colors <- c(
   "All data" = "#000000",
-  "Exclude high likelihood" = "#0072B2",
-  "Exclude moderate or higher" = "#E69F00",
-  "Exclude any indication" = "#D55E00"
+  "Host matrix at or below 45 C" = "#E69F00",
+  "Host matrix at or below 40 C" = "#0072B2"
 )
 
 p_temperature_scenarios <- ggplot(

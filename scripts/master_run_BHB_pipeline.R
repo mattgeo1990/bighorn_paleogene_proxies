@@ -20,6 +20,7 @@ if (!interactive()) {
 }
 
 scripts <- c(
+  "00_import_Ben_S22_clumped.R",
   "01_build_CFB_soilcarb_dataset.R",
   "02_analyze_CFB_carbonate_agreement.R",
   "06_process_reference_datasets.R",

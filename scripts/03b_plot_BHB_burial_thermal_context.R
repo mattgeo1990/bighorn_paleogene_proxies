@@ -319,11 +319,6 @@ CFB_T47_observations <- read_csv(
     carbonate_type = factor(
       carbonate_type,
       levels = c("Pedogenic micrite", "Altered carbonate", "Spar")
-    ),
-    p_altered_preservation = if_else(
-      is.finite(p_altered_preservation),
-      p_altered_preservation,
-      NA_real_
     )
   ) %>%
   filter(
@@ -452,10 +447,9 @@ p_CFB_T47_burial_comparison <- ggplot() +
     data = CFB_T47_observations,
     aes(
       T47_C, strat_height_m,
-      color = dataset_status, fill = p_altered_preservation,
-      shape = carbonate_type
+      color = dataset_status, shape = carbonate_type
     ),
-    size = 2.65, stroke = 0.85
+    fill = "white", size = 2.65, stroke = 0.85
   ) +
   geom_text(
     data = CFB_formation_intervals,
@@ -466,13 +460,6 @@ p_CFB_T47_burial_comparison <- ggplot() +
     ),
     angle = 90, fontface = "bold", size = 18 / ggplot2::.pt,
     color = "grey30"
-  ) +
-  scale_fill_gradientn(
-    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
-    limits = c(0, 1),
-    breaks = c(0, 0.25, 0.5, 0.75, 1),
-    labels = scales::label_percent(accuracy = 1),
-    name = "d18O trajectory\nP(altered)"
   ) +
   scale_color_manual(
     values = c(
@@ -505,7 +492,7 @@ p_CFB_T47_burial_comparison <- ggplot() +
     title = "B  CFB T47 and maximum-burial temperature",
     subtitle = paste0(
       "Points = carbonate formation T; orange = McCulloch Peak;\n",
-      "grey = Roberts BHB range; blue = all-primary fit; fill = alteration index"
+      "grey = Roberts BHB range; blue = host-matrix temperature fit"
     )
   ) +
   guides(

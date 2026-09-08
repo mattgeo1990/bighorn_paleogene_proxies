@@ -299,20 +299,15 @@ p_temperature <- ggplot() +
   ) +
   geom_point(
     data = ipl_d47,
-    aes(T_C, Age_Ma, fill = p_altered_preservation),
-    shape = 21, color = "black", size = 3.0, stroke = 0.8
+    aes(T_C, Age_Ma),
+    shape = 21, color = "black", fill = "#B2182B",
+    size = 3.0, stroke = 0.8
   ) +
   scale_color_manual(
     values = c(seasonal_colors, record_colors),
     breaks = names(record_colors), drop = FALSE
   ) +
   scale_shape_manual(values = record_shapes, drop = FALSE) +
-  scale_fill_gradientn(
-    colors = c("#2166AC", "#67A9CF", "#F7F7F7", "#EF8A62", "#B2182B"),
-    limits = c(0, 1), breaks = c(0, 0.5, 1),
-    labels = scales::label_percent(accuracy = 1),
-    name = "IPL d18O trajectory\nP(altered)"
-  ) +
   scale_x_continuous(
     limits = c(-2, 62), breaks = seq(0, 60, by = 10),
     expand = expansion(mult = c(0.01, 0.02))
@@ -320,20 +315,13 @@ p_temperature <- ggplot() +
   age_scale +
   labs(
     x = expression("Temperature (" * degree * "C)"),
-    y = "Age (Ma)",
-    color = NULL, shape = NULL, fill = "Seasonal synthesis"
+    y = "Age (Ma)", color = NULL, shape = NULL
   ) +
   guides(
     color = "none",
     shape = guide_legend(
       order = 1, nrow = 1, byrow = TRUE,
       override.aes = list(fill = "white")
-    ),
-    fill = guide_colorbar(
-      order = 2,
-      barwidth = unit(2.4, "cm"),
-      barheight = unit(0.35, "cm"),
-      title.position = "top"
     )
   ) +
   theme_slide +

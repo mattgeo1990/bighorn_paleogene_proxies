@@ -26,3 +26,7 @@ source(here::here("scripts", "master_run_BHB_pipeline.R"))
 The master script runs the numbered production scripts in dependency order and
 writes processed data to `data/processed/` and figures to `figures/`.
 
+Current IPL clumped-isotope results come from Ben Passey's final Session 22A/B
+MATLAB workbook. Preferred temperatures use the Anderson et al. (2021) I-CDES
+calibration. The primary model includes analytically accepted host matrix;
+explicitly named `SPAR` samples are retained separately as secondary fill.
